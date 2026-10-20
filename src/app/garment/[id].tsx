@@ -1,0 +1,1 @@
+export { EditGarmentScreen as default } from '../../presentation/screens/EditGarmentScreen';

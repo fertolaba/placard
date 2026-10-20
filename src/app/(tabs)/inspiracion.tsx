@@ -1,0 +1,1 @@
+export { InspirationScreen as default } from '../../presentation/screens/InspirationScreen';

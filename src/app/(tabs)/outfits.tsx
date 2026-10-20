@@ -1,0 +1,1 @@
+export { OutfitsScreen as default } from '../../presentation/screens/OutfitsScreen';

@@ -1,0 +1,1 @@
+export { AddGarmentScreen as default } from '../presentation/screens/AddGarmentScreen';
