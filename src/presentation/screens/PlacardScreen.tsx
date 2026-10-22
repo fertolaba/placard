@@ -5,8 +5,10 @@ import { ActivityIndicator, FlatList, Pressable, Text, useWindowDimensions, View
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CategoryFilter } from '../components/CategoryFilter';
 import { GarmentCard } from '../components/GarmentCard';
+import { SeasonFilter } from '../components/SeasonFilter';
 import { StateMessage } from '../components/StateMessage';
-import { useGarments, type CategoryFilterValue } from '../hooks/useGarments';
+import { useGarments, type CategoryFilterValue, type SeasonFilterValue } from '../hooks/useGarments';
+import { SEASON_UI } from '../seasonUi';
 import { makeStyles } from '../theme/makeStyles';
 import { useTheme } from '../theme/ThemeProvider';
 
@@ -21,10 +23,20 @@ export function PlacardScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const [category, setCategory] = useState<CategoryFilterValue>('todo');
-  const { garments, status, reload } = useGarments(category);
+  const [season, setSeason] = useState<SeasonFilterValue>('todas');
+  const { garments, status, reload } = useGarments(category, season);
 
   const contentWidth = Math.min(width, MAX_CONTENT_WIDTH);
   const cardWidth = (contentWidth - SIDE_PADDING * 2 - GAP) / 2;
+
+  const filtering = category !== 'todo' || season !== 'todas';
+  const clearFilters = () => {
+    setCategory('todo');
+    setSeason('todas');
+  };
+
+  const count = `${garments.length} ${garments.length === 1 ? 'prenda' : 'prendas'}`;
+  const subtitle = status !== 'ready' ? ' ' : season === 'todas' ? count : `${count} · ${SEASON_UI[season].label}`;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
@@ -42,8 +54,21 @@ export function PlacardScreen() {
             <Ionicons name="add" size={26} color={colors.onPrimary} />
           </Pressable>
         </View>
-        <Text style={styles.subtitle}>{status === 'ready' ? `${garments.length} prendas` : ' '}</Text>
+        <View style={styles.subtitleRow}>
+          <Text style={styles.subtitle}>{subtitle}</Text>
+          {season !== 'todas' ? (
+            <Pressable
+              onPress={() => setSeason('todas')}
+              accessibilityRole="button"
+              accessibilityLabel="Quitar filtro de clima"
+              hitSlop={8}
+            >
+              <Text style={styles.clear}>Quitar filtro</Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
+      <SeasonFilter value={season} onChange={setSeason} />
       <CategoryFilter value={category} onChange={setCategory} />
 
       {status === 'loading' && <ActivityIndicator style={styles.loader} />}
@@ -55,7 +80,15 @@ export function PlacardScreen() {
           onAction={reload}
         />
       )}
-      {status === 'ready' && garments.length === 0 && (
+      {status === 'ready' && garments.length === 0 && filtering && (
+        <StateMessage
+          title="No hay prendas con esos filtros"
+          detail="Probá con otra época o categoría, o marcá más épocas en tus prendas."
+          actionLabel="Quitar filtros"
+          onAction={clearFilters}
+        />
+      )}
+      {status === 'ready' && garments.length === 0 && !filtering && (
         <StateMessage title="Todavía no hay prendas acá" detail="Tocá el botón + para agregar una foto de tu ropa." />
       )}
       {status === 'ready' && garments.length > 0 && (
@@ -91,6 +124,8 @@ const useStyles = makeStyles((colors) => ({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  subtitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   subtitle: { fontSize: 15, color: colors.textMuted },
+  clear: { fontSize: 15, fontWeight: '500', color: colors.link },
   loader: { marginTop: 40 },
 }));

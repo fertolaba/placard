@@ -8,6 +8,7 @@ import { HttpClient } from '../../data/http/HttpClient';
 import type { GarmentRepository } from '../../domain/repositories/GarmentRepository';
 import { AddGarment } from '../../domain/usecases/AddGarment';
 import { AddGarmentWithPhoto } from '../../domain/usecases/AddGarmentWithPhoto';
+import { DetectGarmentColor } from '../../domain/usecases/DetectGarmentColor';
 import { DeleteGarment } from '../../domain/usecases/DeleteGarment';
 import { GetGarment } from '../../domain/usecases/GetGarment';
 import { GetGarments } from '../../domain/usecases/GetGarments';
@@ -19,6 +20,7 @@ import { SetThemeMode } from '../../domain/usecases/SetThemeMode';
 import { SuggestOutfits } from '../../domain/usecases/SuggestOutfits';
 import { UpdateGarment } from '../../domain/usecases/UpdateGarment';
 import { UpdateProfile } from '../../domain/usecases/UpdateProfile';
+import { createColorDetector } from '../../data/color/createColorDetector';
 import { env } from '../config/env';
 
 /**
@@ -26,6 +28,7 @@ import { env } from '../config/env';
  * Para sumar otra fuente de datos: crear su repositorio y agregar un caso acá.
  */
 const photoStorage = createPhotoStorage();
+const colorDetector = createColorDetector();
 
 function createGarmentRepository(): GarmentRepository {
   if (env.dataSource === 'api') return new ApiGarmentRepository(new HttpClient(env.apiUrl));
@@ -45,6 +48,7 @@ export const container = {
   addGarmentWithPhoto: new AddGarmentWithPhoto(addGarment, photoStorage),
   updateGarment: new UpdateGarment(garmentRepository, photoStorage),
   deleteGarment: new DeleteGarment(garmentRepository, photoStorage),
+  detectGarmentColor: new DetectGarmentColor(colorDetector),
   suggestOutfits: new SuggestOutfits(garmentRepository),
   getProfile: new GetProfile(profileRepository),
   updateProfile: new UpdateProfile(profileRepository),

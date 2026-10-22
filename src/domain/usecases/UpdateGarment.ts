@@ -1,4 +1,5 @@
 import type { Garment, GarmentCategory } from '../entities/Garment';
+import type { Season } from '../entities/Season';
 import type { GarmentRepository } from '../repositories/GarmentRepository';
 import { normalizeGarmentData } from '../services/garmentRules';
 import type { PhotoStorage } from '../services/PhotoStorage';
@@ -9,6 +10,7 @@ export interface GarmentEdit {
   category: GarmentCategory;
   colorHex: string;
   colorName: string;
+  seasons: Season[];
   newPhotoUri: string | null; // null = dejar la foto que ya tiene
 }
 

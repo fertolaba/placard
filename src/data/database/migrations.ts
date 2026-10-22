@@ -1,11 +1,12 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
+import { SEASONS } from '../../domain/entities/Season';
 import { SAMPLE_GARMENTS } from '../seed/sampleGarments';
 
-export const LATEST_VERSION = 2;
+export const LATEST_VERSION = 3;
 
 /**
  * Lleva la base a la última versión. La versión se guarda en la propia base (PRAGMA user_version),
- * así que para cambiar la estructura más adelante se agrega un bloque "if (version < 3)" y se sube LATEST_VERSION.
+ * así que para cambiar la estructura más adelante se agrega un bloque "if (version < 4)" y se sube LATEST_VERSION.
  */
 export async function runMigrations(db: SQLiteDatabase): Promise<void> {
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
@@ -32,6 +33,11 @@ export async function runMigrations(db: SQLiteDatabase): Promise<void> {
       // Las prendas de prueba de las primeras versiones ya no se cargan: se sacan de las bases que las tenían.
       const ids = SAMPLE_GARMENTS.map((sample) => sample.id);
       await db.runAsync(`DELETE FROM garments WHERE id IN (${ids.map(() => '?').join(', ')})`, ...ids);
+    }
+    if (version < 3) {
+      // Épocas del año en que se usa cada prenda, como texto: "verano,entretiempo,invierno".
+      // Las prendas que ya existían quedan con las tres, para que no desaparezcan de ningún filtro.
+      await db.execAsync(`ALTER TABLE garments ADD COLUMN seasons TEXT NOT NULL DEFAULT '${SEASONS.join(',')}'`);
     }
     await db.execAsync(`PRAGMA user_version = ${LATEST_VERSION}`);
   });

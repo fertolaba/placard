@@ -1,5 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import type { Garment, GarmentCategory, NewGarment } from '../../domain/entities/Garment';
+import { SEASONS, normalizeSeasons, type Season } from '../../domain/entities/Season';
 import type { GarmentRepository } from '../../domain/repositories/GarmentRepository';
 
 /** Forma de la fila tal como está en la tabla (con nombres en snake_case). */
@@ -9,12 +10,18 @@ interface GarmentRow {
   category: GarmentCategory;
   color_hex: string;
   color_name: string;
+  seasons: string; // "verano,invierno"
   photo_ref: string | null;
   created_at: string;
 }
 
 function newId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function parseSeasons(text: string): Season[] {
+  const seasons = normalizeSeasons(text.split(','));
+  return seasons.length > 0 ? seasons : [...SEASONS]; // si el dato está dañado, no se esconde la prenda
 }
 
 export class SqliteGarmentRepository implements GarmentRepository {
@@ -30,6 +37,7 @@ export class SqliteGarmentRepository implements GarmentRepository {
       category: row.category,
       colorHex: row.color_hex,
       colorName: row.color_name,
+      seasons: parseSeasons(row.seasons),
       photoRef: row.photo_ref,
       imageUri: row.photo_ref === null ? null : this.resolvePhoto(row.photo_ref),
       createdAt: new Date(row.created_at),
@@ -54,12 +62,13 @@ export class SqliteGarmentRepository implements GarmentRepository {
     const id = newId();
     const createdAt = new Date();
     await db.runAsync(
-      'INSERT INTO garments (id, name, category, color_hex, color_name, photo_ref, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO garments (id, name, category, color_hex, color_name, seasons, photo_ref, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       id,
       input.name,
       input.category,
       input.colorHex,
       input.colorName,
+      input.seasons.join(','),
       input.photoRef,
       createdAt.toISOString(),
     );
@@ -74,11 +83,12 @@ export class SqliteGarmentRepository implements GarmentRepository {
   async update(id: string, data: NewGarment): Promise<Garment> {
     const db = await this.getDatabase();
     const result = await db.runAsync(
-      'UPDATE garments SET name = ?, category = ?, color_hex = ?, color_name = ?, photo_ref = ? WHERE id = ?',
+      'UPDATE garments SET name = ?, category = ?, color_hex = ?, color_name = ?, seasons = ?, photo_ref = ? WHERE id = ?',
       data.name,
       data.category,
       data.colorHex,
       data.colorName,
+      data.seasons.join(','),
       data.photoRef,
       id,
     );

@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { container } from '../../core/di/container';
 import type { Garment, GarmentCategory } from '../../domain/entities/Garment';
+import type { Season } from '../../domain/entities/Season';
 import { useDataVersion } from '../state/dataVersion';
 
 export type CategoryFilterValue = GarmentCategory | 'todo';
+export type SeasonFilterValue = Season | 'todas';
 type Status = 'loading' | 'ready' | 'error';
 
-export function useGarments(category: CategoryFilterValue) {
+export function useGarments(category: CategoryFilterValue, season: SeasonFilterValue = 'todas') {
   const [garments, setGarments] = useState<Garment[]>([]);
   const [status, setStatus] = useState<Status>('loading');
   const [reloadKey, setReloadKey] = useState(0);
@@ -16,7 +18,10 @@ export function useGarments(category: CategoryFilterValue) {
     let cancelled = false; // evita pisar datos si el usuario cambia de filtro rápido
     setStatus('loading');
     container.getGarments
-      .execute(category === 'todo' ? undefined : category)
+      .execute({
+        category: category === 'todo' ? undefined : category,
+        season: season === 'todas' ? undefined : season,
+      })
       .then((result) => {
         if (cancelled) return;
         setGarments(result);
@@ -28,7 +33,7 @@ export function useGarments(category: CategoryFilterValue) {
     return () => {
       cancelled = true;
     };
-  }, [category, reloadKey, dataVersion]);
+  }, [category, season, reloadKey, dataVersion]);
 
   return { garments, status, reload: () => setReloadKey((key) => key + 1) };
 }

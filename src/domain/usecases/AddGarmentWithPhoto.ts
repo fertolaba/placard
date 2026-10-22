@@ -1,4 +1,5 @@
 import type { Garment, GarmentCategory } from '../entities/Garment';
+import type { Season } from '../entities/Season';
 import type { PhotoStorage } from '../services/PhotoStorage';
 import type { AddGarment } from './AddGarment';
 
@@ -7,6 +8,7 @@ export interface GarmentDraft {
   category: GarmentCategory;
   colorHex: string;
   colorName: string;
+  seasons: Season[];
   photoUri: string | null; // foto recién sacada o elegida (todavía en una carpeta temporal)
 }
 

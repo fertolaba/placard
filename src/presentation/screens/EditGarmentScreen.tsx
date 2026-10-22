@@ -29,6 +29,7 @@ export function EditGarmentScreen() {
         category: values.category,
         colorHex: values.color.hex,
         colorName: values.color.name,
+        seasons: values.seasons,
         newPhotoUri: values.newPhotoUri,
       });
       notifyDataChanged();
@@ -93,6 +94,7 @@ export function EditGarmentScreen() {
         category: garment.category,
         colorHex: garment.colorHex,
         colorName: garment.colorName,
+        seasons: garment.seasons,
         imageUri: garment.imageUri,
       }}
       submitting={submitting}

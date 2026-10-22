@@ -1,3 +1,4 @@
+import { normalizeSeasons } from '../entities/Season';
 import type { NewGarment } from '../entities/Garment';
 
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
@@ -8,5 +9,7 @@ export function normalizeGarmentData(input: NewGarment): NewGarment {
   if (name === '') throw new Error('La prenda necesita un nombre.');
   if (name.length > 40) throw new Error('El nombre puede tener hasta 40 caracteres.');
   if (!HEX_COLOR.test(input.colorHex)) throw new Error('El color tiene que tener el formato #RRGGBB.');
-  return { ...input, name };
+  const seasons = normalizeSeasons(input.seasons ?? []);
+  if (seasons.length === 0) throw new Error('Elegí al menos una época del año.');
+  return { ...input, name, seasons };
 }

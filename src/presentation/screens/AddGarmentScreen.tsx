@@ -18,6 +18,7 @@ export function AddGarmentScreen() {
         category: values.category,
         colorHex: values.color.hex,
         colorName: values.color.name,
+        seasons: values.seasons,
         photoUri: values.newPhotoUri,
       });
       notifyDataChanged(); // avisa a Placard, Outfits, Inspiración y Perfil que hay una prenda nueva
