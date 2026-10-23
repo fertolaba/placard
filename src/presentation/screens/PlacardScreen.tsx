@@ -1,20 +1,29 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CategoryFilter } from '../components/CategoryFilter';
+import type { Garment } from '../../domain/entities/Garment';
+import { CATEGORY_OPTIONS, CategoryFilter } from '../components/CategoryFilter';
 import { GarmentCard } from '../components/GarmentCard';
 import { SeasonFilter } from '../components/SeasonFilter';
 import { StateMessage } from '../components/StateMessage';
+import { SwipeableContent } from '../components/SwipeableContent';
 import { useGarments, type CategoryFilterValue, type SeasonFilterValue } from '../hooks/useGarments';
 import { SEASON_UI } from '../seasonUi';
 import { makeStyles } from '../theme/makeStyles';
 import { useTheme } from '../theme/ThemeProvider';
+import { neighbor } from '../utils/swipe';
 
 const MAX_CONTENT_WIDTH = 480; // en la web se ve como un celular, no estirado
 const SIDE_PADDING = 20;
 const GAP = 12;
+
+const CATEGORY_ORDER = CATEGORY_OPTIONS.map((option) => option.value);
+
+// Hacia dónde hay que deslizar para pasar a la siguiente categoría (Todo → Arriba → Abajo → Calzado).
+// false = dedo hacia la IZQUIERDA (como pasar páginas). true = dedo hacia la DERECHA.
+const SWIPE_RIGHT_GOES_NEXT = false;
 
 export function PlacardScreen() {
   const styles = useStyles();
@@ -22,6 +31,7 @@ export function PlacardScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  const listRef = useRef<FlatList<Garment>>(null);
   const [category, setCategory] = useState<CategoryFilterValue>('todo');
   const [season, setSeason] = useState<SeasonFilterValue>('todas');
   const { garments, status, reload } = useGarments(category, season);
@@ -34,6 +44,11 @@ export function PlacardScreen() {
     setCategory('todo');
     setSeason('todas');
   };
+
+  // Al cambiar de categoría o de clima, la lista vuelve al principio.
+  useEffect(() => {
+    listRef.current?.scrollToOffset({ offset: 0, animated: false });
+  }, [category, season]);
 
   const count = `${garments.length} ${garments.length === 1 ? 'prenda' : 'prendas'}`;
   const subtitle = status !== 'ready' ? ' ' : season === 'todas' ? count : `${count} · ${SEASON_UI[season].label}`;
@@ -71,42 +86,48 @@ export function PlacardScreen() {
       <SeasonFilter value={season} onChange={setSeason} />
       <CategoryFilter value={category} onChange={setCategory} />
 
-      {status === 'loading' && <ActivityIndicator style={styles.loader} />}
-      {status === 'error' && (
-        <StateMessage
-          title="No pudimos cargar tus prendas"
-          detail="Revisá tu conexión y que el servidor esté encendido."
-          actionLabel="Reintentar"
-          onAction={reload}
-        />
-      )}
-      {status === 'ready' && garments.length === 0 && filtering && (
-        <StateMessage
-          title="No hay prendas con esos filtros"
-          detail="Probá con otra época o categoría, o marcá más épocas en tus prendas."
-          actionLabel="Quitar filtros"
-          onAction={clearFilters}
-        />
-      )}
-      {status === 'ready' && garments.length === 0 && !filtering && (
-        <StateMessage title="Todavía no hay prendas acá" detail="Tocá el botón + para agregar una foto de tu ropa." />
-      )}
-      {status === 'ready' && garments.length > 0 && (
-        <FlatList
-          data={garments}
-          keyExtractor={(garment) => garment.id}
-          numColumns={2}
-          columnWrapperStyle={{ gap: GAP }}
-          contentContainerStyle={{ gap: GAP, padding: SIDE_PADDING }}
-          renderItem={({ item }) => (
-            <GarmentCard
-              garment={item}
-              width={cardWidth}
-              onPress={() => router.push({ pathname: '/garment/[id]', params: { id: item.id } })}
-            />
-          )}
-        />
-      )}
+      <SwipeableContent
+        index={CATEGORY_ORDER.indexOf(category)}
+        onSwipe={(direction) => setCategory((current) => neighbor(CATEGORY_ORDER, current, direction, SWIPE_RIGHT_GOES_NEXT))}
+      >
+        {status === 'loading' && <ActivityIndicator style={styles.loader} />}
+        {status === 'error' && (
+          <StateMessage
+            title="No pudimos cargar tus prendas"
+            detail="Revisá tu conexión y que el servidor esté encendido."
+            actionLabel="Reintentar"
+            onAction={reload}
+          />
+        )}
+        {status === 'ready' && garments.length === 0 && filtering && (
+          <StateMessage
+            title="No hay prendas con esos filtros"
+            detail="Probá con otra época o categoría, o marcá más épocas en tus prendas."
+            actionLabel="Quitar filtros"
+            onAction={clearFilters}
+          />
+        )}
+        {status === 'ready' && garments.length === 0 && !filtering && (
+          <StateMessage title="Todavía no hay prendas acá" detail="Tocá el botón + para agregar una foto de tu ropa." />
+        )}
+        {status === 'ready' && garments.length > 0 && (
+          <FlatList
+            ref={listRef}
+            data={garments}
+            keyExtractor={(garment) => garment.id}
+            numColumns={2}
+            columnWrapperStyle={{ gap: GAP }}
+            contentContainerStyle={{ gap: GAP, padding: SIDE_PADDING }}
+            renderItem={({ item }) => (
+              <GarmentCard
+                garment={item}
+                width={cardWidth}
+                onPress={() => router.push({ pathname: '/garment/[id]', params: { id: item.id } })}
+              />
+            )}
+          />
+        )}
+      </SwipeableContent>
     </View>
   );
 }

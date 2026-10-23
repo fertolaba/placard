@@ -16,7 +16,8 @@ export function useGarments(category: CategoryFilterValue, season: SeasonFilterV
 
   useEffect(() => {
     let cancelled = false; // evita pisar datos si el usuario cambia de filtro rápido
-    setStatus('loading');
+    // Si ya hay datos en pantalla, se dejan hasta que lleguen los nuevos (evita el parpadeo al deslizar).
+    setStatus((current) => (current === 'ready' ? current : 'loading'));
     container.getGarments
       .execute({
         category: category === 'todo' ? undefined : category,
