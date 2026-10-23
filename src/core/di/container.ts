@@ -1,26 +1,27 @@
 import { ApiGarmentRepository } from '../../data/repositories/ApiGarmentRepository';
 import { InMemoryGarmentRepository } from '../../data/repositories/InMemoryGarmentRepository';
 import { createSqliteGarmentRepository } from '../../data/repositories/createSqliteGarmentRepository';
-import { InMemoryProfileRepository } from '../../data/repositories/InMemoryProfileRepository';
+import { AsyncStorageProfileRepository } from '../../data/repositories/AsyncStorageProfileRepository';
 import { AsyncStorageThemePreferenceRepository } from '@/domain/repositories/AsyncStorageThemePreferenceRepository';
+import { createColorDetector } from '../../data/color/createColorDetector';
 import { createPhotoStorage } from '../../data/photos/createPhotoStorage';
 import { HttpClient } from '../../data/http/HttpClient';
 import type { GarmentRepository } from '../../domain/repositories/GarmentRepository';
 import { AddGarment } from '../../domain/usecases/AddGarment';
 import { AddGarmentWithPhoto } from '../../domain/usecases/AddGarmentWithPhoto';
-import { DetectGarmentColor } from '../../domain/usecases/DetectGarmentColor';
 import { DeleteGarment } from '../../domain/usecases/DeleteGarment';
+import { DetectGarmentColor } from '../../domain/usecases/DetectGarmentColor';
 import { GetGarment } from '../../domain/usecases/GetGarment';
 import { GetGarments } from '../../domain/usecases/GetGarments';
 import { GetProfile } from '../../domain/usecases/GetProfile';
 import { GetStyleMatches } from '../../domain/usecases/GetStyleMatches';
 import { GetThemeMode } from '../../domain/usecases/GetThemeMode';
 import { GetWardrobeStats } from '../../domain/usecases/GetWardrobeStats';
+import { SetProfilePhoto } from '../../domain/usecases/SetProfilePhoto';
 import { SetThemeMode } from '../../domain/usecases/SetThemeMode';
 import { SuggestOutfits } from '../../domain/usecases/SuggestOutfits';
 import { UpdateGarment } from '../../domain/usecases/UpdateGarment';
 import { UpdateProfile } from '../../domain/usecases/UpdateProfile';
-import { createColorDetector } from '../../data/color/createColorDetector';
 import { env } from '../config/env';
 
 /**
@@ -37,7 +38,7 @@ function createGarmentRepository(): GarmentRepository {
 }
 
 const garmentRepository = createGarmentRepository();
-const profileRepository = new InMemoryProfileRepository();
+const profileRepository = new AsyncStorageProfileRepository((ref) => photoStorage.resolve(ref));
 const themePreferenceRepository = new AsyncStorageThemePreferenceRepository();
 const addGarment = new AddGarment(garmentRepository);
 
@@ -52,6 +53,7 @@ export const container = {
   suggestOutfits: new SuggestOutfits(garmentRepository),
   getProfile: new GetProfile(profileRepository),
   updateProfile: new UpdateProfile(profileRepository),
+  setProfilePhoto: new SetProfilePhoto(profileRepository, photoStorage),
   getWardrobeStats: new GetWardrobeStats(garmentRepository),
   getStyleMatches: new GetStyleMatches(garmentRepository),
   getThemeMode: new GetThemeMode(themePreferenceRepository),

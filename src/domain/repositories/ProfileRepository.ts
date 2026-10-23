@@ -1,6 +1,6 @@
-import type { Profile } from '../entities/Profile';
+import type { Profile, ProfileData } from '../entities/Profile';
 
 export interface ProfileRepository {
   get(): Promise<Profile>;
-  save(profile: Profile): Promise<Profile>;
+  save(data: ProfileData): Promise<Profile>;
 }

@@ -1,4 +1,4 @@
-import type { Profile } from '../entities/Profile';
+import type { Profile, ProfileDraft } from '../entities/Profile';
 import type { ProfileRepository } from '../repositories/ProfileRepository';
 
 export class ValidationError extends Error {
@@ -14,7 +14,8 @@ const USERNAME = /^[a-z0-9._]{3,20}$/;
 export class UpdateProfile {
   constructor(private readonly repository: ProfileRepository) {}
 
-  async execute(input: Profile): Promise<Profile> {
+  /** Cambia el nombre, el usuario y la marca de agua. La foto de perfil se mantiene como estaba. */
+  async execute(input: ProfileDraft): Promise<Profile> {
     const displayName = input.displayName.trim();
     const username = input.username.trim().replace(/^@/, '').toLowerCase();
     if (displayName === '' || displayName.length > 40) {
@@ -23,6 +24,12 @@ export class UpdateProfile {
     if (!USERNAME.test(username)) {
       throw new ValidationError('El usuario tiene de 3 a 20 caracteres: letras, números, punto o guion bajo.');
     }
-    return this.repository.save({ displayName, username, showWatermark: input.showWatermark });
+    const current = await this.repository.get();
+    return this.repository.save({
+      displayName,
+      username,
+      showWatermark: input.showWatermark,
+      photoRef: current.photoRef,
+    });
   }
 }

@@ -1,11 +1,14 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { Profile } from '../../domain/entities/Profile';
+import type { ProfileDraft } from '../../domain/entities/Profile';
 import type { ThemeMode } from '../../domain/entities/ThemeMode';
+import { Avatar } from '../components/Avatar';
 import { FormGroup, SwitchRow, TextRow } from '../components/FormGroup';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { StateMessage } from '../components/StateMessage';
+import { usePhotoPicker, type PhotoSource } from '../hooks/usePhotoPicker';
 import { useProfile } from '../hooks/useProfile';
 import { makeStyles } from '../theme/makeStyles';
 import { useTheme } from '../theme/ThemeProvider';
@@ -17,16 +20,6 @@ const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
   { value: 'light', label: 'Claro' },
   { value: 'dark', label: 'Oscuro' },
 ];
-
-function initials(name: string): string {
-  const letters = name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((word) => word.charAt(0).toUpperCase())
-    .join('');
-  return letters === '' ? '?' : letters;
-}
 
 function Stat({ value, label }: { value: number; label: string }) {
   const styles = useStyles();
@@ -41,15 +34,23 @@ function Stat({ value, label }: { value: number; label: string }) {
 export function ProfileScreen() {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
-  const { mode, setMode } = useTheme();
-  const { profile, stats, status, reload, save } = useProfile();
-  const [draft, setDraft] = useState<Profile | null>(null);
+  const { mode, setMode, colors } = useTheme();
+  const { profile, stats, status, reload, save, changePhoto } = useProfile();
+  const { pick, error: pickerError } = usePhotoPicker();
+  const [draft, setDraft] = useState<ProfileDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [justSaved, setJustSaved] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
 
+  // El borrador del texto solo se reinicia cuando cambia lo guardado (no cuando cambia la foto).
+  const savedName = profile?.displayName;
+  const savedUsername = profile?.username;
+  const savedWatermark = profile?.showWatermark;
   useEffect(() => {
-    if (profile) setDraft(profile);
-  }, [profile]);
+    if (savedName === undefined || savedUsername === undefined || savedWatermark === undefined) return;
+    setDraft({ displayName: savedName, username: savedUsername, showWatermark: savedWatermark });
+  }, [savedName, savedUsername, savedWatermark]);
 
   const dirty =
     profile !== null &&
@@ -58,7 +59,7 @@ export function ProfileScreen() {
       draft.username !== profile.username ||
       draft.showWatermark !== profile.showWatermark);
 
-  const change = (patch: Partial<Profile>) => {
+  const change = (patch: Partial<ProfileDraft>) => {
     setDraft((current) => (current ? { ...current, ...patch } : current));
     setError(null);
     setJustSaved(false);
@@ -70,6 +71,21 @@ export function ProfileScreen() {
     setError(message);
     setJustSaved(message === null);
   };
+
+  const choosePhoto = async (source: PhotoSource) => {
+    setMenuOpen(false);
+    setPhotoError(null);
+    const uri = await pick(source);
+    if (!uri) return;
+    setPhotoError(await changePhoto(uri));
+  };
+
+  const removePhoto = async () => {
+    setMenuOpen(false);
+    setPhotoError(await changePhoto(null));
+  };
+
+  const shownPhotoError = photoError ?? pickerError;
 
   return (
     <ScrollView
@@ -95,11 +111,43 @@ export function ProfileScreen() {
       {status === 'ready' && profile && stats && draft && (
         <>
           <View style={styles.identity}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarLabel}>{initials(profile.displayName)}</Text>
-            </View>
+            <Pressable
+              onPress={() => setMenuOpen((open) => !open)}
+              accessibilityRole="button"
+              accessibilityLabel="Cambiar foto de perfil"
+              accessibilityState={{ expanded: menuOpen }}
+            >
+              <Avatar name={profile.displayName} photoUri={profile.photoUri} />
+              <View style={styles.cameraBadge}>
+                <Ionicons name="camera" size={14} color={colors.onPrimary} />
+              </View>
+            </Pressable>
             <Text style={styles.name}>{profile.displayName}</Text>
             <Text style={styles.username}>@{profile.username}</Text>
+
+            {menuOpen ? (
+              <View style={styles.photoMenu}>
+                <Pressable onPress={() => choosePhoto('camera')} accessibilityRole="button" style={styles.menuButton}>
+                  <Ionicons name="camera-outline" size={18} color={colors.link} />
+                  <Text style={styles.menuLabel}>Cámara</Text>
+                </Pressable>
+                <Pressable onPress={() => choosePhoto('library')} accessibilityRole="button" style={styles.menuButton}>
+                  <Ionicons name="images-outline" size={18} color={colors.link} />
+                  <Text style={styles.menuLabel}>Galería</Text>
+                </Pressable>
+                {profile.photoUri ? (
+                  <Pressable onPress={removePhoto} accessibilityRole="button" style={[styles.menuButton, styles.menuButtonDanger]}>
+                    <Ionicons name="trash-outline" size={18} color={colors.danger} />
+                    <Text style={styles.menuLabelDanger}>Quitar</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : null}
+            {shownPhotoError ? (
+              <Text style={styles.photoError} accessibilityRole="alert">
+                {shownPhotoError}
+              </Text>
+            ) : null}
           </View>
 
           <View style={styles.card}>
@@ -176,17 +224,35 @@ const useStyles = makeStyles((colors) => ({
   title: { fontSize: 34, fontWeight: '700', color: colors.text },
   loader: { marginTop: 40 },
   identity: { alignItems: 'center', marginVertical: 18 },
-  avatar: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    backgroundColor: colors.primaryFill,
+  cameraBadge: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.primary,
+    borderWidth: 2,
+    borderColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarLabel: { fontSize: 30, fontWeight: '700', color: colors.link },
   name: { fontSize: 22, fontWeight: '700', color: colors.text, marginTop: 10 },
   username: { fontSize: 15, color: colors.textMuted },
+  photoMenu: { flexDirection: 'row', gap: 10, marginTop: 14 },
+  menuButton: {
+    height: 36,
+    paddingHorizontal: 14,
+    borderRadius: 18,
+    backgroundColor: colors.primaryFill,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  menuButtonDanger: { backgroundColor: colors.surface },
+  menuLabel: { fontSize: 15, fontWeight: '600', color: colors.link },
+  menuLabelDanger: { fontSize: 15, fontWeight: '600', color: colors.danger },
+  photoError: { fontSize: 14, color: colors.danger, marginTop: 8, textAlign: 'center' },
   card: { backgroundColor: colors.surface, borderRadius: 16, padding: 16, marginBottom: 20 },
   statsRow: { flexDirection: 'row', justifyContent: 'space-around' },
   stat: { alignItems: 'center' },
