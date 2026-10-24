@@ -30,4 +30,9 @@ export const env = {
   // Va en .env.local (que no se sube a Git), no en .env.
   // OJO: todo lo que empieza con EXPO_PUBLIC_ queda dentro de la app (cualquiera podría extraerlo).
   geminiApiKey: (process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? '').trim(),
+  // Proyecto de Supabase para las cuentas (registro e inicio de sesión). Si falta alguna de las dos,
+  // la app abre igual y la pantalla de inicio de sesión avisa que falta configurarlo.
+  // La "anon key" (o "publishable key") es pública por diseño; nunca pongas acá la "service_role key".
+  supabaseUrl: (process.env.EXPO_PUBLIC_SUPABASE_URL ?? '').trim().replace(/\/+$/, ''),
+  supabaseAnonKey: (process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '').trim(),
 } as const;

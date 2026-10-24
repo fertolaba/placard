@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FormGroup } from '../components/FormGroup';
 import { StateMessage } from '../components/StateMessage';
@@ -13,7 +13,7 @@ const MAX_CONTENT_WIDTH = 480;
 export function InspirationScreen() {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   const { matches, status, reload } = useStyleMatches();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 

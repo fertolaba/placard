@@ -4,14 +4,16 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ProfileDraft } from '../../domain/entities/Profile';
 import type { ThemeMode } from '../../domain/entities/ThemeMode';
+import { useAuth } from '../auth/AuthProvider';
 import { Avatar } from '../components/Avatar';
-import { FormGroup, SwitchRow, TextRow } from '../components/FormGroup';
+import { FormGroup, SwitchRow, TextRow, ValueRow } from '../components/FormGroup';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { StateMessage } from '../components/StateMessage';
 import { usePhotoPicker, type PhotoSource } from '../hooks/usePhotoPicker';
 import { useProfile } from '../hooks/useProfile';
 import { makeStyles } from '../theme/makeStyles';
 import { useTheme } from '../theme/ThemeProvider';
+import { confirmDestructive } from '../utils/confirm';
 
 const MAX_CONTENT_WIDTH = 480;
 
@@ -42,6 +44,9 @@ export function ProfileScreen() {
   const [justSaved, setJustSaved] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const { user, signOut } = useAuth();
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
 
   // El borrador del texto solo se reinicia cuando cambia lo guardado (no cuando cambia la foto).
   const savedName = profile?.displayName;
@@ -86,6 +91,21 @@ export function ProfileScreen() {
   };
 
   const shownPhotoError = photoError ?? pickerError;
+
+  const onSignOut = async () => {
+    const confirmed = await confirmDestructive(
+      '¿Cerrar sesión?',
+      'Tus prendas y tu perfil siguen guardados en este teléfono.',
+      'Cerrar sesión',
+    );
+    if (!confirmed) return;
+    setSigningOut(true);
+    setSignOutError(null);
+    // Si sale bien, la navegación lleva sola al login.
+    const message = await signOut();
+    setSigningOut(false);
+    setSignOutError(message);
+  };
 
   return (
     <ScrollView
@@ -214,6 +234,29 @@ export function ProfileScreen() {
           {justSaved && !dirty ? <Text style={styles.success}>Cambios guardados</Text> : null}
         </>
       )}
+
+      {/* La cuenta va aparte del perfil: se puede cerrar sesión aunque el perfil no haya cargado. */}
+      <Text style={[styles.groupLabel, styles.accountLabel]} accessibilityRole="header">
+        Cuenta
+      </Text>
+      <FormGroup>
+        <ValueRow label="Email" value={user?.email ?? ''} />
+        <Pressable
+          onPress={onSignOut}
+          disabled={signingOut}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: signingOut, busy: signingOut }}
+          style={styles.signOut}
+        >
+          {signingOut ? <ActivityIndicator color={colors.danger} /> : null}
+          <Text style={styles.signOutLabel}>{signingOut ? 'Cerrando sesión…' : 'Cerrar sesión'}</Text>
+        </Pressable>
+      </FormGroup>
+      {signOutError ? (
+        <Text style={styles.error} accessibilityRole="alert">
+          {signOutError}
+        </Text>
+      ) : null}
     </ScrollView>
   );
 }
@@ -269,4 +312,7 @@ const useStyles = makeStyles((colors) => ({
   saveDisabled: { opacity: 0.4 },
   saveLabel: { fontSize: 17, fontWeight: '600', color: colors.onPrimary },
   success: { fontSize: 14, color: colors.successText, textAlign: 'center', marginTop: 10 },
+  accountLabel: { marginTop: 28 },
+  signOut: { flex: 1, minHeight: 44, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' },
+  signOutLabel: { fontSize: 17, color: colors.danger },
 }));
