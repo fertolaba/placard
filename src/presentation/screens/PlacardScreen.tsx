@@ -58,7 +58,7 @@ export function PlacardScreen() {
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <Text style={styles.title} accessibilityRole="header">
-            Mi Placard
+            Mi Pilchapp
           </Text>
           <Pressable
             onPress={() => router.push('/add-garment')}

@@ -20,6 +20,8 @@ import { GetWardrobeStats } from '../../domain/usecases/GetWardrobeStats';
 import { SetProfilePhoto } from '../../domain/usecases/SetProfilePhoto';
 import { SetThemeMode } from '../../domain/usecases/SetThemeMode';
 import { SuggestOutfits } from '../../domain/usecases/SuggestOutfits';
+import { createCategoryDetector } from '../../data/ai/createCategoryDetector';
+import { DetectGarmentCategory } from '../../domain/usecases/DetectGarmentCategory';
 import { UpdateGarment } from '../../domain/usecases/UpdateGarment';
 import { UpdateProfile } from '../../domain/usecases/UpdateProfile';
 import { env } from '../config/env';
@@ -30,6 +32,7 @@ import { env } from '../config/env';
  */
 const photoStorage = createPhotoStorage();
 const colorDetector = createColorDetector();
+const categoryDetector = createCategoryDetector(env.geminiApiKey);
 
 function createGarmentRepository(): GarmentRepository {
   if (env.dataSource === 'api') return new ApiGarmentRepository(new HttpClient(env.apiUrl));
@@ -50,6 +53,7 @@ export const container = {
   updateGarment: new UpdateGarment(garmentRepository, photoStorage),
   deleteGarment: new DeleteGarment(garmentRepository, photoStorage),
   detectGarmentColor: new DetectGarmentColor(colorDetector),
+  detectGarmentCategory: new DetectGarmentCategory(categoryDetector),
   suggestOutfits: new SuggestOutfits(garmentRepository),
   getProfile: new GetProfile(profileRepository),
   updateProfile: new UpdateProfile(profileRepository),

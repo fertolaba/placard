@@ -192,7 +192,7 @@ export function ProfileScreen() {
 
           <FormGroup footer="Aparece al pie de tus historias de outfits.">
             <SwitchRow
-              label="Marca de Placard en historias"
+              label="Marca de Pilchapp en historias"
               value={draft.showWatermark}
               onValueChange={(value) => change({ showWatermark: value })}
             />

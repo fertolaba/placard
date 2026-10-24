@@ -26,4 +26,8 @@ export const env = {
   appEnv: process.env.EXPO_PUBLIC_APP_ENV ?? 'development',
   dataSource,
   apiUrl,
+  // Clave de la API de Gemini. Si está vacía, la detección automática de la prenda queda desactivada.
+  // Va en .env.local (que no se sube a Git), no en .env.
+  // OJO: todo lo que empieza con EXPO_PUBLIC_ queda dentro de la app (cualquiera podría extraerlo).
+  geminiApiKey: (process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? '').trim(),
 } as const;

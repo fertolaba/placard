@@ -1,12 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMemo, useState, type ReactNode } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { GarmentCategory } from '../../domain/entities/Garment';
 import type { Season } from '../../domain/entities/Season';
+import type { GarmentTypeDetection } from '../../domain/services/CategoryDetector';
 import { GARMENT_COLORS, type GarmentColor } from '../../domain/services/garmentColors';
+import { useCategoryDetection } from '../hooks/useCategoryDetection';
 import { useColorDetection } from '../hooks/useColorDetection';
 import { usePhotoPicker, type PhotoSource } from '../hooks/usePhotoPicker';
+import { SEASON_UI } from '../seasonUi';
 import { makeStyles } from '../theme/makeStyles';
 import { useTheme } from '../theme/ThemeProvider';
 import { ColorPicker } from './ColorPicker';
@@ -21,6 +24,21 @@ const CATEGORY_OPTIONS: { value: GarmentCategory; label: string }[] = [
   { value: 'abajo', label: 'Abajo' },
   { value: 'calzado', label: 'Calzado' },
 ];
+
+function categoryLabel(value: GarmentCategory): string {
+  return CATEGORY_OPTIONS.find((option) => option.value === value)?.label ?? value;
+}
+
+function seasonsLabel(values: readonly Season[]): string {
+  return values.map((season) => SEASON_UI[season].label).join(', ');
+}
+
+const sameSeasons = (a: readonly Season[], b: readonly Season[]) => a.join(',') === b.join(',');
+
+/** De dónde salen las épocas sugeridas: el largo de manga, o el tipo de prenda si no tiene mangas. */
+function seasonsSource(detection: GarmentTypeDetection): string {
+  return detection.sleeve ? `manga ${detection.sleeve}` : detection.type.toLowerCase();
+}
 
 export interface GarmentFormValues {
   name: string;
@@ -68,6 +86,7 @@ export function GarmentForm({
   const insets = useSafeAreaInsets();
   const { pick, error: pickerError } = usePhotoPicker();
   const { detect, detecting } = useColorDetection();
+  const { detect: detectType, analyzing: analyzingType } = useCategoryDetection();
 
   const [name, setName] = useState(initial?.name ?? '');
   const [category, setCategory] = useState<GarmentCategory>(initial?.category ?? 'arriba');
@@ -77,6 +96,11 @@ export function GarmentForm({
   );
   const [newPhotoUri, setNewPhotoUri] = useState<string | null>(null);
   const [detected, setDetected] = useState<GarmentColor | null>(null);
+  const [detectedType, setDetectedType] = useState<GarmentTypeDetection | null>(null);
+  // Si la persona ya eligió una categoría a mano (o está editando una prenda), la detección no se la pisa.
+  const categoryTouched = useRef(Boolean(initial));
+  const seasonsTouched = useRef(Boolean(initial)); // lo mismo con las épocas
+  const latestRequest = useRef(0); // para ignorar resultados de una foto anterior
 
   // Los colores que no están en la lista (el de la prenda guardada y el detectado en la foto) van primero.
   const colorOptions = useMemo<readonly GarmentColor[]>(() => {
@@ -97,15 +121,49 @@ export function GarmentForm({
     color === null ? 'un color' : null,
   ].filter((item): item is string => item !== null);
   const shownError = error ?? pickerError;
+  const analyzing = detecting || analyzingType;
+
+  const chooseCategory = (value: GarmentCategory) => {
+    categoryTouched.current = true;
+    setCategory(value);
+  };
+
+  const chooseSeasons = (value: Season[]) => {
+    seasonsTouched.current = true;
+    setSeasons(value);
+  };
 
   const choosePhoto = async (source: PhotoSource) => {
     const uri = await pick(source);
     if (!uri) return;
+    const requestId = ++latestRequest.current;
     setNewPhotoUri(uri);
     setDetected(null);
-    const found = await detect(uri);
-    setDetected(found);
-    if (found) setColor((current) => current ?? found); // si todavía no hay color elegido, se propone el detectado
+    setDetectedType(null);
+
+    // El color y el tipo de prenda se analizan a la vez.
+    const [foundColor, foundType] = await Promise.all([detect(uri), detectType(uri)]);
+    if (requestId !== latestRequest.current) return; // mientras tanto eligió otra foto
+
+    setDetected(foundColor);
+    if (foundColor) setColor((current) => current ?? foundColor); // si todavía no hay color elegido, se propone el detectado
+    setDetectedType(foundType);
+    if (foundType) {
+      if (!categoryTouched.current) setCategory(foundType.category);
+      setName((current) => (current.trim() === '' ? foundType.type : current)); // solo si el nombre está vacío
+    }
+
+    // Las épocas deducidas de la foto (largo de manga y tipo de prenda) se aplican solo si la persona no las eligió a mano.
+    const deducedSeasons = foundType?.seasons ?? null;
+    const applySeasons = deducedSeasons !== null && !seasonsTouched.current;
+    if (applySeasons) setSeasons(deducedSeasons);
+    if (__DEV__) {
+      const reason = deducedSeasons ? 'ya se habían elegido a mano' : 'no se pudo deducir de la foto';
+      console.log(
+        '[detección de prenda] temporada final:',
+        applySeasons ? seasonsLabel(deducedSeasons) : `${seasonsLabel(seasons) || '(ninguna)'} (sin cambios: ${reason})`,
+      );
+    }
   };
 
   return (
@@ -147,6 +205,13 @@ export function GarmentForm({
         </Pressable>
       </View>
 
+      {analyzing ? (
+        <View style={styles.analyzing} accessibilityLiveRegion="polite">
+          <ActivityIndicator size="small" color={colors.link} />
+          <Text style={styles.analyzingText}>Analizando prenda…</Text>
+        </View>
+      ) : null}
+
       <FormGroup>
         <TextRow label="Nombre" value={name} onChangeText={setName} maxLength={40} placeholder="Ej: Remera negra" />
       </FormGroup>
@@ -155,14 +220,40 @@ export function GarmentForm({
         Categoría
       </Text>
       <View style={styles.section}>
-        <SegmentedControl options={CATEGORY_OPTIONS} value={category} onChange={setCategory} />
+        <SegmentedControl options={CATEGORY_OPTIONS} value={category} onChange={chooseCategory} />
+        {!analyzing && detectedType && detectedType.category === category ? (
+          <Text style={styles.detectHint}>Detectado de la foto: {detectedType.type}</Text>
+        ) : null}
+        {!analyzing && detectedType && detectedType.category !== category ? (
+          <View style={styles.suggestion}>
+            <Text style={styles.suggestionText}>
+              Parece ser: {detectedType.type} ({categoryLabel(detectedType.category)})
+            </Text>
+            <Pressable onPress={() => chooseCategory(detectedType.category)} accessibilityRole="button" hitSlop={8}>
+              <Text style={styles.suggestionAction}>Usar</Text>
+            </Pressable>
+          </View>
+        ) : null}
       </View>
 
       <Text style={styles.groupLabel} accessibilityRole="header">
         Clima
       </Text>
       <View style={styles.section}>
-        <SeasonPicker value={seasons} onChange={setSeasons} />
+        <SeasonPicker value={seasons} onChange={chooseSeasons} />
+        {!analyzing && detectedType?.seasons && sameSeasons(detectedType.seasons, seasons) ? (
+          <Text style={styles.detectHint}>Deducido de la foto: {seasonsSource(detectedType)}</Text>
+        ) : null}
+        {!analyzing && detectedType?.seasons && !sameSeasons(detectedType.seasons, seasons) ? (
+          <View style={styles.suggestion}>
+            <Text style={styles.suggestionText}>
+              Por la foto ({seasonsSource(detectedType)}): {seasonsLabel(detectedType.seasons)}
+            </Text>
+            <Pressable onPress={() => chooseSeasons(detectedType.seasons!)} accessibilityRole="button" hitSlop={8}>
+              <Text style={styles.suggestionAction}>Usar</Text>
+            </Pressable>
+          </View>
+        ) : null}
         <Text style={styles.seasonHint}>Elegí todas las épocas en las que la usarías.</Text>
       </View>
 
@@ -172,7 +263,6 @@ export function GarmentForm({
       <View style={styles.colorCard}>
         <ColorPicker options={colorOptions} selectedHex={color?.hex ?? null} onSelect={setColor} />
         <Text style={styles.colorName}>{color ? `Color: ${color.name}` : 'Elegí el color de la prenda'}</Text>
-        {detecting ? <Text style={styles.detectHint}>Detectando el color de la foto…</Text> : null}
         {!detecting && detected && color?.hex === detected.hex ? (
           <Text style={styles.detectHint}>Color detectado de la foto</Text>
         ) : null}
@@ -246,6 +336,8 @@ const useStyles = makeStyles((colors) => ({
   seasonHint: { fontSize: 13, color: colors.textMuted, marginTop: 6, paddingHorizontal: 4 },
   colorCard: { backgroundColor: colors.surface, borderRadius: 12, padding: 12, marginBottom: 20 },
   colorName: { fontSize: 14, color: colors.textMuted, marginTop: 10, paddingHorizontal: 4 },
+  analyzing: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14, paddingHorizontal: 4 },
+  analyzingText: { fontSize: 14, color: colors.textMuted },
   detectHint: { fontSize: 13, color: colors.textMuted, marginTop: 6, paddingHorizontal: 4 },
   suggestion: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, paddingHorizontal: 4 },
   suggestionDot: { width: 16, height: 16, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.swatchBorder },

@@ -21,7 +21,7 @@ export function AddGarmentScreen() {
         seasons: values.seasons,
         photoUri: values.newPhotoUri,
       });
-      notifyDataChanged(); // avisa a Placard, Outfits, Inspiración y Perfil que hay una prenda nueva
+      notifyDataChanged(); // avisa a Pilchapp, Outfits, Inspiración y Perfil que hay una prenda nueva
       router.back();
     } catch {
       setError('No pudimos guardar la prenda. Probá de nuevo.');
