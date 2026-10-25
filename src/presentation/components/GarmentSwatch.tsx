@@ -6,7 +6,9 @@ import { makeStyles } from '../theme/makeStyles';
 
 const ICONS: Record<GarmentCategory, keyof typeof MaterialCommunityIcons.glyphMap> = {
   arriba: 'tshirt-crew-outline',
+  top: 'tshirt-v-outline',
   abajo: 'hanger',
+  pollera: 'hanger', // no hay ícono de pollera
   calzado: 'shoe-sneaker',
 };
 

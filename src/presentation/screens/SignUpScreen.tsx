@@ -3,10 +3,12 @@ import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Pressable, Text, View, type TextInputInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { Sex } from '../../domain/entities/Sex';
 import { MIN_PASSWORD_LENGTH } from '../../domain/services/authValidation';
 import { useAuth } from '../auth/AuthProvider';
 import { AuthScaffold } from '../components/AuthScaffold';
 import { FormGroup, PasswordRow, TextRow } from '../components/FormGroup';
+import { SexPicker } from '../components/SexPicker';
 import { makeStyles } from '../theme/makeStyles';
 import { useTheme } from '../theme/ThemeProvider';
 
@@ -38,11 +40,14 @@ export function SignUpScreen() {
   const styles = useStyles();
   const { signUp, configured } = useAuth();
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  const [sex, setSex] = useState<Sex | null>(null);
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [mustConfirm, setMustConfirm] = useState(false);
+  const usernameRef = useRef<TextInputInstance>(null);
   const passwordRef = useRef<TextInputInstance>(null);
   const confirmationRef = useRef<TextInputInstance>(null);
 
@@ -51,7 +56,7 @@ export function SignUpScreen() {
     setBusy(true);
     setError(null);
     // Si no hace falta confirmar el email, la persona ya queda con sesión y la navegación la lleva a la app.
-    const outcome = await signUp(email, password, confirmation);
+    const outcome = await signUp({ email, password, confirmation, username, sex });
     setBusy(false);
     if (outcome.error !== null) setError(outcome.error);
     else if (outcome.needsEmailConfirmation) setMustConfirm(true);
@@ -59,6 +64,11 @@ export function SignUpScreen() {
 
   const edit = (setter: (value: string) => void) => (value: string) => {
     setter(value);
+    setError(null);
+  };
+
+  const chooseSex = (value: Sex) => {
+    setSex(value);
     setError(null);
   };
 
@@ -90,9 +100,24 @@ export function SignUpScreen() {
           textContentType="emailAddress"
           returnKeyType="next"
           submitBehavior="submit"
-          onSubmitEditing={() => passwordRef.current?.focus()}
+          onSubmitEditing={() => usernameRef.current?.focus()}
           editable={!busy}
           maxLength={254}
+        />
+        <TextRow
+          ref={usernameRef}
+          label="Usuario"
+          value={username}
+          onChangeText={edit(setUsername)}
+          placeholder="tu.usuario"
+          autoCapitalize="none"
+          autoComplete="username-new"
+          textContentType="username"
+          returnKeyType="next"
+          submitBehavior="submit"
+          onSubmitEditing={() => passwordRef.current?.focus()}
+          editable={!busy}
+          maxLength={21}
         />
         <PasswordRow
           ref={passwordRef}
@@ -122,13 +147,23 @@ export function SignUpScreen() {
           maxLength={72}
         />
       </FormGroup>
-      <Text style={styles.hint}>La contraseña tiene que tener al menos {MIN_PASSWORD_LENGTH} caracteres.</Text>
+      <Text style={styles.hint}>
+        El usuario tiene de 3 a 20 caracteres: letras, números, punto o guion bajo. La contraseña, al menos{' '}
+        {MIN_PASSWORD_LENGTH} caracteres.
+      </Text>
+      <Text style={styles.groupLabel} accessibilityRole="header">
+        Sexo
+      </Text>
+      <SexPicker value={sex} onChange={chooseSex} disabled={busy} />
+      <Text style={styles.sexHint}>Lo usamos para mostrarte las categorías y cortes de ropa que te corresponden.</Text>
     </AuthScaffold>
   );
 }
 
 const useStyles = makeStyles((colors) => ({
   hint: { fontSize: 13, color: colors.textMuted, marginTop: -12, marginBottom: 20, paddingHorizontal: 16 },
+  groupLabel: { fontSize: 13, color: colors.textMuted, textTransform: 'uppercase', marginBottom: 6, paddingHorizontal: 16 },
+  sexHint: { fontSize: 13, color: colors.textMuted, marginTop: 6, marginBottom: 20, paddingHorizontal: 16 },
   done: { flex: 1, backgroundColor: colors.background, alignItems: 'center', paddingHorizontal: 28 },
   doneIcon: {
     width: 72,

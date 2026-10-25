@@ -19,6 +19,8 @@ export function AddGarmentScreen() {
         colorHex: values.color.hex,
         colorName: values.color.name,
         seasons: values.seasons,
+        sporty: values.sporty,
+        corte: values.corte,
         photoUri: values.newPhotoUri,
       });
       notifyDataChanged(); // avisa a Pilchapp, Outfits, Inspiración y Perfil que hay una prenda nueva

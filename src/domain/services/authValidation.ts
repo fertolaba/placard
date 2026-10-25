@@ -1,7 +1,24 @@
+import type { SignUpInput } from '../entities/AuthUser';
+import { isSex } from '../entities/Sex';
+
 export const MIN_PASSWORD_LENGTH = 8;
 const MAX_PASSWORD_LENGTH = 72; // Supabase no acepta contraseñas más largas
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const USERNAME = /^[a-z0-9._]{3,20}$/; // la misma regla que el usuario del perfil
+
+/** El nombre de usuario sin espacios, sin @ adelante y en minúsculas. */
+export function normalizeUsername(username: string): string {
+  return username.trim().replace(/^@/, '').toLowerCase();
+}
+
+/** Devuelve el motivo por el que el nombre de usuario no sirve, o null si está bien. */
+export function validateUsername(username: string): string | null {
+  const value = normalizeUsername(username);
+  if (value === '') return 'Escribí un nombre de usuario.';
+  if (!USERNAME.test(value)) return 'El nombre de usuario tiene de 3 a 20 caracteres: letras, números, punto o guion bajo.';
+  return null;
+}
 
 /** El email sin espacios alrededor y en minúsculas, para que "Ana@Mail.com " y "ana@mail.com" sean la misma cuenta. */
 export function normalizeEmail(email: string): string {
@@ -30,9 +47,11 @@ export function validateSignIn(email: string, password: string): string | null {
 }
 
 /** Revisa los datos para crear una cuenta. */
-export function validateSignUp(email: string, password: string, confirmation: string): string | null {
+export function validateSignUp({ email, password, confirmation, username, sex }: SignUpInput): string | null {
   return (
     validateEmail(email) ??
+    validateUsername(username) ??
+    (isSex(sex) ? null : 'Elegí tu sexo.') ??
     validateNewPassword(password) ??
     (password !== confirmation ? 'Las contraseñas no coinciden.' : null)
   );

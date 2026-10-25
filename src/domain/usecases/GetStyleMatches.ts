@@ -1,8 +1,15 @@
 import type { Garment } from '../entities/Garment';
-import type { StyleMatch, StyleReference } from '../entities/StyleReference';
+import type { StyleMatch, StyleReference, StyleSlot } from '../entities/StyleReference';
 import type { GarmentRepository } from '../repositories/GarmentRepository';
 import { STYLE_REFERENCES } from '../services/styleCatalog';
 import { matchesTone } from '../services/tone';
+
+/** Una pieza que pide ropa deportiva solo acepta deportivas; las demás, solo si el estilo las permite. */
+function fitsSlot(garment: Garment, slot: StyleSlot, reference: StyleReference): boolean {
+  if (!slot.categories.includes(garment.category) || !matchesTone(garment.colorHex, slot.tone)) return false;
+  if (slot.requiresSporty) return garment.sporty;
+  return reference.allowsSporty === true || !garment.sporty;
+}
 
 function matchReference(reference: StyleReference, garments: Garment[]): StyleMatch {
   // Se asignan primero las piezas con menos candidatas, así una prenda versátil no le "roba" el lugar a otra.
@@ -10,9 +17,10 @@ function matchReference(reference: StyleReference, garments: Garment[]): StyleMa
     .map((slot, index) => ({
       slot,
       index,
-      candidates: garments.filter(
-        (garment) => garment.category === slot.category && matchesTone(garment.colorHex, slot.tone),
-      ),
+      // Entre las candidatas van primero las de la categoría preferida de la pieza (en Y2K, un top antes que una remera).
+      candidates: garments
+        .filter((garment) => fitsSlot(garment, slot, reference))
+        .sort((a, b) => slot.categories.indexOf(a.category) - slot.categories.indexOf(b.category)),
     }))
     .sort((a, b) => a.candidates.length - b.candidates.length);
 

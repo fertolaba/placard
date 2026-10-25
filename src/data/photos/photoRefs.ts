@@ -1,3 +1,10 @@
+import type { PhotoStorage } from '../../domain/services/PhotoStorage';
+
+/** Fotos guardadas en el propio teléfono: la dirección para mostrarlas se calcula al instante desde la referencia. */
+export interface LocalPhotoStorage extends PhotoStorage {
+  resolve(ref: string): string;
+}
+
 /** Extensión del archivo de una dirección (sin parámetros); si no se reconoce, "jpg". */
 export function extensionOf(uri: string): string {
   const clean = uri.split('?')[0].split('#')[0];

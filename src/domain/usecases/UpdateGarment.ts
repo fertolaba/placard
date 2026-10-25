@@ -11,6 +11,8 @@ export interface GarmentEdit {
   colorHex: string;
   colorName: string;
   seasons: Season[];
+  sporty: boolean;
+  corte?: string; // sin corte = se borra el que tenía
   newPhotoUri: string | null; // null = dejar la foto que ya tiene
 }
 

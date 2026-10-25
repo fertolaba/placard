@@ -1,10 +1,13 @@
 import { isAuthError, isAuthRetryableFetchError, isAuthWeakPasswordError, type SupabaseClient, type User } from '@supabase/supabase-js';
 import type { AuthUser } from '../../domain/entities/AuthUser';
-import { AuthError, type AuthRepository, type AuthStateListener, type SignUpResult } from '../../domain/repositories/AuthRepository';
+import { isSex } from '../../domain/entities/Sex';
+import { AuthError, type AuthRepository, type AuthStateListener, type NewAccount, type SignUpResult } from '../../domain/repositories/AuthRepository';
 
 const MESSAGES = {
   invalidCredentials: 'El email o la contraseña no son correctos.',
   alreadyRegistered: 'Ya hay una cuenta con ese email. Probá iniciar sesión.',
+  // El trigger que crea el perfil falla sobre todo cuando el nombre de usuario ya existe (es único).
+  profileNotSaved: 'No pudimos crear la cuenta. Puede que ese nombre de usuario ya esté en uso: probá con otro.',
   emailNotConfirmed: 'Todavía no confirmaste tu email. Revisá tu correo (también la carpeta de spam) y tocá el enlace.',
   tooManyAttempts: 'Hiciste demasiados intentos. Esperá unos minutos y probá de nuevo.',
   offline: 'No hay conexión. Revisá tu internet y probá de nuevo.',
@@ -50,22 +53,31 @@ function toAuthError(error: unknown): AuthError {
   if (message.includes('invalid login credentials')) return new AuthError(MESSAGES.invalidCredentials);
   if (message.includes('already registered')) return new AuthError(MESSAGES.alreadyRegistered);
   if (message.includes('email not confirmed')) return new AuthError(MESSAGES.emailNotConfirmed);
+  if (message.includes('database error saving new user')) return new AuthError(MESSAGES.profileNotSaved);
   if (error.status === 429) return new AuthError(MESSAGES.tooManyAttempts);
   return new AuthError(MESSAGES.unknown);
 }
 
 function toAuthUser(user: User): AuthUser {
-  return { id: user.id, email: user.email ?? '' };
+  // user_metadata lo puede cambiar la propia persona: se revisa antes de usarlo.
+  const metadata: Record<string, unknown> = user.user_metadata ?? {};
+  return {
+    id: user.id,
+    email: user.email ?? '',
+    username: typeof metadata.username === 'string' && metadata.username !== '' ? metadata.username : null,
+    sex: isSex(metadata.sex) ? metadata.sex : null,
+  };
 }
 
 /** Cuentas con Supabase Auth (email y contraseña). */
 export class SupabaseAuthRepository implements AuthRepository {
   constructor(private readonly client: SupabaseClient) {}
 
-  async signUp(email: string, password: string): Promise<SignUpResult> {
+  async signUp({ email, password, username, sex }: NewAccount): Promise<SignUpResult> {
     let result;
     try {
-      result = await this.client.auth.signUp({ email, password });
+      // Los datos van a user_metadata; el trigger handle_new_user (supabase/migrations) los copia a public.profiles.
+      result = await this.client.auth.signUp({ email, password, options: { data: { username, sex } } });
     } catch (error) {
       throw toAuthError(error);
     }

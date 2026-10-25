@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ProfileDraft } from '../../domain/entities/Profile';
 import type { ThemeMode } from '../../domain/entities/ThemeMode';
 import { useAuth } from '../auth/AuthProvider';
+import { categoryOptionsFor } from '../categoryUi';
 import { Avatar } from '../components/Avatar';
 import { FormGroup, SwitchRow, TextRow, ValueRow } from '../components/FormGroup';
 import { SegmentedControl } from '../components/SegmentedControl';
@@ -173,9 +174,9 @@ export function ProfileScreen() {
           <View style={styles.card}>
             <View style={styles.statsRow}>
               <Stat value={stats.total} label="Prendas" />
-              <Stat value={stats.byCategory.arriba} label="Arriba" />
-              <Stat value={stats.byCategory.abajo} label="Abajo" />
-              <Stat value={stats.byCategory.calzado} label="Calzado" />
+              {categoryOptionsFor(user?.sex ?? null).map((option) => (
+                <Stat key={option.value} value={stats.byCategory[option.value]} label={option.label} />
+              ))}
             </View>
             {stats.palette.length > 0 && (
               <View

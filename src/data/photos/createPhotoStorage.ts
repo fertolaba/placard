@@ -1,10 +1,10 @@
-import type { PhotoStorage } from '../../domain/services/PhotoStorage';
+import type { LocalPhotoStorage } from './photoRefs';
 
 /**
  * Versión para la web: no copia nada, usa la dirección temporal de la foto tal cual
  * (alcanza para probar la pantalla). En el celular, Expo usa el archivo ".native" de al lado.
  */
-export function createPhotoStorage(): PhotoStorage {
+export function createPhotoStorage(): LocalPhotoStorage {
   return {
     async save(sourceUri) {
       return sourceUri;

@@ -9,6 +9,8 @@ export interface GarmentDraft {
   colorHex: string;
   colorName: string;
   seasons: Season[];
+  sporty: boolean;
+  corte?: string;
   photoUri: string | null; // foto recién sacada o elegida (todavía en una carpeta temporal)
 }
 

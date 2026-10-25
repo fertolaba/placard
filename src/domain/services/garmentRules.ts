@@ -1,5 +1,5 @@
 import { normalizeSeasons } from '../entities/Season';
-import type { NewGarment } from '../entities/Garment';
+import { GARMENT_CUTS, type NewGarment } from '../entities/Garment';
 
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 
@@ -11,5 +11,7 @@ export function normalizeGarmentData(input: NewGarment): NewGarment {
   if (!HEX_COLOR.test(input.colorHex)) throw new Error('El color tiene que tener el formato #RRGGBB.');
   const seasons = normalizeSeasons(input.seasons ?? []);
   if (seasons.length === 0) throw new Error('Elegí al menos una época del año.');
-  return { ...input, name, seasons };
+  // Un corte que no corresponde a la categoría (por ejemplo "baggy" en una remera) no se guarda.
+  const corte = input.corte !== undefined && GARMENT_CUTS[input.category].includes(input.corte) ? input.corte : undefined;
+  return { ...input, name, seasons, corte };
 }

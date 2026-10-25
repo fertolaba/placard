@@ -1,14 +1,16 @@
-import { GARMENT_CATEGORIES, type GarmentCategory } from '../entities/Garment';
+import { GARMENT_CATEGORIES, GARMENT_CUTS, type GarmentCategory } from '../entities/Garment';
 import { normalizeSeasons, type Season } from '../entities/Season';
 import type { GarmentTypeDetection, SleeveLength } from './CategoryDetector';
 
 /** Lo que el modelo de IA tiene que devolver al mirar la foto (los nombres coinciden con el esquema JSON que se le pide). */
 export interface GarmentAnalysis {
   esPrenda: boolean; // false si la foto no muestra una prenda que la app maneje (un vestido, una cartera, nada)
-  tipo: string; // "Remera", "Jean", "Zapatillas"…
+  tipo: string; // "Remera", "Crop top", "Jean", "Pollera", "Zapatillas"…
   categoria: GarmentCategory;
   manga: SleeveLength | 'no_aplica';
   temporadas: Season[];
+  corte: string; // uno de GARMENT_CUTS[categoria], o "no_aplica" para calzado
+  es_deportiva: boolean; // camiseta de fútbol, camiseta de un club o selección, ropa de entrenamiento
 }
 
 /** Manga larga abriga: sirve para entretiempo e invierno. Manga corta (o sin mangas): verano. */
@@ -29,6 +31,7 @@ const isCategory = (value: unknown): value is GarmentCategory =>
  * Revisa la respuesta del modelo (puede venir incompleta o con valores inventados) y la convierte en una detección.
  * Devuelve null si no es una prenda que la app maneje: la persona elige a mano.
  * Si el modelo no dio épocas válidas, se deducen del largo de manga.
+ * Un corte que no corresponde a la categoría (por ejemplo "baggy" en una remera) se descarta.
  */
 export function parseGarmentAnalysis(raw: unknown): GarmentTypeDetection | null {
   if (typeof raw !== 'object' || raw === null) return null;
@@ -39,8 +42,11 @@ export function parseGarmentAnalysis(raw: unknown): GarmentTypeDetection | null 
   if (type === '') return null;
 
   const category = data.categoria;
-  const sleeve = category === 'arriba' && (data.manga === 'larga' || data.manga === 'corta') ? data.manga : null;
+  const hasSleeves = category === 'arriba' || category === 'top';
+  const sleeve = hasSleeves && (data.manga === 'larga' || data.manga === 'corta') ? data.manga : null;
   const fromModel = normalizeSeasons(Array.isArray(data.temporadas) ? data.temporadas : []);
   const seasons = fromModel.length > 0 ? fromModel : seasonsForSleeve(sleeve);
-  return { type, category, sleeve, seasons };
+  const cut = typeof data.corte === 'string' && GARMENT_CUTS[category].includes(data.corte) ? data.corte : null;
+  const sporty = data.es_deportiva === true; // si el modelo no lo dice, se asume que no es deportiva
+  return { type, category, sleeve, seasons, cut, sporty };
 }

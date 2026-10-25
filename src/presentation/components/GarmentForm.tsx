@@ -5,7 +5,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { GarmentCategory } from '../../domain/entities/Garment';
 import type { Season } from '../../domain/entities/Season';
 import type { GarmentTypeDetection } from '../../domain/services/CategoryDetector';
+import { closestAllowedCategory, cutsFor } from '../../domain/services/garmentCatalog';
 import { GARMENT_COLORS, type GarmentColor } from '../../domain/services/garmentColors';
+import { useAuth } from '../auth/AuthProvider';
+import { CATEGORY_LABELS, categoryOptionsFor } from '../categoryUi';
 import { useCategoryDetection } from '../hooks/useCategoryDetection';
 import { useColorDetection } from '../hooks/useColorDetection';
 import { usePhotoPicker, type PhotoSource } from '../hooks/usePhotoPicker';
@@ -13,21 +16,12 @@ import { SEASON_UI } from '../seasonUi';
 import { makeStyles } from '../theme/makeStyles';
 import { useTheme } from '../theme/ThemeProvider';
 import { ColorPicker } from './ColorPicker';
-import { FormGroup, TextRow } from './FormGroup';
+import { CutPicker } from './CutPicker';
+import { FormGroup, SwitchRow, TextRow } from './FormGroup';
 import { SeasonPicker } from './SeasonPicker';
 import { SegmentedControl } from './SegmentedControl';
 
 const MAX_CONTENT_WIDTH = 480;
-
-const CATEGORY_OPTIONS: { value: GarmentCategory; label: string }[] = [
-  { value: 'arriba', label: 'Arriba' },
-  { value: 'abajo', label: 'Abajo' },
-  { value: 'calzado', label: 'Calzado' },
-];
-
-function categoryLabel(value: GarmentCategory): string {
-  return CATEGORY_OPTIONS.find((option) => option.value === value)?.label ?? value;
-}
 
 function seasonsLabel(values: readonly Season[]): string {
   return values.map((season) => SEASON_UI[season].label).join(', ');
@@ -44,6 +38,8 @@ export interface GarmentFormValues {
   name: string;
   category: GarmentCategory;
   seasons: Season[];
+  corte?: string;
+  sporty: boolean;
   color: GarmentColor;
   newPhotoUri: string | null; // null = no se eligió una foto nueva
 }
@@ -54,6 +50,8 @@ export interface GarmentFormInitial {
   colorHex: string;
   colorName: string;
   seasons: Season[];
+  corte?: string;
+  sporty: boolean;
   imageUri: string | null;
 }
 
@@ -87,10 +85,21 @@ export function GarmentForm({
   const { pick, error: pickerError } = usePhotoPicker();
   const { detect, detecting } = useColorDetection();
   const { detect: detectType, analyzing: analyzingType } = useCategoryDetection();
+  const sex = useAuth().user?.sex ?? null;
+
+  // Las categorías según el sexo del perfil. Al editar, la de la prenda se muestra igual aunque no corresponda.
+  const allowedOptions = categoryOptionsFor(sex);
+  const categoryOptions =
+    initial && !allowedOptions.some((option) => option.value === initial.category)
+      ? [...allowedOptions, { value: initial.category, label: CATEGORY_LABELS[initial.category] }]
+      : allowedOptions;
+  const isAllowedCategory = (value: GarmentCategory) => categoryOptions.some((option) => option.value === value);
 
   const [name, setName] = useState(initial?.name ?? '');
-  const [category, setCategory] = useState<GarmentCategory>(initial?.category ?? 'arriba');
+  const [category, setCategory] = useState<GarmentCategory>(initial?.category ?? categoryOptions[0].value);
   const [seasons, setSeasons] = useState<Season[]>(initial?.seasons ?? []);
+  const [corte, setCorte] = useState<string | undefined>(initial?.corte);
+  const [sporty, setSporty] = useState(initial?.sporty ?? false);
   const [color, setColor] = useState<GarmentColor | null>(
     initial ? { name: initial.colorName, hex: initial.colorHex } : null,
   );
@@ -100,6 +109,8 @@ export function GarmentForm({
   // Si la persona ya eligió una categoría a mano (o está editando una prenda), la detección no se la pisa.
   const categoryTouched = useRef(Boolean(initial));
   const seasonsTouched = useRef(Boolean(initial)); // lo mismo con las épocas
+  const corteTouched = useRef(Boolean(initial)); // y con el corte
+  const sportyTouched = useRef(Boolean(initial)); // y con "deportiva"
   const latestRequest = useRef(0); // para ignorar resultados de una foto anterior
 
   // Los colores que no están en la lista (el de la prenda guardada y el detectado en la foto) van primero.
@@ -112,6 +123,15 @@ export function GarmentForm({
     }
     return [...extras, ...GARMENT_COLORS];
   }, [initial, detected]);
+
+  // Los cortes según la categoría y el sexo del perfil. Al editar, el corte guardado se muestra igual aunque no corresponda.
+  // Si cambia la categoría, un corte que no le corresponde no se muestra ni se guarda (vuelve si se elige la categoría de nuevo).
+  const allowedCuts = cutsFor(category, sex);
+  const keepInitialCut = initial?.corte !== undefined && initial.category === category && !allowedCuts.includes(initial.corte);
+  const cutOptions = keepInitialCut ? [...allowedCuts, initial.corte!] : allowedCuts;
+  // Un corte detectado en la foto que no se ofrece (por ejemplo, "cropped" en un perfil masculino) no se sugiere.
+  const detectedCut = detectedType?.cut && detectedType.category === category && cutOptions.includes(detectedType.cut) ? detectedType.cut : null;
+  const shownCorte = corte !== undefined && cutOptions.includes(corte) ? corte : undefined;
 
   const shownPhoto = newPhotoUri ?? initial?.imageUri ?? null;
   const canSave = name.trim() !== '' && seasons.length > 0 && color !== null && !submitting;
@@ -133,6 +153,16 @@ export function GarmentForm({
     setSeasons(value);
   };
 
+  const chooseCorte = (value: string | undefined) => {
+    corteTouched.current = true;
+    setCorte(value);
+  };
+
+  const chooseSporty = (value: boolean) => {
+    sportyTouched.current = true;
+    setSporty(value);
+  };
+
   const choosePhoto = async (source: PhotoSource) => {
     const uri = await pick(source);
     if (!uri) return;
@@ -149,8 +179,16 @@ export function GarmentForm({
     if (foundColor) setColor((current) => current ?? foundColor); // si todavía no hay color elegido, se propone el detectado
     setDetectedType(foundType);
     if (foundType) {
-      if (!categoryTouched.current) setCategory(foundType.category);
+      // Si la IA ve una categoría que el perfil no tiene (un top en un perfil masculino), se usa la de la misma parte del cuerpo.
+      const categoryAllowed = isAllowedCategory(foundType.category);
+      const fallback = closestAllowedCategory(foundType.category, sex);
+      if (!categoryTouched.current && fallback) setCategory(fallback);
       setName((current) => (current.trim() === '' ? foundType.type : current)); // solo si el nombre está vacío
+      // El corte deducido de la silueta se aplica solo si la persona no eligió uno a mano y se ofrece para su perfil.
+      if (foundType.cut && !corteTouched.current && categoryAllowed && cutsFor(foundType.category, sex).includes(foundType.cut)) {
+        setCorte(foundType.cut);
+      }
+      if (!sportyTouched.current) setSporty(foundType.sporty);
     }
 
     // Las épocas deducidas de la foto (largo de manga y tipo de prenda) se aplican solo si la persona no las eligió a mano.
@@ -195,11 +233,19 @@ export function GarmentForm({
         )}
       </View>
       <View style={styles.photoActions}>
-        <Pressable onPress={() => choosePhoto('camera')} accessibilityRole="button" style={styles.photoButton}>
+        <Pressable
+          onPress={() => choosePhoto('camera')}
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.photoButton, pressed && styles.photoButtonPressed]}
+        >
           <Ionicons name="camera-outline" size={20} color={colors.link} />
           <Text style={styles.photoButtonLabel}>Cámara</Text>
         </Pressable>
-        <Pressable onPress={() => choosePhoto('library')} accessibilityRole="button" style={styles.photoButton}>
+        <Pressable
+          onPress={() => choosePhoto('library')}
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.photoButton, pressed && styles.photoButtonPressed]}
+        >
           <Ionicons name="images-outline" size={20} color={colors.link} />
           <Text style={styles.photoButtonLabel}>Galería</Text>
         </Pressable>
@@ -220,14 +266,14 @@ export function GarmentForm({
         Categoría
       </Text>
       <View style={styles.section}>
-        <SegmentedControl options={CATEGORY_OPTIONS} value={category} onChange={chooseCategory} />
+        <SegmentedControl options={categoryOptions} value={category} onChange={chooseCategory} />
         {!analyzing && detectedType && detectedType.category === category ? (
           <Text style={styles.detectHint}>Detectado de la foto: {detectedType.type}</Text>
         ) : null}
-        {!analyzing && detectedType && detectedType.category !== category ? (
+        {!analyzing && detectedType && detectedType.category !== category && isAllowedCategory(detectedType.category) ? (
           <View style={styles.suggestion}>
             <Text style={styles.suggestionText}>
-              Parece ser: {detectedType.type} ({categoryLabel(detectedType.category)})
+              Parece ser: {detectedType.type} ({CATEGORY_LABELS[detectedType.category]})
             </Text>
             <Pressable onPress={() => chooseCategory(detectedType.category)} accessibilityRole="button" hitSlop={8}>
               <Text style={styles.suggestionAction}>Usar</Text>
@@ -257,6 +303,29 @@ export function GarmentForm({
         <Text style={styles.seasonHint}>Elegí todas las épocas en las que la usarías.</Text>
       </View>
 
+      {cutOptions.length > 0 ? (
+        <>
+          <Text style={styles.groupLabel} accessibilityRole="header">
+            Corte
+          </Text>
+          <View style={styles.section}>
+            <CutPicker options={cutOptions} value={shownCorte} onChange={chooseCorte} />
+            {!analyzing && detectedCut && detectedCut === shownCorte ? (
+              <Text style={styles.detectHint}>Deducido de la silueta en la foto</Text>
+            ) : null}
+            {!analyzing && detectedCut && detectedCut !== shownCorte ? (
+              <View style={styles.suggestion}>
+                <Text style={styles.suggestionText}>Por la silueta de la foto: {detectedCut}</Text>
+                <Pressable onPress={() => chooseCorte(detectedCut)} accessibilityRole="button" hitSlop={8}>
+                  <Text style={styles.suggestionAction}>Usar</Text>
+                </Pressable>
+              </View>
+            ) : null}
+            <Text style={styles.seasonHint}>Opcional.</Text>
+          </View>
+        </>
+      ) : null}
+
       <Text style={styles.groupLabel} accessibilityRole="header">
         Color
       </Text>
@@ -277,13 +346,23 @@ export function GarmentForm({
         ) : null}
       </View>
 
+      <FormGroup
+        footer={
+          !analyzing && detectedType && detectedType.sporty === sporty
+            ? 'Detectado de la foto. Las prendas deportivas solo se usan en el estilo Blokecore.'
+            : 'Camisetas de fútbol y ropa deportiva. Solo se usan en el estilo Blokecore.'
+        }
+      >
+        <SwitchRow label="Prenda deportiva" value={sporty} onValueChange={chooseSporty} />
+      </FormGroup>
+
       {shownError ? (
         <Text style={styles.error} accessibilityRole="alert">
           {shownError}
         </Text>
       ) : null}
       <Pressable
-        onPress={() => color && onSubmit({ name, category, seasons, color, newPhotoUri })}
+        onPress={() => color && onSubmit({ name, category, seasons, corte: shownCorte, sporty, color, newPhotoUri })}
         disabled={!canSave}
         accessibilityRole="button"
         style={[styles.save, !canSave && styles.saveDisabled]}
@@ -330,6 +409,7 @@ const useStyles = makeStyles((colors) => ({
     justifyContent: 'center',
     gap: 8,
   },
+  photoButtonPressed: { opacity: 0.6 }, // respuesta inmediata al toque, antes de que aparezca el selector
   photoButtonLabel: { fontSize: 16, fontWeight: '600', color: colors.link },
   groupLabel: { fontSize: 13, color: colors.textMuted, textTransform: 'uppercase', marginBottom: 6, paddingHorizontal: 16 },
   section: { marginBottom: 20 },

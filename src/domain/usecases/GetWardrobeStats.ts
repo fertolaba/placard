@@ -18,7 +18,7 @@ export class GetWardrobeStats {
 
   async execute(): Promise<WardrobeStats> {
     const garments = await this.repository.getAll();
-    const byCategory: Record<GarmentCategory, number> = { arriba: 0, abajo: 0, calzado: 0 };
+    const byCategory: Record<GarmentCategory, number> = { arriba: 0, top: 0, abajo: 0, pollera: 0, calzado: 0 };
     const colors = new Map<string, PaletteEntry>();
 
     for (const garment of garments) {

@@ -1,10 +1,14 @@
 import { useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { StyleId } from '../../domain/entities/StyleReference';
 import { OutfitCard } from '../components/OutfitCard';
 import { OutfitMiniCard } from '../components/OutfitMiniCard';
 import { StateMessage } from '../components/StateMessage';
+import { StyleList } from '../components/StyleList';
+import { StyleProgressCard } from '../components/StyleProgressCard';
 import { useOutfitSuggestions } from '../hooks/useOutfitSuggestions';
+import { useStyleMatches } from '../hooks/useStyleMatches';
 import { makeStyles } from '../theme/makeStyles';
 
 const MAX_CONTENT_WIDTH = 480;
@@ -16,6 +20,10 @@ export function OutfitsScreen() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Por ahora "Guardar" vive solo mientras la app está abierta; se persiste cuando agreguemos la base de datos.
   const [savedIds, setSavedIds] = useState<ReadonlySet<string>>(new Set());
+  // Los estilos van aparte de los outfits por color: cada parte carga (o falla) sin afectar a la otra.
+  const { matches, status: stylesStatus, reload: reloadStyles } = useStyleMatches();
+  const [selectedStyleId, setSelectedStyleId] = useState<StyleId | null>(null);
+  const currentStyle = matches.find((match) => match.reference.id === selectedStyleId) ?? matches[0];
 
   const current = outfits.find((outfit) => outfit.id === selectedId) ?? outfits[0];
   const others = outfits.filter((outfit) => outfit.id !== current?.id).slice(0, 2);
@@ -58,7 +66,7 @@ export function OutfitsScreen() {
       {status === 'ready' && !current && (
         <StateMessage
           title="Todavía no hay combinaciones"
-          detail="Para armar un look necesitás al menos una prenda de arriba y una de abajo."
+          detail="Para armar un look necesitás al menos una prenda de arriba (o un top) y una de abajo (o una pollera)."
         />
       )}
       {status === 'ready' && current && (
@@ -81,6 +89,29 @@ export function OutfitsScreen() {
               </View>
             </>
           )}
+        </>
+      )}
+
+      {stylesStatus === 'loading' && status !== 'loading' && <ActivityIndicator style={styles.loader} />}
+      {stylesStatus === 'error' && (
+        <StateMessage
+          title="No pudimos cargar los estilos"
+          detail="Revisá tu conexión y que el servidor esté encendido."
+          actionLabel="Reintentar"
+          onAction={reloadStyles}
+        />
+      )}
+      {stylesStatus === 'ready' && currentStyle && (
+        <>
+          <Text style={styles.sectionTitle} accessibilityRole="header">
+            {currentStyle.reference.name}
+          </Text>
+          <StyleProgressCard match={currentStyle} />
+
+          <Text style={styles.sectionTitle} accessibilityRole="header">
+            Estilos
+          </Text>
+          <StyleList matches={matches} selectedId={currentStyle.reference.id} onSelect={setSelectedStyleId} />
         </>
       )}
     </ScrollView>

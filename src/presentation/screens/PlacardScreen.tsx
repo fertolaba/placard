@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Garment } from '../../domain/entities/Garment';
-import { CATEGORY_OPTIONS, CategoryFilter } from '../components/CategoryFilter';
+import { useAuth } from '../auth/AuthProvider';
+import { CategoryFilter, categoryFilterOptions } from '../components/CategoryFilter';
 import { GarmentCard } from '../components/GarmentCard';
 import { SeasonFilter } from '../components/SeasonFilter';
 import { StateMessage } from '../components/StateMessage';
@@ -19,9 +20,7 @@ const MAX_CONTENT_WIDTH = 480; // en la web se ve como un celular, no estirado
 const SIDE_PADDING = 20;
 const GAP = 12;
 
-const CATEGORY_ORDER = CATEGORY_OPTIONS.map((option) => option.value);
-
-// Hacia dónde hay que deslizar para pasar a la siguiente categoría (Todo → Arriba → Abajo → Calzado).
+// Hacia dónde hay que deslizar para pasar a la siguiente categoría (Todo → Arriba → … → Calzado).
 // false = dedo hacia la IZQUIERDA (como pasar páginas). true = dedo hacia la DERECHA.
 const SWIPE_RIGHT_GOES_NEXT = false;
 
@@ -32,6 +31,9 @@ export function PlacardScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const listRef = useRef<FlatList<Garment>>(null);
+  const sex = useAuth().user?.sex ?? null;
+  const categoryOptions = categoryFilterOptions(sex);
+  const categoryOrder = categoryOptions.map((option) => option.value);
   const [category, setCategory] = useState<CategoryFilterValue>('todo');
   const [season, setSeason] = useState<SeasonFilterValue>('todas');
   const { garments, status, reload } = useGarments(category, season);
@@ -84,11 +86,11 @@ export function PlacardScreen() {
         </View>
       </View>
       <SeasonFilter value={season} onChange={setSeason} />
-      <CategoryFilter value={category} onChange={setCategory} />
+      <CategoryFilter options={categoryOptions} value={category} onChange={setCategory} />
 
       <SwipeableContent
-        index={CATEGORY_ORDER.indexOf(category)}
-        onSwipe={(direction) => setCategory((current) => neighbor(CATEGORY_ORDER, current, direction, SWIPE_RIGHT_GOES_NEXT))}
+        index={categoryOrder.indexOf(category)}
+        onSwipe={(direction) => setCategory((current) => neighbor(categoryOrder, current, direction, SWIPE_RIGHT_GOES_NEXT))}
       >
         {status === 'loading' && <ActivityIndicator style={styles.loader} />}
         {status === 'error' && (

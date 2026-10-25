@@ -3,13 +3,13 @@
  * Importante: Expo solo reemplaza referencias estáticas, por eso se escribe
  * process.env.EXPO_PUBLIC_XXX completo (no process.env[nombre]).
  */
-export type DataSource = 'local' | 'sqlite' | 'api';
+export type DataSource = 'local' | 'sqlite' | 'api' | 'supabase';
 
 function parseDataSource(value: string | undefined): DataSource {
   if (value === undefined || value === '') return 'local';
-  if (value === 'local' || value === 'sqlite' || value === 'api') return value;
+  if (value === 'local' || value === 'sqlite' || value === 'api' || value === 'supabase') return value;
   throw new Error(
-    `EXPO_PUBLIC_DATA_SOURCE tiene un valor inválido ("${value}"). Usá "local", "sqlite" o "api" en tu archivo .env.`,
+    `EXPO_PUBLIC_DATA_SOURCE tiene un valor inválido ("${value}"). Usá "local", "sqlite", "api" o "supabase" en tu archivo .env.`,
   );
 }
 
@@ -19,6 +19,12 @@ const apiUrl = (process.env.EXPO_PUBLIC_API_URL ?? '').replace(/\/+$/, '');
 if (dataSource === 'api' && apiUrl === '') {
   throw new Error(
     'Falta EXPO_PUBLIC_API_URL en tu archivo .env (es obligatoria cuando EXPO_PUBLIC_DATA_SOURCE=api).',
+  );
+}
+
+if (dataSource === 'supabase' && (!process.env.EXPO_PUBLIC_SUPABASE_URL?.trim() || !process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim())) {
+  throw new Error(
+    'Faltan EXPO_PUBLIC_SUPABASE_URL o EXPO_PUBLIC_SUPABASE_ANON_KEY (son obligatorias cuando EXPO_PUBLIC_DATA_SOURCE=supabase).',
   );
 }
 

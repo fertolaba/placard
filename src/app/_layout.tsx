@@ -21,8 +21,9 @@ function ThemedStack() {
   return (
     <>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
-        {/* La app solo con sesión; sin sesión, cualquier ruta lleva al login (y con sesión, el login no se puede ver). */}
-        <Stack.Protected guard={signedIn}>
+        {/* La app solo con sesión; sin sesión, cualquier ruta lleva al login (y con sesión, el login no se puede ver).
+            redirectTo asegura que al cerrar sesión se caiga en el login y no en otra pantalla de (auth). */}
+        <Stack.Protected guard={signedIn} redirectTo="/login">
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="add-garment" options={{ presentation: 'modal' }} />
           <Stack.Screen name="garment/[id]" options={{ presentation: 'modal' }} />

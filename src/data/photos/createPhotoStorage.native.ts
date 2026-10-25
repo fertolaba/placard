@@ -1,6 +1,5 @@
 import { Directory, File, Paths } from 'expo-file-system';
-import type { PhotoStorage } from '../../domain/services/PhotoStorage';
-import { buildPhotoRef } from './photoRefs';
+import { buildPhotoRef, type LocalPhotoStorage } from './photoRefs';
 
 const PHOTOS_DIRECTORY = 'garments';
 
@@ -9,7 +8,7 @@ function fileFor(ref: string): File {
 }
 
 /** Versión para iPhone y Android: guarda las fotos en la carpeta privada de la app. */
-export function createPhotoStorage(): PhotoStorage {
+export function createPhotoStorage(): LocalPhotoStorage {
   return {
     async save(sourceUri) {
       new Directory(Paths.document, PHOTOS_DIRECTORY).create({ idempotent: true });

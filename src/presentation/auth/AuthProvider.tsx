@@ -1,7 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { container } from '../../core/di/container';
-import type { AuthUser } from '../../domain/entities/AuthUser';
+import type { AuthUser, SignUpInput } from '../../domain/entities/AuthUser';
 import { AuthError } from '../../domain/repositories/AuthRepository';
+import { notifyDataChanged } from '../state/dataVersion';
 
 export type AuthStatus = 'loading' | 'signedIn' | 'signedOut';
 
@@ -13,7 +14,7 @@ interface AuthValue {
   configured: boolean; // false si falta configurar Supabase
   /** Devuelve null si entró, o el mensaje de error para mostrarle a la persona. */
   signIn: (email: string, password: string) => Promise<string | null>;
-  signUp: (email: string, password: string, confirmation: string) => Promise<SignUpOutcome>;
+  signUp: (input: SignUpInput) => Promise<SignUpOutcome>;
   /** Devuelve null si cerró la sesión, o el mensaje de error. */
   signOut: () => Promise<string | null>;
 }
@@ -43,6 +44,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // Al cerrar sesión (a mano o porque venció) o al entrar con otra cuenta, se olvida lo que quedó en memoria
+  // de la anterior y todas las pantallas vuelven a cargar: la cuenta nueva arranca vacía y solo ve lo suyo.
+  const userId = user?.id ?? null;
+  const previousUserId = useRef<string | null>(null);
+  useEffect(() => {
+    if (previousUserId.current === userId) return;
+    previousUserId.current = userId;
+    container.clearSessionData.execute();
+    notifyDataChanged();
+  }, [userId]);
+
   const signIn = useCallback(async (email: string, password: string) => {
     try {
       setUser(await container.signIn.execute(email, password));
@@ -52,9 +64,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string, confirmation: string): Promise<SignUpOutcome> => {
+  const signUp = useCallback(async (input: SignUpInput): Promise<SignUpOutcome> => {
     try {
-      const result = await container.signUp.execute(email, password, confirmation);
+      const result = await container.signUp.execute(input);
       if (!result.needsEmailConfirmation && result.user) setUser(result.user);
       return { error: null, needsEmailConfirmation: result.needsEmailConfirmation };
     } catch (error) {

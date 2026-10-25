@@ -1,52 +1,65 @@
 import type { StyleReference } from '../entities/StyleReference';
 
-/** Catálogo de referencias. Agregar un estilo nuevo es agregar un objeto a esta lista. */
+/**
+ * Catálogo de referencias. Agregar un estilo nuevo es sumar su id a STYLE_IDS y un objeto a esta lista.
+ * "top" y "pollera" entran en las piezas donde quedan bien; en Y2K son las preferidas.
+ */
 export const STYLE_REFERENCES: StyleReference[] = [
   {
-    id: 'asap-rocky',
-    name: 'A$AP Rocky',
-    description: 'Capas oscuras con un color de contraste',
-    note: 'Interpretación libre del estilo, no es un look real.',
-    palette: ['#26262B', '#7A2E3A', '#6B705C'],
-    slots: [
-      { label: 'prenda base oscura', category: 'arriba', tone: 'oscuro' },
-      { label: 'capa de color de contraste', category: 'arriba', tone: 'color' },
-      { label: 'pantalón', category: 'abajo', tone: 'cualquiera' },
-      { label: 'zapatillas', category: 'calzado', tone: 'cualquiera' },
-      { label: 'campera oscura', category: 'arriba', tone: 'oscuro' },
-    ],
-  },
-  {
     id: 'streetwear',
-    name: 'Streetwear urbano',
-    description: 'Prendas cómodas y zapatillas claras',
-    palette: ['#26262B', '#E4DED2'],
+    name: 'Streetwear',
+    description: 'Prendas holgadas y cómodas, con zapatillas claras',
+    palette: ['#26262B', '#8A8D91', '#E4DED2'],
     slots: [
-      { label: 'remera o buzo', category: 'arriba', tone: 'cualquiera' },
-      { label: 'pantalón', category: 'abajo', tone: 'cualquiera' },
-      { label: 'zapatillas claras', category: 'calzado', tone: 'claro' },
+      { label: 'buzo, remera o top', categories: ['arriba', 'top'], tone: 'cualquiera' },
+      { label: 'pantalón o pollera', categories: ['abajo', 'pollera'], tone: 'cualquiera' },
+      { label: 'zapatillas claras', categories: ['calzado'], tone: 'claro' },
     ],
   },
   {
-    id: 'minimal',
-    name: 'Minimal neutro',
-    description: 'Todo en tonos neutros',
-    palette: ['#CDB99A', '#E4DED2', '#26262B'],
+    id: 'old-money',
+    name: 'Old Money',
+    description: 'Clásico y prolijo, en tonos claros y neutros',
+    palette: ['#E9E1D0', '#B08D63', '#23324A'],
     slots: [
-      { label: 'prenda de arriba neutra', category: 'arriba', tone: 'neutro' },
-      { label: 'pantalón neutro', category: 'abajo', tone: 'neutro' },
-      { label: 'calzado neutro', category: 'calzado', tone: 'neutro' },
+      { label: 'camisa o sweater claro', categories: ['arriba'], tone: 'claro' },
+      { label: 'pantalón o pollera neutra', categories: ['abajo', 'pollera'], tone: 'neutro' },
+      { label: 'mocasines oscuros', categories: ['calzado'], tone: 'oscuro' },
     ],
   },
   {
-    id: 'smart-casual',
-    name: 'Smart casual',
-    description: 'Arriba claro y abajo oscuro',
-    palette: ['#5B7AA0', '#CDB99A'],
+    id: 'y2k',
+    name: 'Y2K',
+    description: 'Colores vivos y aire de los 2000',
+    palette: ['#E59BC4', '#9CC6E8', '#C9CCD1'],
     slots: [
-      { label: 'camisa o remera clara', category: 'arriba', tone: 'claro' },
-      { label: 'pantalón oscuro', category: 'abajo', tone: 'oscuro' },
-      { label: 'calzado oscuro', category: 'calzado', tone: 'oscuro' },
+      { label: 'top de color', categories: ['top', 'arriba'], tone: 'color' },
+      { label: 'pollera o jean', categories: ['pollera', 'abajo'], tone: 'cualquiera' },
+      { label: 'zapatillas claras', categories: ['calzado'], tone: 'claro' },
+    ],
+  },
+  {
+    id: 'techwear',
+    name: 'Techwear',
+    description: 'Capas funcionales, todo en oscuro',
+    palette: ['#1A1A1D', '#3B3F45', '#5A6150'],
+    slots: [
+      { label: 'prenda base oscura', categories: ['arriba', 'top'], tone: 'oscuro' },
+      { label: 'campera oscura', categories: ['arriba'], tone: 'oscuro' },
+      { label: 'pantalón oscuro', categories: ['abajo'], tone: 'oscuro' },
+      { label: 'zapatillas oscuras', categories: ['calzado'], tone: 'oscuro' },
+    ],
+  },
+  {
+    id: 'blokecore',
+    name: 'Blokecore',
+    description: 'Camiseta de fútbol con jean o pollera y zapatillas clásicas',
+    palette: ['#C8102E', '#1F3A93', '#F2F2F2'],
+    allowsSporty: true, // el único estilo que usa ropa deportiva
+    slots: [
+      { label: 'camiseta de fútbol', categories: ['arriba'], tone: 'cualquiera', requiresSporty: true },
+      { label: 'jean o pollera', categories: ['abajo', 'pollera'], tone: 'cualquiera' },
+      { label: 'zapatillas', categories: ['calzado'], tone: 'cualquiera' },
     ],
   },
 ];
