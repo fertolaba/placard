@@ -2,6 +2,7 @@ import { CATEGORY_ZONE, type Garment } from '../entities/Garment';
 import type { Outfit } from '../entities/Outfit';
 import type { GarmentRepository } from '../repositories/GarmentRepository';
 import { hexToHsl, isNeutral, scoreOutfit } from '../services/colorHarmony';
+import { echoBonus, explainOutfit } from '../services/outfitExplanation';
 
 function describe(garments: Garment[]): Pick<Outfit, 'title' | 'summary'> {
   const colorful = garments.filter((garment) => !isNeutral(hexToHsl(garment.colorHex)));
@@ -31,11 +32,15 @@ export class SuggestOutfits {
       for (const bottom of bottoms) {
         for (const shoe of shoeOptions) {
           const items = shoe ? [top, bottom, shoe] : [top, bottom];
+          const explanation = explainOutfit(items);
           outfits.push({
             id: items.map((item) => item.id).join('-'),
             garments: items,
-            matchPercent: scoreOutfit(items.map((item) => item.colorHex)),
+            // El puntaje sale de los colores dominantes; los detalles que se repiten entre prendas suman un poco.
+            matchPercent: Math.min(100, scoreOutfit(items.map((item) => item.colorHex)) + echoBonus(items)),
             ...describe(items),
+            description: explanation.description,
+            explanation,
           });
         }
       }

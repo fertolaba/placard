@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { GarmentCategory } from '../../domain/entities/Garment';
+import { MAX_SECONDARY_COLORS, type GarmentCategory } from '../../domain/entities/Garment';
 import type { Season } from '../../domain/entities/Season';
 import type { GarmentTypeDetection } from '../../domain/services/CategoryDetector';
 import { closestAllowedCategory, cutsFor } from '../../domain/services/garmentCatalog';
@@ -41,6 +41,7 @@ export interface GarmentFormValues {
   corte?: string;
   sporty: boolean;
   color: GarmentColor;
+  secondaryColors: GarmentColor[];
   newPhotoUri: string | null; // null = no se eligió una foto nueva
 }
 
@@ -49,6 +50,7 @@ export interface GarmentFormInitial {
   category: GarmentCategory;
   colorHex: string;
   colorName: string;
+  secondaryColors: GarmentColor[];
   seasons: Season[];
   corte?: string;
   sporty: boolean;
@@ -103,6 +105,7 @@ export function GarmentForm({
   const [color, setColor] = useState<GarmentColor | null>(
     initial ? { name: initial.colorName, hex: initial.colorHex } : null,
   );
+  const [secondaryColors, setSecondaryColors] = useState<GarmentColor[]>(initial?.secondaryColors ?? []);
   const [newPhotoUri, setNewPhotoUri] = useState<string | null>(null);
   const [detected, setDetected] = useState<GarmentColor | null>(null);
   const [detectedType, setDetectedType] = useState<GarmentTypeDetection | null>(null);
@@ -111,6 +114,7 @@ export function GarmentForm({
   const seasonsTouched = useRef(Boolean(initial)); // lo mismo con las épocas
   const corteTouched = useRef(Boolean(initial)); // y con el corte
   const sportyTouched = useRef(Boolean(initial)); // y con "deportiva"
+  const secondaryTouched = useRef(Boolean(initial)); // y con los colores secundarios
   const latestRequest = useRef(0); // para ignorar resultados de una foto anterior
 
   // Los colores que no están en la lista (el de la prenda guardada y el detectado en la foto) van primero.
@@ -123,6 +127,18 @@ export function GarmentForm({
     }
     return [...extras, ...GARMENT_COLORS];
   }, [initial, detected]);
+
+  // Los secundarios nunca repiten el dominante: si se elige como dominante uno que estaba de secundario, se oculta.
+  const shownSecondary = secondaryColors.filter((item) => item.hex !== color?.hex);
+  const secondaryOptions = useMemo<readonly GarmentColor[]>(() => {
+    const extras = (initial?.secondaryColors ?? []).filter(
+      (item) => !GARMENT_COLORS.some((option) => option.hex.toLowerCase() === item.hex.toLowerCase()),
+    );
+    return [...extras, ...GARMENT_COLORS].filter((item) => item.hex !== color?.hex);
+  }, [initial, color]);
+  const detectedSecondary = detectedType?.secondaryColors ?? [];
+  const sameSecondary =
+    detectedSecondary.length === shownSecondary.length && detectedSecondary.every((item) => shownSecondary.some((s) => s.hex === item.hex));
 
   // Los cortes según la categoría y el sexo del perfil. Al editar, el corte guardado se muestra igual aunque no corresponda.
   // Si cambia la categoría, un corte que no le corresponde no se muestra ni se guarda (vuelve si se elige la categoría de nuevo).
@@ -158,6 +174,20 @@ export function GarmentForm({
     setCorte(value);
   };
 
+  const chooseSecondary = (value: GarmentColor[]) => {
+    secondaryTouched.current = true;
+    setSecondaryColors(value);
+  };
+
+  // Tocar un color lo agrega o lo quita; con MAX_SECONDARY_COLORS elegidos, no se agregan más.
+  const toggleSecondary = (value: GarmentColor) => {
+    if (shownSecondary.some((item) => item.hex === value.hex)) {
+      chooseSecondary(shownSecondary.filter((item) => item.hex !== value.hex));
+    } else if (shownSecondary.length < MAX_SECONDARY_COLORS) {
+      chooseSecondary([...shownSecondary, value]);
+    }
+  };
+
   const chooseSporty = (value: boolean) => {
     sportyTouched.current = true;
     setSporty(value);
@@ -175,9 +205,13 @@ export function GarmentForm({
     const [foundColor, foundType] = await Promise.all([detect(uri), detectType(uri)]);
     if (requestId !== latestRequest.current) return; // mientras tanto eligió otra foto
 
-    setDetected(foundColor);
-    if (foundColor) setColor((current) => current ?? foundColor); // si todavía no hay color elegido, se propone el detectado
+    // El dominante de la IA mira solo la prenda (no el fondo); si coincide con el de los píxeles, se usa el tono exacto de la foto.
+    const fromAi = foundType?.dominantColor ?? null;
+    const dominant = fromAi && foundColor?.name !== fromAi.name ? fromAi : foundColor;
+    setDetected(dominant);
+    if (dominant) setColor((current) => current ?? dominant); // si todavía no hay color elegido, se propone el detectado
     setDetectedType(foundType);
+    if (foundType && !secondaryTouched.current) setSecondaryColors(foundType.secondaryColors);
     if (foundType) {
       // Si la IA ve una categoría que el perfil no tiene (un top en un perfil masculino), se usa la de la misma parte del cuerpo.
       const categoryAllowed = isAllowedCategory(foundType.category);
@@ -330,7 +364,7 @@ export function GarmentForm({
         Color
       </Text>
       <View style={styles.colorCard}>
-        <ColorPicker options={colorOptions} selectedHex={color?.hex ?? null} onSelect={setColor} />
+        <ColorPicker options={colorOptions} selectedHexes={color ? [color.hex] : []} onSelect={setColor} />
         <Text style={styles.colorName}>{color ? `Color: ${color.name}` : 'Elegí el color de la prenda'}</Text>
         {!detecting && detected && color?.hex === detected.hex ? (
           <Text style={styles.detectHint}>Color detectado de la foto</Text>
@@ -340,6 +374,32 @@ export function GarmentForm({
             <View style={[styles.suggestionDot, { backgroundColor: detected.hex }]} />
             <Text style={styles.suggestionText}>Detectamos {detected.name} en la foto</Text>
             <Pressable onPress={() => setColor(detected)} accessibilityRole="button" hitSlop={8}>
+              <Text style={styles.suggestionAction}>Usar</Text>
+            </Pressable>
+          </View>
+        ) : null}
+      </View>
+
+      <Text style={styles.groupLabel} accessibilityRole="header">
+        Colores secundarios
+      </Text>
+      <View style={styles.colorCard}>
+        <ColorPicker options={secondaryOptions} selectedHexes={shownSecondary.map((item) => item.hex)} onSelect={toggleSecondary} />
+        <Text style={styles.colorName}>
+          {shownSecondary.length > 0
+            ? `Detalles: ${shownSecondary.map((item) => item.name).join(', ')}`
+            : `Opcional: los colores de rayas, estampas, logos o costuras (hasta ${MAX_SECONDARY_COLORS}).`}
+        </Text>
+        {!analyzing && detectedSecondary.length > 0 && sameSecondary ? (
+          <Text style={styles.detectHint}>Detectados en la foto</Text>
+        ) : null}
+        {!analyzing && detectedSecondary.length > 0 && !sameSecondary ? (
+          <View style={styles.suggestion}>
+            {detectedSecondary.map((item) => (
+              <View key={item.hex} style={[styles.suggestionDot, { backgroundColor: item.hex }]} />
+            ))}
+            <Text style={styles.suggestionText}>En la foto: {detectedSecondary.map((item) => item.name).join(', ')}</Text>
+            <Pressable onPress={() => chooseSecondary(detectedSecondary)} accessibilityRole="button" hitSlop={8}>
               <Text style={styles.suggestionAction}>Usar</Text>
             </Pressable>
           </View>
@@ -362,7 +422,7 @@ export function GarmentForm({
         </Text>
       ) : null}
       <Pressable
-        onPress={() => color && onSubmit({ name, category, seasons, corte: shownCorte, sporty, color, newPhotoUri })}
+        onPress={() => color && onSubmit({ name, category, seasons, corte: shownCorte, sporty, color, secondaryColors: shownSecondary, newPhotoUri })}
         disabled={!canSave}
         accessibilityRole="button"
         style={[styles.save, !canSave && styles.saveDisabled]}

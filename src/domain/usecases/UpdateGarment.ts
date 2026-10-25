@@ -2,6 +2,7 @@ import type { Garment, GarmentCategory } from '../entities/Garment';
 import type { Season } from '../entities/Season';
 import type { GarmentRepository } from '../repositories/GarmentRepository';
 import { normalizeGarmentData } from '../services/garmentRules';
+import type { GarmentColor } from '../services/garmentColors';
 import type { PhotoStorage } from '../services/PhotoStorage';
 
 export interface GarmentEdit {
@@ -10,6 +11,7 @@ export interface GarmentEdit {
   category: GarmentCategory;
   colorHex: string;
   colorName: string;
+  secondaryColors: GarmentColor[];
   seasons: Season[];
   sporty: boolean;
   corte?: string; // sin corte = se borra el que tenía

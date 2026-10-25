@@ -45,3 +45,12 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- Las cuentas creadas antes de esta migración: se les crea el perfil si se registraron con usuario y sexo.
+-- (Las más viejas, sin esos datos, quedan sin perfil; no se inventa nada.)
+insert into public.profiles (id, username, sex)
+select id, lower(trim(raw_user_meta_data ->> 'username')), raw_user_meta_data ->> 'sex'
+from auth.users
+where lower(trim(raw_user_meta_data ->> 'username')) ~ '^[a-z0-9._]{3,20}$'
+  and raw_user_meta_data ->> 'sex' in ('femenino', 'masculino')
+on conflict do nothing;

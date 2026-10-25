@@ -3,6 +3,7 @@ import type { Garment, GarmentCategory, NewGarment } from '../../domain/entities
 import { SEASONS, normalizeSeasons, type Season } from '../../domain/entities/Season';
 import type { CurrentUserId } from '../../domain/repositories/AuthRepository';
 import type { GarmentRepository } from '../../domain/repositories/GarmentRepository';
+import { parseSecondaryColors } from '../mappers/secondaryColors';
 
 /** Forma de la fila tal como está en la tabla (con nombres en snake_case). */
 interface GarmentRow {
@@ -11,6 +12,7 @@ interface GarmentRow {
   category: GarmentCategory;
   color_hex: string;
   color_name: string;
+  secondary_colors: string; // JSON: [{"name":"Blanco","hex":"#EDEAE4"}]
   seasons: string; // "verano,invierno"
   sporty: number; // 0 o 1
   corte: string | null; // null = sin corte
@@ -42,6 +44,7 @@ export class SqliteGarmentRepository implements GarmentRepository {
       category: row.category,
       colorHex: row.color_hex,
       colorName: row.color_name,
+      secondaryColors: parseSecondaryColors(row.secondary_colors),
       seasons: parseSeasons(row.seasons),
       sporty: row.sporty === 1,
       corte: row.corte ?? undefined,
@@ -72,13 +75,14 @@ export class SqliteGarmentRepository implements GarmentRepository {
     const id = newId();
     const createdAt = new Date();
     await db.runAsync(
-      'INSERT INTO garments (id, user_id, name, category, color_hex, color_name, seasons, sporty, corte, photo_ref, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO garments (id, user_id, name, category, color_hex, color_name, secondary_colors, seasons, sporty, corte, photo_ref, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       id,
       userId,
       input.name,
       input.category,
       input.colorHex,
       input.colorName,
+      JSON.stringify(input.secondaryColors),
       input.seasons.join(','),
       input.sporty ? 1 : 0,
       input.corte ?? null,
@@ -96,11 +100,12 @@ export class SqliteGarmentRepository implements GarmentRepository {
   async update(id: string, data: NewGarment): Promise<Garment> {
     const [db, userId] = await Promise.all([this.getDatabase(), this.currentUserId()]);
     const result = await db.runAsync(
-      'UPDATE garments SET name = ?, category = ?, color_hex = ?, color_name = ?, seasons = ?, sporty = ?, corte = ?, photo_ref = ? WHERE id = ? AND user_id = ?',
+      'UPDATE garments SET name = ?, category = ?, color_hex = ?, color_name = ?, secondary_colors = ?, seasons = ?, sporty = ?, corte = ?, photo_ref = ? WHERE id = ? AND user_id = ?',
       data.name,
       data.category,
       data.colorHex,
       data.colorName,
+      JSON.stringify(data.secondaryColors),
       data.seasons.join(','),
       data.sporty ? 1 : 0,
       data.corte ?? null, // sin corte = se borra el que tenía

@@ -1,4 +1,5 @@
-import { ALL_GARMENT_CUTS, GARMENT_CATEGORIES } from '../../domain/entities/Garment';
+import { ALL_GARMENT_CUTS, GARMENT_CATEGORIES, MAX_SECONDARY_COLORS } from '../../domain/entities/Garment';
+import { GARMENT_COLORS } from '../../domain/services/garmentColors';
 import type { GarmentTypeDetection } from '../../domain/services/CategoryDetector';
 import { parseGarmentAnalysis } from '../../domain/services/garmentAnalysis';
 
@@ -20,6 +21,8 @@ export const GEMINI_MODEL = 'gemini-3.5-flash-lite';
 const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
 const DEFAULT_TIMEOUT_MS = 15_000;
 
+const COLOR_NAMES = GARMENT_COLORS.map((color) => `"${color.name}"`).join(', ');
+
 const PROMPT = `Mirá la foto y decí qué prenda es. Usá nombres comunes en Argentina (Remera, Musculosa, Camisa, Chomba, Buzo, Sweater, Campera, Abrigo, Top, Crop top, Corset, Body, Jean, Pantalón, Jogger, Short, Bermuda, Pollera, Minifalda, Calza, Zapatillas, Botas, Sandalias, Ojotas, Zapatos).
 - categoria: elegí uno de estos valores exactos.
   - "top": prenda de arriba femenina, corta o de tiras, que suele dejar ver hombros, escote o cintura: top de tiras, crop top, top strapless o bandeau, corset, corpiño deportivo usado como prenda, body, top halter.
@@ -38,6 +41,8 @@ const PROMPT = `Mirá la foto y decí qué prenda es. Usá nombres comunes en Ar
   - Abajo: "skinny" (pegado a toda la pierna), "slim" (angosto pero no pegado), "straight" (recto desde la cadera hasta el tobillo), "baggy" (holgado, con mucha tela, suele angostarse abajo), "wide leg" (ancho desde la cadera y en toda la pierna), "flared" (acampanado, oxford o pata de elefante: ajustado hasta la rodilla y se abre recién de la rodilla para abajo).
   - Pollera: "lápiz" (angosta y pegada, se cierra hacia la rodilla), "recta" (cae derecha desde la cadera, sin abrirse), "acampanada" (se abre desde la cintura en forma de A, sin pliegues marcados), "tableada" (con tablas o pliegues planchados, como la de colegio o una plisada), "cruzada" (envolvente o wrap: una tela se cruza sobre la otra adelante).
   - Calzado: "no_aplica".
+- color_dominante: el color que ocupa más superficie de la prenda (no del fondo ni de la piel). Elegí el nombre más parecido de esta lista, escrito exactamente igual: ${COLOR_NAMES}.
+- colores_secundarios: los colores de los detalles que se ven a simple vista (rayas, estampa, logo, escudo, cuello, puños, costuras contrastantes, suela de un calzado), de más a menos visible, como mucho ${MAX_SECONDARY_COLORS}. Mismos nombres exactos de la lista. No repitas el dominante ni pongas sombras o pliegues del mismo color. Si la prenda es lisa, devolvé [].
 - es_deportiva: true si es una camiseta de fútbol (de un club, de una selección o retro: suele tener escudo, sponsor, número o tela técnica brillante) o indumentaria deportiva similar (camisetas de otros deportes, ropa de entrenamiento, shorts de fútbol, botines). false para ropa de uso diario, aunque sea cómoda: una remera lisa, un buzo, un jogger o unas zapatillas urbanas no son deportivas.`;
 
 /** Esquema de la respuesta: Gemini devuelve un JSON que lo cumple. */
@@ -52,9 +57,25 @@ const RESPONSE_SCHEMA = {
     // El esquema no puede atar el corte a la categoría: eso lo revisa parseGarmentAnalysis.
     corte: { type: 'STRING', enum: [...ALL_GARMENT_CUTS, 'no_aplica'] },
     es_deportiva: { type: 'BOOLEAN' },
+    color_dominante: { type: 'STRING', enum: GARMENT_COLORS.map((color) => color.name) },
+    colores_secundarios: {
+      type: 'ARRAY',
+      items: { type: 'STRING', enum: GARMENT_COLORS.map((color) => color.name) },
+      maxItems: MAX_SECONDARY_COLORS,
+    },
   },
-  required: ['esPrenda', 'tipo', 'categoria', 'manga', 'temporadas', 'corte', 'es_deportiva'],
-  propertyOrdering: ['esPrenda', 'tipo', 'categoria', 'manga', 'temporadas', 'corte', 'es_deportiva'],
+  required: ['esPrenda', 'tipo', 'categoria', 'manga', 'temporadas', 'corte', 'es_deportiva', 'color_dominante', 'colores_secundarios'],
+  propertyOrdering: [
+    'esPrenda',
+    'tipo',
+    'categoria',
+    'manga',
+    'temporadas',
+    'corte',
+    'es_deportiva',
+    'color_dominante',
+    'colores_secundarios',
+  ],
 };
 
 export class GeminiApiError extends Error {
@@ -133,7 +154,7 @@ export async function detectGarmentCategory(image: GeminiImage, options: GeminiO
   if (__DEV__) {
     console.log(
       '[detección de prenda] categoría asignada:',
-      detection ? `${detection.type} → ${detection.category} · manga ${detection.sleeve ?? 'no aplica'} · épocas ${detection.seasons?.join(', ') ?? 'sin deducir'} · corte ${detection.cut ?? 'sin deducir'}${detection.sporty ? ' · deportiva' : ''}` : 'ninguna (no es una prenda que la app maneje)',
+      detection ? `${detection.type} → ${detection.category} · manga ${detection.sleeve ?? 'no aplica'} · épocas ${detection.seasons?.join(', ') ?? 'sin deducir'} · corte ${detection.cut ?? 'sin deducir'}${detection.sporty ? ' · deportiva' : ''} · color ${detection.dominantColor?.name ?? 'sin deducir'}${detection.secondaryColors.length > 0 ? ` + ${detection.secondaryColors.map((color) => color.name).join(', ')}` : ''}` : 'ninguna (no es una prenda que la app maneje)',
     );
   }
   return detection;

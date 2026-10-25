@@ -4,6 +4,7 @@ import { SEASONS, normalizeSeasons } from '../../domain/entities/Season';
 import type { CurrentUserId } from '../../domain/repositories/AuthRepository';
 import type { GarmentRepository } from '../../domain/repositories/GarmentRepository';
 import type { SessionCache } from '../../domain/services/SessionCache';
+import { parseSecondaryColors } from '../mappers/secondaryColors';
 import { GARMENT_PHOTOS_BUCKET } from '../supabase/SupabasePhotoStorage';
 
 /** Forma de la fila en la tabla public.garments (ver supabase/migrations). */
@@ -13,6 +14,7 @@ interface GarmentRow {
   category: GarmentCategory;
   color_hex: string;
   color_name: string;
+  secondary_colors: unknown; // jsonb: [{"name":"Blanco","hex":"#EDEAE4"}]
   seasons: string[];
   sporty: boolean;
   corte: string | null;
@@ -20,7 +22,7 @@ interface GarmentRow {
   created_at: string;
 }
 
-const COLUMNS = 'id, name, category, color_hex, color_name, seasons, sporty, corte, photo_path, created_at';
+const COLUMNS = 'id, name, category, color_hex, color_name, secondary_colors, seasons, sporty, corte, photo_path, created_at';
 const SIGNED_URL_SECONDS = 60 * 60 * 24; // las direcciones de las fotos vencen en un día
 const SIGNED_URL_MARGIN_MS = 60 * 60 * 1000; // se renuevan si les queda menos de una hora
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -29,12 +31,19 @@ const LOAD_ERROR = 'No pudimos cargar tus prendas. Revisá tu conexión y probá
 const SAVE_ERROR = 'No pudimos guardar la prenda. Revisá tu conexión y probá de nuevo.';
 const NOT_FOUND = 'La prenda ya no existe.';
 
+/** El mensaje para la persona es genérico; en desarrollo se deja en la consola el error real de Supabase (sin datos personales). */
+function fail(message: string, error: { code?: string; message?: string }): Error {
+  if (__DEV__) console.warn('[prendas] Supabase devolvió un error:', error.code ?? 'sin código', error.message ?? '');
+  return new Error(message);
+}
+
 function toRow(data: NewGarment) {
   return {
     name: data.name,
     category: data.category,
     color_hex: data.colorHex,
     color_name: data.colorName,
+    secondary_colors: data.secondaryColors,
     seasons: data.seasons,
     sporty: data.sporty,
     corte: data.corte ?? null, // sin corte = se borra el que tenía
@@ -93,6 +102,7 @@ export class SupabaseGarmentRepository implements GarmentRepository, SessionCach
         category: row.category,
         colorHex: row.color_hex,
         colorName: row.color_name,
+        secondaryColors: parseSecondaryColors(row.secondary_colors),
         seasons: seasons.length > 0 ? seasons : [...SEASONS], // si el dato está dañado, no se esconde la prenda
         sporty: row.sporty,
         corte: row.corte ?? undefined,
@@ -111,7 +121,7 @@ export class SupabaseGarmentRepository implements GarmentRepository, SessionCach
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .order('id');
-    if (error) throw new Error(LOAD_ERROR);
+    if (error) throw fail(LOAD_ERROR, error);
     return this.toGarments(data as GarmentRow[]);
   }
 
@@ -124,7 +134,7 @@ export class SupabaseGarmentRepository implements GarmentRepository, SessionCach
       .eq('id', id)
       .eq('user_id', userId)
       .maybeSingle();
-    if (error) throw new Error(LOAD_ERROR);
+    if (error) throw fail(LOAD_ERROR, error);
     return data ? (await this.toGarments([data as GarmentRow]))[0] : null;
   }
 
@@ -135,7 +145,7 @@ export class SupabaseGarmentRepository implements GarmentRepository, SessionCach
       .insert({ ...toRow(input), user_id: userId })
       .select(COLUMNS)
       .single();
-    if (error) throw new Error(SAVE_ERROR);
+    if (error) throw fail(SAVE_ERROR, error);
     return (await this.toGarments([data as GarmentRow]))[0];
   }
 
@@ -149,7 +159,7 @@ export class SupabaseGarmentRepository implements GarmentRepository, SessionCach
       .eq('user_id', userId)
       .select(COLUMNS)
       .maybeSingle();
-    if (error) throw new Error(SAVE_ERROR);
+    if (error) throw fail(SAVE_ERROR, error);
     if (!row) throw new Error(NOT_FOUND);
     return (await this.toGarments([row as GarmentRow]))[0];
   }
@@ -158,6 +168,6 @@ export class SupabaseGarmentRepository implements GarmentRepository, SessionCach
     if (!UUID.test(id)) return;
     const userId = await this.currentUserId();
     const { error } = await this.client.from('garments').delete().eq('id', id).eq('user_id', userId);
-    if (error) throw new Error('No pudimos borrar la prenda. Revisá tu conexión y probá de nuevo.');
+    if (error) throw fail('No pudimos borrar la prenda. Revisá tu conexión y probá de nuevo.', error);
   }
 }

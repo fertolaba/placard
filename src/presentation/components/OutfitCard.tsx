@@ -1,6 +1,8 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import type { Outfit } from '../../domain/entities/Outfit';
 import { makeStyles } from '../theme/makeStyles';
+import { ColorBreakdown } from './ColorBreakdown';
+import { ExplainLink } from './ExplainLink';
 import { GarmentSwatch } from './GarmentSwatch';
 
 interface Props {
@@ -8,9 +10,10 @@ interface Props {
   saved: boolean;
   onToggleSave: () => void;
   onNext?: () => void; // si no hay otra idea para mostrar, el botón queda deshabilitado
+  onExplain: () => void; // abre "Ver por qué"
 }
 
-export function OutfitCard({ outfit, saved, onToggleSave, onNext }: Props) {
+export function OutfitCard({ outfit, saved, onToggleSave, onNext, onExplain }: Props) {
   const styles = useStyles();
   return (
     <View style={styles.card}>
@@ -18,6 +21,7 @@ export function OutfitCard({ outfit, saved, onToggleSave, onNext }: Props) {
         {outfit.garments.map((garment) => (
           <View key={garment.id} style={styles.piece}>
             <GarmentSwatch garment={garment} height={124} />
+            <ColorBreakdown garment={garment} />
           </View>
         ))}
       </View>
@@ -30,13 +34,8 @@ export function OutfitCard({ outfit, saved, onToggleSave, onNext }: Props) {
           <Text style={styles.badgeLabel}>{outfit.matchPercent}% match</Text>
         </View>
       </View>
-      <Text style={styles.summary}>{outfit.summary}</Text>
-
-      <View style={styles.dots}>
-        {outfit.garments.map((garment) => (
-          <View key={garment.id} style={[styles.dot, { backgroundColor: garment.colorHex }]} />
-        ))}
-      </View>
+      <Text style={styles.description}>{outfit.description}</Text>
+      <ExplainLink onPress={onExplain} />
 
       <View style={styles.actions}>
         <Pressable
@@ -68,9 +67,7 @@ const useStyles = makeStyles((colors) => ({
   title: { flex: 1, fontSize: 20, fontWeight: '700', color: colors.text },
   badge: { backgroundColor: colors.successFill, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
   badgeLabel: { fontSize: 12, fontWeight: '600', color: colors.successText },
-  summary: { fontSize: 14, color: colors.textMuted, marginTop: 4 },
-  dots: { flexDirection: 'row', gap: 6, marginTop: 10 },
-  dot: { width: 14, height: 14, borderRadius: 7, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.swatchBorder },
+  description: { fontSize: 14, color: colors.textMuted, marginTop: 4 },
   actions: { flexDirection: 'row', gap: 10, marginTop: 14 },
   button: { flex: 1, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   primary: { backgroundColor: colors.primary },

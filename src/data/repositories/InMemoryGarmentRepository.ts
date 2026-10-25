@@ -10,7 +10,13 @@ function newId(): string {
 }
 
 function sampleRecords(): StoredGarment[] {
-  return SAMPLE_GARMENTS.map((sample) => ({ ...sample, sporty: false, photoRef: null, createdAt: new Date() }));
+  return SAMPLE_GARMENTS.map((sample) => ({
+    ...sample,
+    secondaryColors: [],
+    sporty: false,
+    photoRef: null,
+    createdAt: new Date(),
+  }));
 }
 
 /**

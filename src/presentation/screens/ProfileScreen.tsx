@@ -123,7 +123,7 @@ export function ProfileScreen() {
       {status === 'error' && (
         <StateMessage
           title="No pudimos cargar tu perfil"
-          detail="Revisá tu conexión y que el servidor esté encendido."
+          detail="Revisá tu conexión a internet y probá de nuevo."
           actionLabel="Reintentar"
           onAction={reload}
         />

@@ -4,16 +4,16 @@ import { makeStyles } from '../theme/makeStyles';
 
 interface Props {
   options: readonly GarmentColor[];
-  selectedHex: string | null;
+  selectedHexes: readonly string[]; // uno para el color dominante; varios para los secundarios
   onSelect: (color: GarmentColor) => void;
 }
 
-export function ColorPicker({ options, selectedHex, onSelect }: Props) {
+export function ColorPicker({ options, selectedHexes, onSelect }: Props) {
   const styles = useStyles();
   return (
     <View style={styles.grid}>
       {options.map((color) => {
-        const selected = color.hex === selectedHex;
+        const selected = selectedHexes.includes(color.hex);
         return (
           <Pressable
             key={color.hex}

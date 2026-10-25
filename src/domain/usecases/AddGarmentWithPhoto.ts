@@ -1,5 +1,6 @@
 import type { Garment, GarmentCategory } from '../entities/Garment';
 import type { Season } from '../entities/Season';
+import type { GarmentColor } from '../services/garmentColors';
 import type { PhotoStorage } from '../services/PhotoStorage';
 import type { AddGarment } from './AddGarment';
 
@@ -8,6 +9,7 @@ export interface GarmentDraft {
   category: GarmentCategory;
   colorHex: string;
   colorName: string;
+  secondaryColors: GarmentColor[];
   seasons: Season[];
   sporty: boolean;
   corte?: string;

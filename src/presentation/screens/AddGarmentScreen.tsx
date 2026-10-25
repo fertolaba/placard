@@ -18,6 +18,7 @@ export function AddGarmentScreen() {
         category: values.category,
         colorHex: values.color.hex,
         colorName: values.color.name,
+        secondaryColors: values.secondaryColors,
         seasons: values.seasons,
         sporty: values.sporty,
         corte: values.corte,

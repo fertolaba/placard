@@ -2,11 +2,11 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import { SEASONS } from '../../domain/entities/Season';
 import { SAMPLE_GARMENTS } from '../seed/sampleGarments';
 
-export const LATEST_VERSION = 7;
+export const LATEST_VERSION = 8;
 
 /**
  * Lleva la base a la última versión. La versión se guarda en la propia base (PRAGMA user_version),
- * así que para cambiar la estructura más adelante se agrega un bloque "if (version < 8)" y se sube LATEST_VERSION.
+ * así que para cambiar la estructura más adelante se agrega un bloque "if (version < 9)" y se sube LATEST_VERSION.
  */
 export async function runMigrations(db: SQLiteDatabase): Promise<void> {
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
@@ -75,6 +75,11 @@ export async function runMigrations(db: SQLiteDatabase): Promise<void> {
         ALTER TABLE garments ADD COLUMN user_id TEXT;
         CREATE INDEX garments_user_created ON garments (user_id, created_at DESC);
       `);
+    }
+    if (version < 8) {
+      // Colores secundarios (detalles, estampa, logo) como JSON: [{"name":"Blanco","hex":"#EDEAE4"}].
+      // El color dominante sigue en color_hex y color_name. Las prendas que ya existían quedan sin secundarios.
+      await db.execAsync(`ALTER TABLE garments ADD COLUMN secondary_colors TEXT NOT NULL DEFAULT '[]'`);
     }
     await db.execAsync(`PRAGMA user_version = ${LATEST_VERSION}`);
   });

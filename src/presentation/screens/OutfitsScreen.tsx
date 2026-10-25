@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { Outfit } from '../../domain/entities/Outfit';
 import type { StyleId } from '../../domain/entities/StyleReference';
 import { OutfitCard } from '../components/OutfitCard';
+import { OutfitExplanationModal } from '../components/OutfitExplanationModal';
 import { OutfitMiniCard } from '../components/OutfitMiniCard';
 import { StateMessage } from '../components/StateMessage';
 import { StyleList } from '../components/StyleList';
@@ -20,6 +22,7 @@ export function OutfitsScreen() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Por ahora "Guardar" vive solo mientras la app está abierta; se persiste cuando agreguemos la base de datos.
   const [savedIds, setSavedIds] = useState<ReadonlySet<string>>(new Set());
+  const [explained, setExplained] = useState<Outfit | null>(null); // el look que muestra "Ver por qué"
   // Los estilos van aparte de los outfits por color: cada parte carga (o falla) sin afectar a la otra.
   const { matches, status: stylesStatus, reload: reloadStyles } = useStyleMatches();
   const [selectedStyleId, setSelectedStyleId] = useState<StyleId | null>(null);
@@ -58,7 +61,7 @@ export function OutfitsScreen() {
       {status === 'error' && (
         <StateMessage
           title="No pudimos armar tus outfits"
-          detail="Revisá tu conexión y que el servidor esté encendido."
+          detail="Revisá tu conexión a internet y probá de nuevo."
           actionLabel="Reintentar"
           onAction={reload}
         />
@@ -76,6 +79,7 @@ export function OutfitsScreen() {
             saved={savedIds.has(current.id)}
             onToggleSave={() => toggleSave(current.id)}
             onNext={outfits.length > 1 ? showNext : undefined}
+            onExplain={() => setExplained(current)}
           />
           {others.length > 0 && (
             <>
@@ -84,7 +88,12 @@ export function OutfitsScreen() {
               </Text>
               <View style={styles.others}>
                 {others.map((outfit) => (
-                  <OutfitMiniCard key={outfit.id} outfit={outfit} onPress={() => setSelectedId(outfit.id)} />
+                  <OutfitMiniCard
+                    key={outfit.id}
+                    outfit={outfit}
+                    onPress={() => setSelectedId(outfit.id)}
+                    onExplain={() => setExplained(outfit)}
+                  />
                 ))}
               </View>
             </>
@@ -96,7 +105,7 @@ export function OutfitsScreen() {
       {stylesStatus === 'error' && (
         <StateMessage
           title="No pudimos cargar los estilos"
-          detail="Revisá tu conexión y que el servidor esté encendido."
+          detail="Revisá tu conexión a internet y probá de nuevo."
           actionLabel="Reintentar"
           onAction={reloadStyles}
         />
@@ -114,6 +123,9 @@ export function OutfitsScreen() {
           <StyleList matches={matches} selectedId={currentStyle.reference.id} onSelect={setSelectedStyleId} />
         </>
       )}
+
+      {/* El Modal se dibuja encima de toda la pantalla, aunque esté declarado dentro del ScrollView. */}
+      <OutfitExplanationModal outfit={explained} onClose={() => setExplained(null)} />
     </ScrollView>
   );
 }

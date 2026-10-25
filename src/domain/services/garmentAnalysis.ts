@@ -1,6 +1,7 @@
-import { GARMENT_CATEGORIES, GARMENT_CUTS, type GarmentCategory } from '../entities/Garment';
+import { GARMENT_CATEGORIES, GARMENT_CUTS, MAX_SECONDARY_COLORS, type GarmentCategory } from '../entities/Garment';
 import { normalizeSeasons, type Season } from '../entities/Season';
 import type { GarmentTypeDetection, SleeveLength } from './CategoryDetector';
+import { GARMENT_COLORS, type GarmentColor } from './garmentColors';
 
 /** Lo que el modelo de IA tiene que devolver al mirar la foto (los nombres coinciden con el esquema JSON que se le pide). */
 export interface GarmentAnalysis {
@@ -11,6 +12,15 @@ export interface GarmentAnalysis {
   temporadas: Season[];
   corte: string; // uno de GARMENT_CUTS[categoria], o "no_aplica" para calzado
   es_deportiva: boolean; // camiseta de fútbol, camiseta de un club o selección, ropa de entrenamiento
+  color_dominante: string; // uno de los nombres de GARMENT_COLORS
+  colores_secundarios: string[]; // nombres de GARMENT_COLORS; vacío si la prenda es lisa
+}
+
+/** El color de la lista con ese nombre (sin importar mayúsculas), o null si el modelo inventó uno. */
+function colorNamed(name: unknown): GarmentColor | null {
+  if (typeof name !== 'string') return null;
+  const wanted = name.trim().toLowerCase();
+  return GARMENT_COLORS.find((color) => color.name.toLowerCase() === wanted) ?? null;
 }
 
 /** Manga larga abriga: sirve para entretiempo e invierno. Manga corta (o sin mangas): verano. */
@@ -32,6 +42,7 @@ const isCategory = (value: unknown): value is GarmentCategory =>
  * Devuelve null si no es una prenda que la app maneje: la persona elige a mano.
  * Si el modelo no dio épocas válidas, se deducen del largo de manga.
  * Un corte que no corresponde a la categoría (por ejemplo "baggy" en una remera) se descarta.
+ * Los colores que no están en la lista se descartan; los secundarios no repiten el dominante.
  */
 export function parseGarmentAnalysis(raw: unknown): GarmentTypeDetection | null {
   if (typeof raw !== 'object' || raw === null) return null;
@@ -48,5 +59,13 @@ export function parseGarmentAnalysis(raw: unknown): GarmentTypeDetection | null 
   const seasons = fromModel.length > 0 ? fromModel : seasonsForSleeve(sleeve);
   const cut = typeof data.corte === 'string' && GARMENT_CUTS[category].includes(data.corte) ? data.corte : null;
   const sporty = data.es_deportiva === true; // si el modelo no lo dice, se asume que no es deportiva
-  return { type, category, sleeve, seasons, cut, sporty };
+  const dominantColor = colorNamed(data.color_dominante);
+  const secondaryColors: GarmentColor[] = [];
+  for (const name of Array.isArray(data.colores_secundarios) ? data.colores_secundarios : []) {
+    const color = colorNamed(name);
+    if (!color || color.hex === dominantColor?.hex || secondaryColors.some((item) => item.hex === color.hex)) continue;
+    secondaryColors.push(color);
+    if (secondaryColors.length === MAX_SECONDARY_COLORS) break;
+  }
+  return { type, category, sleeve, seasons, cut, sporty, dominantColor, secondaryColors };
 }

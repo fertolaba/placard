@@ -96,7 +96,7 @@ export function PlacardScreen() {
         {status === 'error' && (
           <StateMessage
             title="No pudimos cargar tus prendas"
-            detail="Revisá tu conexión y que el servidor esté encendido."
+            detail="Revisá tu conexión a internet y probá de nuevo."
             actionLabel="Reintentar"
             onAction={reload}
           />

@@ -1,3 +1,4 @@
+import type { GarmentColor } from '../services/garmentColors';
 import type { Season } from './Season';
 
 // "top" y "pollera" son categorías propias (no variantes de "arriba" y "abajo"): solo se ofrecen en perfiles femeninos.
@@ -23,6 +24,9 @@ export const GARMENT_CUTS: Record<GarmentCategory, readonly string[]> = {
   calzado: [],
 };
 
+/** Cuántos colores secundarios se guardan como máximo por prenda. */
+export const MAX_SECONDARY_COLORS = 3;
+
 /** Todos los cortes, sin repetir (para el esquema que se le pide a la IA). */
 export const ALL_GARMENT_CUTS: readonly string[] = [...new Set(Object.values(GARMENT_CUTS).flat())];
 
@@ -30,8 +34,9 @@ export interface Garment {
   id: string;
   name: string;
   category: GarmentCategory;
-  colorHex: string; // formato #RRGGBB
-  colorName: string;
+  colorHex: string; // color dominante, formato #RRGGBB
+  colorName: string; // nombre del color dominante
+  secondaryColors: GarmentColor[]; // colores de detalles (rayas, estampa, logo, costuras); hasta MAX_SECONDARY_COLORS
   seasons: Season[]; // épocas del año en las que se usa (al menos una)
   corte?: string; // uno de GARMENT_CUTS[category]; opcional
   sporty: boolean; // ropa deportiva (camiseta de fútbol, etc.): en los estilos solo se usa en Blokecore
