@@ -1,19 +1,19 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Garment } from '../../domain/entities/Garment';
 import { useAuth } from '../auth/AuthProvider';
+import { AddGarmentCard } from '../components/AddGarmentCard';
 import { CategoryFilter, categoryFilterOptions } from '../components/CategoryFilter';
 import { GarmentCard } from '../components/GarmentCard';
 import { SeasonFilter } from '../components/SeasonFilter';
 import { StateMessage } from '../components/StateMessage';
 import { SwipeableContent } from '../components/SwipeableContent';
+import { ThemeToggle } from '../components/ThemeToggle';
 import { useGarments, type CategoryFilterValue, type SeasonFilterValue } from '../hooks/useGarments';
 import { SEASON_UI } from '../seasonUi';
 import { makeStyles } from '../theme/makeStyles';
-import { useTheme } from '../theme/ThemeProvider';
 import { neighbor } from '../utils/swipe';
 
 const MAX_CONTENT_WIDTH = 480; // en la web se ve como un celular, no estirado
@@ -24,13 +24,16 @@ const GAP = 12;
 // false = dedo hacia la IZQUIERDA (como pasar páginas). true = dedo hacia la DERECHA.
 const SWIPE_RIGHT_GOES_NEXT = false;
 
+// Elemento fijo al final de la grilla: la tarjeta para agregar prendas.
+const ADD_ITEM = 'add' as const;
+type GridItem = Garment | typeof ADD_ITEM;
+
 export function PlacardScreen() {
   const styles = useStyles();
-  const { colors } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const listRef = useRef<FlatList<Garment>>(null);
+  const listRef = useRef<FlatList<GridItem>>(null);
   const sex = useAuth().user?.sex ?? null;
   const categoryOptions = categoryFilterOptions(sex);
   const categoryOrder = categoryOptions.map((option) => option.value);
@@ -42,6 +45,7 @@ export function PlacardScreen() {
   const cardWidth = (contentWidth - SIDE_PADDING * 2 - GAP) / 2;
 
   const filtering = category !== 'todo' || season !== 'todas';
+  const openAddGarment = () => router.push('/add-garment');
   const clearFilters = () => {
     setCategory('todo');
     setSeason('todas');
@@ -62,14 +66,7 @@ export function PlacardScreen() {
           <Text style={styles.title} accessibilityRole="header">
             Mi Pilchapp
           </Text>
-          <Pressable
-            onPress={() => router.push('/add-garment')}
-            accessibilityRole="button"
-            accessibilityLabel="Agregar prenda"
-            style={styles.addButton}
-          >
-            <Ionicons name="add" size={26} color={colors.onPrimary} />
-          </Pressable>
+          <ThemeToggle />
         </View>
         <View style={styles.subtitleRow}>
           <Text style={styles.subtitle}>{subtitle}</Text>
@@ -109,24 +106,26 @@ export function PlacardScreen() {
             onAction={clearFilters}
           />
         )}
-        {status === 'ready' && garments.length === 0 && !filtering && (
-          <StateMessage title="Todavía no hay prendas acá" detail="Tocá el botón + para agregar una foto de tu ropa." />
-        )}
-        {status === 'ready' && garments.length > 0 && (
-          <FlatList
+        {/* Sin filtros la grilla se muestra aunque esté vacía, para que siempre esté la tarjeta de agregar. */}
+        {status === 'ready' && (garments.length > 0 || !filtering) && (
+          <FlatList<GridItem>
             ref={listRef}
-            data={garments}
-            keyExtractor={(garment) => garment.id}
+            data={[...garments, ADD_ITEM]}
+            keyExtractor={(item) => (item === ADD_ITEM ? ADD_ITEM : item.id)}
             numColumns={2}
             columnWrapperStyle={{ gap: GAP }}
             contentContainerStyle={{ gap: GAP, padding: SIDE_PADDING }}
-            renderItem={({ item }) => (
-              <GarmentCard
-                garment={item}
-                width={cardWidth}
-                onPress={() => router.push({ pathname: '/garment/[id]', params: { id: item.id } })}
-              />
-            )}
+            renderItem={({ item }) =>
+              item === ADD_ITEM ? (
+                <AddGarmentCard width={cardWidth} onPress={openAddGarment} />
+              ) : (
+                <GarmentCard
+                  garment={item}
+                  width={cardWidth}
+                  onPress={() => router.push({ pathname: '/garment/[id]', params: { id: item.id } })}
+                />
+              )
+            }
           />
         )}
       </SwipeableContent>
@@ -139,14 +138,6 @@ const useStyles = makeStyles((colors) => ({
   header: { paddingHorizontal: SIDE_PADDING, paddingBottom: 12 },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { fontSize: 34, fontWeight: '700', color: colors.text },
-  addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   subtitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   subtitle: { fontSize: 15, color: colors.textMuted },
   clear: { fontSize: 15, fontWeight: '500', color: colors.link },

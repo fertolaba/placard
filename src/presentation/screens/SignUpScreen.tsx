@@ -4,10 +4,11 @@ import { useRef, useState } from 'react';
 import { Pressable, Text, View, type TextInputInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Sex } from '../../domain/entities/Sex';
-import { MIN_PASSWORD_LENGTH } from '../../domain/services/authValidation';
+import { MIN_PASSWORD_LENGTH, validateSignUp } from '../../domain/services/authValidation';
 import { useAuth } from '../auth/AuthProvider';
 import { AuthScaffold } from '../components/AuthScaffold';
-import { FormGroup, PasswordRow, TextRow } from '../components/FormGroup';
+import { AuthTextField } from '../components/AuthTextField';
+import { MascotAvatar, type MascotFocus } from '../components/MascotAvatar';
 import { SexPicker } from '../components/SexPicker';
 import { makeStyles } from '../theme/makeStyles';
 import { useTheme } from '../theme/ThemeProvider';
@@ -47,6 +48,8 @@ export function SignUpScreen() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [mustConfirm, setMustConfirm] = useState(false);
+  const [focus, setFocus] = useState<MascotFocus>('none');
+  const [emailWidth, setEmailWidth] = useState(0);
   const usernameRef = useRef<TextInputInstance>(null);
   const passwordRef = useRef<TextInputInstance>(null);
   const confirmationRef = useRef<TextInputInstance>(null);
@@ -76,77 +79,79 @@ export function SignUpScreen() {
 
   return (
     <AuthScaffold
-      title="Crear cuenta"
-      subtitle="Por ahora tus prendas siguen guardadas solo en este teléfono."
+      hero={<MascotAvatar focus={focus} emailLength={email.length} fieldWidth={emailWidth} />}
+      title="Creá tu cuenta"
       configured={configured}
       error={error}
       submitLabel="Crear cuenta"
       busyLabel="Creando cuenta…"
       busy={busy}
+      valid={validateSignUp({ email, password, confirmation, username, sex }) === null}
       onSubmit={submit}
       switchPrompt="¿Ya tenés cuenta?"
       switchLabel="Iniciá sesión"
       onSwitch={() => router.replace('/login')}
     >
-      <FormGroup>
-        <TextRow
-          label="Email"
-          value={email}
-          onChangeText={edit(setEmail)}
-          placeholder="nombre@ejemplo.com"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoComplete="email"
-          textContentType="emailAddress"
-          returnKeyType="next"
-          submitBehavior="submit"
-          onSubmitEditing={() => usernameRef.current?.focus()}
-          editable={!busy}
-          maxLength={254}
-        />
-        <TextRow
-          ref={usernameRef}
-          label="Usuario"
-          value={username}
-          onChangeText={edit(setUsername)}
-          placeholder="tu.usuario"
-          autoCapitalize="none"
-          autoComplete="username-new"
-          textContentType="username"
-          returnKeyType="next"
-          submitBehavior="submit"
-          onSubmitEditing={() => passwordRef.current?.focus()}
-          editable={!busy}
-          maxLength={21}
-        />
-        <PasswordRow
-          ref={passwordRef}
-          label="Contraseña"
-          value={password}
-          onChangeText={edit(setPassword)}
-          placeholder={`Mínimo ${MIN_PASSWORD_LENGTH}`}
-          autoComplete="new-password"
-          textContentType="newPassword"
-          returnKeyType="next"
-          submitBehavior="submit"
-          onSubmitEditing={() => confirmationRef.current?.focus()}
-          editable={!busy}
-          maxLength={72}
-        />
-        <PasswordRow
-          ref={confirmationRef}
-          label="Repetir"
-          value={confirmation}
-          onChangeText={edit(setConfirmation)}
-          placeholder="La misma contraseña"
-          autoComplete="new-password"
-          textContentType="newPassword"
-          returnKeyType="go"
-          onSubmitEditing={submit}
-          editable={!busy}
-          maxLength={72}
-        />
-      </FormGroup>
+      <AuthTextField
+        label="Correo"
+        value={email}
+        onChangeText={edit(setEmail)}
+        onFocus={() => setFocus('email')}
+        onInputWidth={setEmailWidth}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        autoComplete="email"
+        textContentType="emailAddress"
+        returnKeyType="next"
+        submitBehavior="submit"
+        onSubmitEditing={() => usernameRef.current?.focus()}
+        editable={!busy}
+        maxLength={254}
+      />
+      <AuthTextField
+        ref={usernameRef}
+        label="Usuario"
+        value={username}
+        onChangeText={edit(setUsername)}
+        onFocus={() => setFocus('none')}
+        autoCapitalize="none"
+        autoComplete="username-new"
+        textContentType="username"
+        returnKeyType="next"
+        submitBehavior="submit"
+        onSubmitEditing={() => passwordRef.current?.focus()}
+        editable={!busy}
+        maxLength={21}
+      />
+      <AuthTextField
+        ref={passwordRef}
+        label="Contraseña"
+        password
+        value={password}
+        onChangeText={edit(setPassword)}
+        onFocus={() => setFocus('password')}
+        autoComplete="new-password"
+        textContentType="newPassword"
+        returnKeyType="next"
+        submitBehavior="submit"
+        onSubmitEditing={() => confirmationRef.current?.focus()}
+        editable={!busy}
+        maxLength={72}
+      />
+      <AuthTextField
+        ref={confirmationRef}
+        label="Repetir contraseña"
+        password
+        value={confirmation}
+        onChangeText={edit(setConfirmation)}
+        onFocus={() => setFocus('password')}
+        autoComplete="new-password"
+        textContentType="newPassword"
+        returnKeyType="go"
+        onSubmitEditing={submit}
+        editable={!busy}
+        maxLength={72}
+      />
       <Text style={styles.hint}>
         El usuario tiene de 3 a 20 caracteres: letras, números, punto o guion bajo. La contraseña, al menos{' '}
         {MIN_PASSWORD_LENGTH} caracteres.
@@ -161,10 +166,10 @@ export function SignUpScreen() {
 }
 
 const useStyles = makeStyles((colors) => ({
-  hint: { fontSize: 13, color: colors.textMuted, marginTop: -12, marginBottom: 20, paddingHorizontal: 16 },
-  groupLabel: { fontSize: 13, color: colors.textMuted, textTransform: 'uppercase', marginBottom: 6, paddingHorizontal: 16 },
-  sexHint: { fontSize: 13, color: colors.textMuted, marginTop: 6, marginBottom: 20, paddingHorizontal: 16 },
-  done: { flex: 1, backgroundColor: colors.background, alignItems: 'center', paddingHorizontal: 28 },
+  hint: { fontSize: 13, color: colors.textMuted, marginTop: 2, marginBottom: 20, paddingHorizontal: 4 },
+  groupLabel: { fontSize: 13, color: colors.textMuted, textTransform: 'uppercase', marginBottom: 6, paddingHorizontal: 4 },
+  sexHint: { fontSize: 13, color: colors.textMuted, marginTop: 6, marginBottom: 20, paddingHorizontal: 4 },
+  done: { flex: 1, backgroundColor: colors.surface, alignItems: 'center', paddingHorizontal: 28 },
   doneIcon: {
     width: 72,
     height: 72,

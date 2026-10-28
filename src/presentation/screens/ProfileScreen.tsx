@@ -3,12 +3,10 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ProfileDraft } from '../../domain/entities/Profile';
-import type { ThemeMode } from '../../domain/entities/ThemeMode';
 import { useAuth } from '../auth/AuthProvider';
 import { categoryOptionsFor } from '../categoryUi';
 import { Avatar } from '../components/Avatar';
 import { FormGroup, SwitchRow, TextRow, ValueRow } from '../components/FormGroup';
-import { SegmentedControl } from '../components/SegmentedControl';
 import { StateMessage } from '../components/StateMessage';
 import { usePhotoPicker, type PhotoSource } from '../hooks/usePhotoPicker';
 import { useProfile } from '../hooks/useProfile';
@@ -17,12 +15,6 @@ import { useTheme } from '../theme/ThemeProvider';
 import { confirmDestructive } from '../utils/confirm';
 
 const MAX_CONTENT_WIDTH = 480;
-
-const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
-  { value: 'system', label: 'Sistema' },
-  { value: 'light', label: 'Claro' },
-  { value: 'dark', label: 'Oscuro' },
-];
 
 function Stat({ value, label }: { value: number; label: string }) {
   const styles = useStyles();
@@ -37,7 +29,7 @@ function Stat({ value, label }: { value: number; label: string }) {
 export function ProfileScreen() {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
-  const { mode, setMode, colors } = useTheme();
+  const { colors } = useTheme();
   const { profile, stats, status, reload, save, changePhoto } = useProfile();
   const { pick, error: pickerError } = usePhotoPicker();
   const [draft, setDraft] = useState<ProfileDraft | null>(null);
@@ -194,12 +186,6 @@ export function ProfileScreen() {
             )}
           </View>
 
-          <Text style={styles.groupLabel} accessibilityRole="header">
-            Apariencia
-          </Text>
-          <SegmentedControl options={THEME_OPTIONS} value={mode} onChange={setMode} />
-          <Text style={styles.groupFooter}>"Sistema" usa la configuración de tu teléfono. Se aplica al instante.</Text>
-
           <FormGroup>
             <TextRow label="Nombre" value={draft.displayName} onChangeText={(value) => change({ displayName: value })} maxLength={40} />
             <TextRow
@@ -307,7 +293,6 @@ const useStyles = makeStyles((colors) => ({
   dots: { flexDirection: 'row', gap: 8 },
   dot: { width: 22, height: 22, borderRadius: 11, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.swatchBorder },
   groupLabel: { fontSize: 13, color: colors.textMuted, textTransform: 'uppercase', marginBottom: 6, paddingHorizontal: 16 },
-  groupFooter: { fontSize: 13, color: colors.textMuted, marginTop: 6, marginBottom: 20, paddingHorizontal: 16 },
   error: { fontSize: 14, color: colors.danger, marginBottom: 8 },
   save: { height: 50, borderRadius: 14, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   saveDisabled: { opacity: 0.4 },
