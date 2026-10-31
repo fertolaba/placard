@@ -5,6 +5,13 @@ export function isSeason(value: unknown): value is Season {
   return typeof value === 'string' && (SEASONS as readonly string[]).includes(value);
 }
 
+/** La estación elegida en Mi Pilchapp: una época o todas. */
+export type SeasonSelection = Season | 'todas';
+
+export function isSeasonSelection(value: unknown): value is SeasonSelection {
+  return value === 'todas' || isSeason(value);
+}
+
 /** Deja solo épocas válidas, sin repetir y siempre en el mismo orden (verano, entretiempo, invierno). */
 export function normalizeSeasons(values: readonly unknown[]): Season[] {
   return SEASONS.filter((season) => values.includes(season));

@@ -1,74 +1,161 @@
-import { useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, View, type ScrollViewInstance } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { StyleId } from '../../domain/entities/StyleReference';
+import { DESTACADO_CARD_WIDTH, DestacadoCard } from '../components/DestacadoCard';
+import { ReferenteFilter, type ReferenteFilterValue } from '../components/ReferenteFilter';
+import { ReferenteRow } from '../components/ReferenteRow';
 import { StateMessage } from '../components/StateMessage';
-import { StyleHero } from '../components/StyleHero';
-import { StyleList } from '../components/StyleList';
-import { StyleProgressCard } from '../components/StyleProgressCard';
-import { useStyleMatches } from '../hooks/useStyleMatches';
+import { useReferentes, type ReferenteConMatch } from '../hooks/useReferentes';
+import { toggleReferenteGuardado, useReferentesGuardados } from '../hooks/useReferentesGuardados';
 import { makeStyles } from '../theme/makeStyles';
 
 const MAX_CONTENT_WIDTH = 480;
+const CARD_GAP = 12;
+const CARD_INTERVAL = DESTACADO_CARD_WIDTH + CARD_GAP;
+
+const keyOf = (item: ReferenteConMatch) => item.referente.id;
 
 export function InspirationScreen() {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
-  const scrollRef = useRef<ScrollViewInstance>(null);
-  const { matches, status, reload } = useStyleMatches();
-  const [selectedId, setSelectedId] = useState<StyleId | null>(null);
+  const router = useRouter();
+  const { items, status, reload } = useReferentes();
+  const guardados = useReferentesGuardados();
+  const [filter, setFilter] = useState<ReferenteFilterValue>('Todos');
 
-  const current = matches.find((match) => match.reference.id === selectedId) ?? matches[0];
+  const openDetail = useCallback((id: string) => router.push(`/inspiracion/${id}`), [router]);
 
-  const select = (id: StyleId) => {
-    setSelectedId(id);
-    scrollRef.current?.scrollTo({ y: 0, animated: true });
-  };
+  const filtered = useMemo(
+    () => (filter === 'Todos' ? items : items.filter((item) => item.referente.estilo === filter)),
+    [items, filter],
+  );
+  const destacados = useMemo(() => filtered.filter((item) => item.referente.destacado), [filtered]);
+  const referentes = useMemo(() => filtered.filter((item) => !item.referente.destacado), [filtered]);
+  // Se toma de la lista completa: el referente de la semana no cambia al filtrar.
+  const semanaId = useMemo(() => items.find((item) => item.referente.destacado)?.referente.id, [items]);
 
-  return (
-    <ScrollView
-      ref={scrollRef}
-      style={styles.scroll}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]}
-    >
+  const renderDestacado = useCallback(
+    ({ item }: { item: ReferenteConMatch }) => (
+      <DestacadoCard
+        item={item}
+        etiqueta={item.referente.id === semanaId ? 'Referente de la semana' : item.referente.estilo}
+        saved={guardados.has(item.referente.id)}
+        onToggleSave={toggleReferenteGuardado}
+        onPress={openDetail}
+      />
+    ),
+    [semanaId, guardados, openDetail],
+  );
+
+  const renderReferente = useCallback(
+    ({ item, index }: { item: ReferenteConMatch; index: number }) => (
+      <ReferenteRow
+        item={item}
+        first={index === 0}
+        last={index === referentes.length - 1}
+        saved={guardados.has(item.referente.id)}
+        onToggleSave={toggleReferenteGuardado}
+        onPress={openDetail}
+      />
+    ),
+    [referentes.length, guardados, openDetail],
+  );
+
+  // Va como elemento y no como componente: si fuera un componente nuevo en cada render, el carrusel perdería su posición.
+  const header = (
+    <View>
       <View style={styles.header}>
         <Text style={styles.title} accessibilityRole="header">
           Inspiración
         </Text>
-        <Text style={styles.subtitle}>Referencias de estilo para armar con tu ropa</Text>
+        <Text style={styles.subtitle}>Referentes de la moda y su estilo</Text>
       </View>
+      <ReferenteFilter value={filter} onChange={setFilter} />
 
       {status === 'loading' && <ActivityIndicator style={styles.loader} />}
       {status === 'error' && (
-        <StateMessage
-          title="No pudimos cargar las referencias"
-          detail="Revisá tu conexión a internet y probá de nuevo."
-          actionLabel="Reintentar"
-          onAction={reload}
-        />
+        <View style={styles.message}>
+          <StateMessage
+            title="No pudimos cargar los referentes"
+            detail="Revisá tu conexión a internet y probá de nuevo."
+            actionLabel="Reintentar"
+            onAction={reload}
+          />
+        </View>
       )}
 
-      {status === 'ready' && current && (
+      {status === 'ready' && destacados.length > 0 && (
         <>
-          <StyleHero reference={current.reference} />
-          <StyleProgressCard match={current} />
-
           <Text style={styles.sectionTitle} accessibilityRole="header">
-            Estilos
+            Destacados
           </Text>
-          <StyleList matches={matches} selectedId={current.reference.id} onSelect={select} />
+          <FlatList
+            horizontal
+            data={destacados}
+            extraData={guardados}
+            keyExtractor={keyOf}
+            renderItem={renderDestacado}
+            ItemSeparatorComponent={CardGap}
+            getItemLayout={(_, index) => ({ length: DESTACADO_CARD_WIDTH, offset: CARD_INTERVAL * index, index })}
+            showsHorizontalScrollIndicator={false}
+            snapToInterval={CARD_INTERVAL}
+            snapToAlignment="start"
+            decelerationRate="fast"
+            disableIntervalMomentum
+            contentContainerStyle={styles.carousel}
+          />
         </>
       )}
-    </ScrollView>
+
+      {status === 'ready' && referentes.length > 0 && (
+        <View style={styles.listHeader}>
+          <Text style={styles.listTitle} accessibilityRole="header">
+            Referentes
+          </Text>
+          <Text style={styles.count}>
+            {referentes.length} {referentes.length === 1 ? 'persona' : 'personas'}
+          </Text>
+        </View>
+      )}
+    </View>
   );
+
+  return (
+    <FlatList
+      data={status === 'ready' ? referentes : []}
+      extraData={guardados}
+      keyExtractor={keyOf}
+      renderItem={renderReferente}
+      ListHeaderComponent={header}
+      style={styles.scroll}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]}
+    />
+  );
+}
+
+function CardGap() {
+  return <View style={{ width: CARD_GAP }} />;
 }
 
 const useStyles = makeStyles((colors) => ({
   scroll: { flex: 1, backgroundColor: colors.background },
-  content: { width: '100%', maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center', paddingHorizontal: 20, paddingBottom: 32 },
-  header: { paddingBottom: 14 },
+  content: { width: '100%', maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center', paddingBottom: 32 },
+  header: { paddingHorizontal: 20, paddingBottom: 14 },
   title: { fontSize: 34, fontWeight: '700', color: colors.text },
   subtitle: { fontSize: 15, color: colors.textMuted },
   loader: { marginTop: 40 },
-  sectionTitle: { fontSize: 20, fontWeight: '700', color: colors.text, marginTop: 22, marginBottom: 10 },
+  message: { paddingHorizontal: 20 },
+  sectionTitle: { fontSize: 20, fontWeight: '700', color: colors.text, marginTop: 22, marginBottom: 10, paddingHorizontal: 20 },
+  carousel: { paddingHorizontal: 20 },
+  listHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginTop: 22,
+    marginBottom: 10,
+    paddingHorizontal: 20,
+  },
+  listTitle: { fontSize: 20, fontWeight: '700', color: colors.text },
+  count: { fontSize: 14, color: colors.textMuted },
 }));

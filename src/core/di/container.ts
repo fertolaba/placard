@@ -2,11 +2,13 @@ import { ApiGarmentRepository } from '../../data/repositories/ApiGarmentReposito
 import { InMemoryGarmentRepository } from '../../data/repositories/InMemoryGarmentRepository';
 import { createSqliteGarmentRepository } from '../../data/repositories/createSqliteGarmentRepository';
 import { AsyncStorageProfileRepository } from '../../data/repositories/AsyncStorageProfileRepository';
+import { AsyncStorageReferenteRepository } from '../../data/repositories/AsyncStorageReferenteRepository';
 import { SupabaseAuthRepository } from '../../data/repositories/SupabaseAuthRepository';
 import { SupabaseGarmentRepository } from '../../data/repositories/SupabaseGarmentRepository';
 import { SupabasePhotoStorage } from '../../data/supabase/SupabasePhotoStorage';
 import { UnconfiguredAuthRepository } from '../../data/repositories/UnconfiguredAuthRepository';
 import { createSupabaseClient } from '../../data/supabase/supabaseClient';
+import { AsyncStorageSeasonPreferenceRepository } from '../../data/repositories/AsyncStorageSeasonPreferenceRepository';
 import { AsyncStorageThemePreferenceRepository } from '@/domain/repositories/AsyncStorageThemePreferenceRepository';
 import { createColorDetector } from '../../data/color/createColorDetector';
 import { createPhotoStorage } from '../../data/photos/createPhotoStorage';
@@ -23,11 +25,15 @@ import { DetectGarmentColor } from '../../domain/usecases/DetectGarmentColor';
 import { GetGarment } from '../../domain/usecases/GetGarment';
 import { GetGarments } from '../../domain/usecases/GetGarments';
 import { GetProfile } from '../../domain/usecases/GetProfile';
+import { GetReferentes } from '../../domain/usecases/GetReferentes';
+import { GetReferentesGuardados } from '../../domain/usecases/GetReferentesGuardados';
+import { GetSeasonPreference } from '../../domain/usecases/GetSeasonPreference';
 import { GetSession } from '../../domain/usecases/GetSession';
 import { GetStyleMatches } from '../../domain/usecases/GetStyleMatches';
 import { GetThemeMode } from '../../domain/usecases/GetThemeMode';
 import { GetWardrobeStats } from '../../domain/usecases/GetWardrobeStats';
 import { SetProfilePhoto } from '../../domain/usecases/SetProfilePhoto';
+import { SetSeasonPreference } from '../../domain/usecases/SetSeasonPreference';
 import { SetThemeMode } from '../../domain/usecases/SetThemeMode';
 import { SignIn } from '../../domain/usecases/SignIn';
 import { SignOut } from '../../domain/usecases/SignOut';
@@ -35,6 +41,7 @@ import { SignUp } from '../../domain/usecases/SignUp';
 import { SuggestOutfits } from '../../domain/usecases/SuggestOutfits';
 import { createCategoryDetector } from '../../data/ai/createCategoryDetector';
 import { DetectGarmentCategory } from '../../domain/usecases/DetectGarmentCategory';
+import { ToggleReferenteGuardado } from '../../domain/usecases/ToggleReferenteGuardado';
 import { UpdateGarment } from '../../domain/usecases/UpdateGarment';
 import { UpdateProfile } from '../../domain/usecases/UpdateProfile';
 import { env } from '../config/env';
@@ -77,7 +84,9 @@ function createGarmentStorage(): { repository: GarmentRepository; photos: PhotoS
 
 const { repository: garmentRepository, photos: photoStorage } = createGarmentStorage();
 const profileRepository = new AsyncStorageProfileRepository((ref) => localPhotoStorage.resolve(ref), currentUserId);
+const referenteRepository = new AsyncStorageReferenteRepository(currentUserId);
 const themePreferenceRepository = new AsyncStorageThemePreferenceRepository();
+const seasonPreferenceRepository = new AsyncStorageSeasonPreferenceRepository();
 const addGarment = new AddGarment(garmentRepository);
 
 export const container = {
@@ -95,8 +104,13 @@ export const container = {
   setProfilePhoto: new SetProfilePhoto(profileRepository, localPhotoStorage),
   getWardrobeStats: new GetWardrobeStats(garmentRepository),
   getStyleMatches: new GetStyleMatches(garmentRepository),
+  getReferentes: new GetReferentes(referenteRepository),
+  getReferentesGuardados: new GetReferentesGuardados(referenteRepository),
+  toggleReferenteGuardado: new ToggleReferenteGuardado(referenteRepository),
   getThemeMode: new GetThemeMode(themePreferenceRepository),
   setThemeMode: new SetThemeMode(themePreferenceRepository),
+  getSeasonPreference: new GetSeasonPreference(seasonPreferenceRepository),
+  setSeasonPreference: new SetSeasonPreference(seasonPreferenceRepository),
   authConfigured: supabase !== null,
   signUp: new SignUp(authRepository),
   signIn: new SignIn(authRepository),

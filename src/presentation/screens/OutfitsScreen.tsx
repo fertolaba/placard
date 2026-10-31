@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, ScrollView, Text, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Outfit } from '../../domain/entities/Outfit';
-import type { StyleId } from '../../domain/entities/StyleReference';
+import { STYLE_IDS, type StyleId } from '../../domain/entities/StyleReference';
 import { OutfitCard } from '../components/OutfitCard';
 import { OutfitExplanationModal } from '../components/OutfitExplanationModal';
 import { OutfitMiniCard } from '../components/OutfitMiniCard';
@@ -28,6 +29,23 @@ export function OutfitsScreen() {
   const [selectedStyleId, setSelectedStyleId] = useState<StyleId | null>(null);
   const currentStyle = matches.find((match) => match.reference.id === selectedStyleId) ?? matches[0];
 
+  // Inspiración puede abrir esta pestaña con un estilo: se selecciona y se baja hasta esa sección.
+  const router = useRouter();
+  const { estilo } = useLocalSearchParams<{ estilo?: string }>();
+  const scrollRef = useRef<ScrollViewInstance>(null);
+  const stylesY = useRef<number | null>(null);
+  const pendingScroll = useRef(false);
+
+  const requestedStyleId = STYLE_IDS.find((styleId) => styleId === estilo);
+  if (requestedStyleId && requestedStyleId !== selectedStyleId) setSelectedStyleId(requestedStyleId);
+
+  useEffect(() => {
+    if (!requestedStyleId) return;
+    if (stylesY.current === null) pendingScroll.current = true;
+    else scrollRef.current?.scrollTo({ y: stylesY.current, animated: true });
+    router.setParams({ estilo: undefined }); // así el mismo estilo se puede volver a pedir más tarde
+  }, [requestedStyleId, router]);
+
   const current = outfits.find((outfit) => outfit.id === selectedId) ?? outfits[0];
   const others = outfits.filter((outfit) => outfit.id !== current?.id).slice(0, 2);
 
@@ -47,6 +65,7 @@ export function OutfitsScreen() {
 
   return (
     <ScrollView
+      ref={scrollRef}
       style={styles.scroll}
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]}
     >
@@ -111,7 +130,16 @@ export function OutfitsScreen() {
         />
       )}
       {stylesStatus === 'ready' && currentStyle && (
-        <>
+        <View
+          onLayout={(event) => {
+            stylesY.current = event.nativeEvent.layout.y;
+            // Mientras cargan los outfits de arriba, esta sección todavía se va a mover.
+            if (pendingScroll.current && status !== 'loading') {
+              pendingScroll.current = false;
+              scrollRef.current?.scrollTo({ y: stylesY.current, animated: true });
+            }
+          }}
+        >
           <Text style={styles.sectionTitle} accessibilityRole="header">
             {currentStyle.reference.name}
           </Text>
@@ -121,7 +149,7 @@ export function OutfitsScreen() {
             Estilos
           </Text>
           <StyleList matches={matches} selectedId={currentStyle.reference.id} onSelect={setSelectedStyleId} />
-        </>
+        </View>
       )}
 
       {/* El Modal se dibuja encima de toda la pantalla, aunque esté declarado dentro del ScrollView. */}

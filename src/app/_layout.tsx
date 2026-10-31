@@ -27,6 +27,7 @@ function ThemedStack() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="add-garment" options={{ presentation: 'modal' }} />
           <Stack.Screen name="garment/[id]" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="inspiracion/[id]" />
         </Stack.Protected>
         <Stack.Protected guard={!signedIn}>
           <Stack.Screen name="(auth)" />

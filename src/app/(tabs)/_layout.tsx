@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import type { ColorValue } from 'react-native';
+import { SeasonThemeProvider, useSeasonTheme } from '../../presentation/theme/SeasonThemeProvider';
 import { useTheme } from '../../presentation/theme/ThemeProvider';
 
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -11,8 +12,9 @@ const tabIcon = (name: IconName) =>
     return <Ionicons name={name} color={color as string} size={size} />;
   };
 
-export default function TabsLayout() {
+function ThemedTabs() {
   const { colors } = useTheme();
+  const { theme } = useSeasonTheme();
   return (
     <Tabs
       screenOptions={{
@@ -27,6 +29,10 @@ export default function TabsLayout() {
         options={{
           title: 'Pilchapp',
           tabBarIcon: tabIcon('shirt-outline'),
+          // La barra toma las opciones de la pestaña abierta: la estación se ve solo en Mi Pilchapp.
+          tabBarActiveTintColor: theme.tabActive,
+          tabBarInactiveTintColor: theme.tabInactive,
+          tabBarStyle: { backgroundColor: theme.tabBar, borderTopColor: theme.tabBarBorder },
         }}
       />
       <Tabs.Screen
@@ -51,5 +57,13 @@ export default function TabsLayout() {
         }}
       />
     </Tabs>
+  );
+}
+
+export default function TabsLayout() {
+  return (
+    <SeasonThemeProvider>
+      <ThemedTabs />
+    </SeasonThemeProvider>
   );
 }
