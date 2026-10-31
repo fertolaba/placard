@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="210" viewBox="0 0 390 210" preserveAspectRatio="xMidYMin slice">
+<defs>
+<linearGradient id="skyON" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1F1830"/><stop offset="1" stop-color="#7A3A33"/></linearGradient>
+</defs>
+<rect width="390" height="210" fill="url(#skyON)"/>
+<g fill="#FFE0B8"><circle data-anim="twinkle" cx="30" cy="30" r="1.600"/><circle data-anim="twinkle" cx="190" cy="26" r="1.800"/><circle data-anim="twinkle" cx="250" cy="70" r="1.500"/><circle data-anim="twinkle" cx="364" cy="30" r="1.600"/><circle data-anim="twinkle" cx="58" cy="92" r="1.500"/></g>
+<circle cx="110" cy="122" r="52" fill="#FFB347" opacity=".18"/>
+<circle cx="110" cy="122" r="40" fill="#FFB347"/><circle cx="96" cy="112" r="7" fill="#F59E0B" opacity=".5"/><circle cx="124" cy="130" r="9" fill="#F59E0B" opacity=".45"/><circle cx="112" cy="140" r="4" fill="#F59E0B" opacity=".5"/>
+<g data-anim="drift"><path d="M70 40l8 -6 8 6 8 -6 8 6 -8 4z" fill="#12091A" transform="translate(120 20)"/></g>
+<g data-anim="drift"><path d="M70 40l8 -6 8 6 8 -6 8 6 -8 4z" fill="#12091A" transform="translate(200 60) scale(.8)"/></g>
+<path d="M0 156Q80 130 170 152T390 142V230H0Z" fill="#4A2430"/>
+<path d="M0 176Q110 154 220 174T390 166V230H0Z" fill="#38202B"/>
+<path d="M0 204Q90 192 200 200T390 196V230H0Z" fill="#1E1219"/>
+<rect x="316" y="122" width="11" height="78" rx="4" fill="#5A3418"/>
+<circle cx="321" cy="104" r="26" fill="#B8430E"/><circle cx="298" cy="118" r="18" fill="#C47A0B"/><circle cx="346" cy="116" r="20" fill="#9A3412"/><circle cx="321" cy="84" r="18" fill="#C47A0B"/>
+<circle cx="270" cy="198" r="24" fill="#FFB347" opacity=".25" data-anim="twinkle"/>
+<ellipse cx="270" cy="198" rx="14" ry="11" fill="#FF8A1F"/><path d="M263 194L267 190L271 194ZM271 194L275 190L279 194Z" fill="#FFF0A8"/><path d="M263 201L266 204L269 201L272 204L275 201L278 204" fill="none" stroke="#FFF0A8" stroke-width="1.500" stroke-linecap="round" stroke-linejoin="round"/><path d="M270 188V183" stroke="#2F7D32" stroke-width="3" stroke-linecap="round"/>
+<g transform="translate(60 0)"><g data-anim="fall"><path d="M0 0Q8 -7 15 0Q8 7 0 0Z" fill="#B8430E"/></g></g>
+<g transform="translate(170 0)"><g data-anim="fall"><path d="M0 0Q8 -7 15 0Q8 7 0 0Z" fill="#C47A0B"/></g></g>
+<g transform="translate(290 0)"><g data-anim="fall"><path d="M0 0Q8 -7 15 0Q8 7 0 0Z" fill="#9A3412"/></g></g>
+</svg>

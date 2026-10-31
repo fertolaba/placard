@@ -6,6 +6,7 @@ export interface SeasonTheme {
   background: string;
   text: string;
   textMuted: string;
+  headerMuted: string; // subtítulo: va sobre la escena, donde a veces no alcanza el contraste de textMuted
   card: string;
   cardBorder: string;
   headerButtonBackground: string;
@@ -39,6 +40,7 @@ export const SEASON_THEMES: Record<SeasonSelection, Record<SeasonScheme, SeasonT
       background: '#F2F2F7',
       text: '#000000',
       textMuted: '#6C6C70',
+      headerMuted: '#6C6C70',
       card: '#FFFFFF',
       cardBorder: 'rgba(0,0,0,0)',
       headerButtonBackground: '#F2F2F7',
@@ -67,6 +69,7 @@ export const SEASON_THEMES: Record<SeasonSelection, Record<SeasonScheme, SeasonT
       background: darkPalette.background,
       text: darkPalette.text,
       textMuted: darkPalette.textMuted,
+      headerMuted: darkPalette.textMuted,
       card: darkPalette.surface,
       cardBorder: 'rgba(255,255,255,0)',
       headerButtonBackground: darkPalette.background,
@@ -96,6 +99,7 @@ export const SEASON_THEMES: Record<SeasonSelection, Record<SeasonScheme, SeasonT
       background: '#FFEFC4',
       text: '#0F3B57',
       textMuted: '#3B6A85',
+      headerMuted: '#0F3B57',
       card: '#FFFFFF',
       cardBorder: 'rgba(15,59,87,0.10)',
       headerButtonBackground: '#FFFFFF',
@@ -123,6 +127,7 @@ export const SEASON_THEMES: Record<SeasonSelection, Record<SeasonScheme, SeasonT
       background: '#1A1633',
       text: '#FFF4D6',
       textMuted: '#B8B2D9',
+      headerMuted: '#B8B2D9',
       card: '#2A2548',
       cardBorder: 'rgba(255,244,214,0.12)',
       headerButtonBackground: '#2A2548',
@@ -152,6 +157,7 @@ export const SEASON_THEMES: Record<SeasonSelection, Record<SeasonScheme, SeasonT
       background: '#FFE9CC',
       text: '#5A2E12',
       textMuted: '#8A4B20',
+      headerMuted: '#5A2E12',
       card: '#FFF7EA',
       cardBorder: 'rgba(90,46,18,0.12)',
       headerButtonBackground: '#FFF7EA',
@@ -179,6 +185,7 @@ export const SEASON_THEMES: Record<SeasonSelection, Record<SeasonScheme, SeasonT
       background: '#1E1219',
       text: '#FFE8D1',
       textMuted: '#D9B79B',
+      headerMuted: '#D9B79B',
       card: '#2E1D26',
       cardBorder: 'rgba(255,232,209,0.12)',
       headerButtonBackground: '#2E1D26',
@@ -208,6 +215,7 @@ export const SEASON_THEMES: Record<SeasonSelection, Record<SeasonScheme, SeasonT
       background: '#EAF5FC',
       text: '#12304A',
       textMuted: '#3E6685',
+      headerMuted: '#12304A',
       card: '#FFFFFF',
       cardBorder: 'rgba(18,48,74,0.10)',
       headerButtonBackground: '#FFFFFF',
@@ -235,6 +243,7 @@ export const SEASON_THEMES: Record<SeasonSelection, Record<SeasonScheme, SeasonT
       background: '#0E1C33',
       text: '#EAF4FF',
       textMuted: '#A9C4E0',
+      headerMuted: '#A9C4E0',
       card: '#17294A',
       cardBorder: 'rgba(234,244,255,0.12)',
       headerButtonBackground: '#17294A',

@@ -7,6 +7,7 @@ const MIN_CONTRAST = 4.5;
 const PAIRS: readonly [SeasonThemeColor, SeasonThemeColor][] = [
   ['text', 'background'],
   ['textMuted', 'background'],
+  ['headerMuted', 'background'],
   ['text', 'card'],
   ['textMuted', 'card'],
   ['headerButtonColor', 'headerButtonBackground'],

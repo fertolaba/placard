@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="210" viewBox="0 0 390 210" preserveAspectRatio="xMidYMin slice">
+<defs>
+<linearGradient id="skyI" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8FCBEF"/><stop offset="1" stop-color="#E4F3FB"/></linearGradient>
+</defs>
+<rect width="390" height="210" fill="url(#skyI)"/>
+<circle cx="296" cy="52" r="20" fill="#FFF6C8" opacity=".9"/>
+<g data-anim="drift"><path d="M20 60Q20 50 30 50Q34 40 46 42Q56 36 64 48Q76 48 76 60Z" fill="#FFFFFF" opacity=".95"/></g>
+<g data-anim="drift"><path d="M150 40Q150 32 158 32Q162 24 172 26Q180 22 186 32Q196 32 196 40Z" fill="#FFFFFF" opacity=".9"/></g>
+<path d="M0 162Q90 136 190 158T390 148V230H0Z" fill="#D7ECF8"/>
+<path d="M0 182Q110 160 220 178T390 170V230H0Z" fill="#FFFFFF"/>
+<path d="M0 204Q90 192 200 200T390 196V230H0Z" fill="#EAF5FC"/>
+<rect x="244" y="176" width="6" height="22" fill="#8B5A2B"/><path d="M247 120L226 156H268ZM247 140L222 178H272Z" fill="#2F7D5B"/><path d="M247 120L238 134Q247 130 256 134ZM247 140L234 160Q247 155 260 160Z" fill="#FFFFFF"/>
+<circle cx="345" cy="184" r="17" fill="#FFFFFF" stroke="#BFDDF0" stroke-width="1.500"/><circle cx="345" cy="160" r="13" fill="#FFFFFF" stroke="#BFDDF0" stroke-width="1.500"/><circle cx="345" cy="140" r="10" fill="#FFFFFF" stroke="#BFDDF0" stroke-width="1.500"/>
+<circle cx="341" cy="138" r="1.600" fill="#1F2937"/><circle cx="349" cy="138" r="1.600" fill="#1F2937"/><path d="M345 141L356 143L345 145Z" fill="#FF8A1F"/>
+<rect x="335" y="147" width="20" height="5" rx="2.500" fill="#E63946"/><path d="M351 150V162" stroke="#E63946" stroke-width="4" stroke-linecap="round"/>
+<circle cx="345" cy="164" r="1.500" fill="#1F2937"/><circle cx="345" cy="172" r="1.500" fill="#1F2937"/>
+<path d="M332 158L318 150M358 158L372 150" stroke="#8B5A2B" stroke-width="2.500" stroke-linecap="round"/>
+<rect x="335" y="129" width="20" height="4" rx="2" fill="#1F2937"/><rect x="339" y="119" width="12" height="11" rx="2" fill="#1F2937"/>
+<g transform="translate(30 0)"><g data-anim="snow"><circle r="3" fill="#FFFFFF"/></g></g>
+<g transform="translate(80 0)"><g data-anim="snow"><circle r="2.500" fill="#FFFFFF"/></g></g>
+<g transform="translate(130 0)"><g data-anim="snow"><circle r="3.500" fill="#FFFFFF"/></g></g>
+<g transform="translate(180 0)"><g data-anim="snow"><circle r="2.500" fill="#FFFFFF"/></g></g>
+<g transform="translate(230 0)"><g data-anim="snow"><circle r="3" fill="#FFFFFF"/></g></g>
+<g transform="translate(290 0)"><g data-anim="snow"><circle r="3.500" fill="#FFFFFF"/></g></g>
+<g transform="translate(330 0)"><g data-anim="snow"><circle r="2.500" fill="#FFFFFF"/></g></g>
+<g transform="translate(370 0)"><g data-anim="snow"><circle r="3" fill="#FFFFFF"/></g></g>
+</svg>
