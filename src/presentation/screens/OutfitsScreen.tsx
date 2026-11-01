@@ -1,33 +1,61 @@
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, View, type ScrollViewInstance } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Outfit } from '../../domain/entities/Outfit';
+import type { SavedOutfit } from '../../domain/entities/SavedOutfit';
 import { STYLE_IDS, type StyleId } from '../../domain/entities/StyleReference';
-import { OutfitCard } from '../components/OutfitCard';
 import { OutfitExplanationModal } from '../components/OutfitExplanationModal';
-import { OutfitMiniCard } from '../components/OutfitMiniCard';
+import { OutfitDeck, type DeckDecision } from '../components/outfits/OutfitDeck';
+import { StyleCarousel } from '../components/outfits/StyleCarousel';
+import { StyleDetailCard } from '../components/outfits/StyleDetailCard';
+import { StyleVariantsSection } from '../components/outfits/StyleVariantsSection';
 import { StateMessage } from '../components/StateMessage';
-import { StyleList } from '../components/StyleList';
-import { StyleProgressCard } from '../components/StyleProgressCard';
+import { HeaderActions } from '../components/HeaderActions';
+import { useGarments } from '../hooks/useGarments';
 import { useOutfitSuggestions } from '../hooks/useOutfitSuggestions';
 import { useStyleMatches } from '../hooks/useStyleMatches';
-import { makeStyles } from '../theme/makeStyles';
+import { useOutfitsTheme } from '../outfits/outfitsTheme';
+import { styleCoverage } from '../outfits/styleVariants';
+import { useWarmTabBar } from '../outfits/useWarmTabBar';
+import { toggleSavedOutfit, useSavedOutfits } from '../state/savedOutfits';
 
 const MAX_CONTENT_WIDTH = 480;
+const DECK_SIZE = 30; // el estado vacío invita a sumar prendas: el mazo no se puede cortar mucho antes de agotar las ideas
+
+const saveHaptic = () => {
+  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined); // sin vibración, se guarda igual
+};
 
 export function OutfitsScreen() {
-  const styles = useStyles();
   const insets = useSafeAreaInsets();
-  const { outfits, status, reload } = useOutfitSuggestions();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  // Por ahora "Guardar" vive solo mientras la app está abierta; se persiste cuando agreguemos la base de datos.
-  const [savedIds, setSavedIds] = useState<ReadonlySet<string>>(new Set());
+  const { tokens, transition } = useOutfitsTheme();
+  const { outfits, status, reload } = useOutfitSuggestions(DECK_SIZE);
+  const saved = useSavedOutfits();
+  const savedIds = useMemo(() => new Set(saved.map((outfit) => outfit.id)), [saved]);
   const [explained, setExplained] = useState<Outfit | null>(null); // el look que muestra "Ver por qué"
+
+  // Si cambian las ideas (por ejemplo, una prenda nueva), el mazo arranca de cero.
+  const [deckIndex, setDeckIndex] = useState(0);
+  const deckKey = outfits.map((outfit) => outfit.id).join('|');
+  const [shownDeckKey, setShownDeckKey] = useState(deckKey);
+  if (deckKey !== shownDeckKey) {
+    setShownDeckKey(deckKey);
+    setDeckIndex(0);
+  }
+
   // Los estilos van aparte de los outfits por color: cada parte carga (o falla) sin afectar a la otra.
   const { matches, status: stylesStatus, reload: reloadStyles } = useStyleMatches();
+  // GetStyleMatches asigna una sola prenda por pieza; las variantes necesitan todas las del placard.
+  const { garments, status: garmentsStatus, reload: reloadGarments } = useGarments('todo');
   const [selectedStyleId, setSelectedStyleId] = useState<StyleId | null>(null);
-  const currentStyle = matches.find((match) => match.reference.id === selectedStyleId) ?? matches[0];
+  const coverages = useMemo(() => matches.map((match) => styleCoverage(match.reference, garments)), [matches, garments]);
+  const currentStyle = coverages.find((coverage) => coverage.reference.id === selectedStyleId) ?? coverages[0];
+  const sectionStatus = stylesStatus === 'error' || garmentsStatus === 'error' ? 'error' : stylesStatus === 'ready' && garmentsStatus === 'ready' ? 'ready' : 'loading';
 
   // Inspiración puede abrir esta pestaña con un estilo: se selecciona y se baja hasta esa sección.
   const router = useRouter();
@@ -46,125 +74,158 @@ export function OutfitsScreen() {
     router.setParams({ estilo: undefined }); // así el mismo estilo se puede volver a pedir más tarde
   }, [requestedStyleId, router]);
 
-  const current = outfits.find((outfit) => outfit.id === selectedId) ?? outfits[0];
-  const others = outfits.filter((outfit) => outfit.id !== current?.id).slice(0, 2);
+  useWarmTabBar();
 
-  const showNext = () => {
-    if (!current || outfits.length < 2) return;
-    const index = outfits.findIndex((outfit) => outfit.id === current.id);
-    setSelectedId(outfits[(index + 1) % outfits.length].id);
-  };
+  const decide = useCallback(
+    (outfit: Outfit, decision: DeckDecision) => {
+      if (decision !== 'save') return;
+      saveHaptic();
+      if (!savedIds.has(outfit.id)) {
+        toggleSavedOutfit({ id: outfit.id, garmentIds: outfit.garments.map((garment) => garment.id), styleId: null });
+      }
+    },
+    [savedIds],
+  );
+  const advance = useCallback(() => setDeckIndex((index) => index + 1), []);
+  const restart = useCallback(() => setDeckIndex(0), []);
 
-  const toggleSave = (id: string) =>
-    setSavedIds((previous) => {
-      const next = new Set(previous);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  const toggleVariant = useCallback(
+    (outfit: SavedOutfit) => {
+      if (!savedIds.has(outfit.id)) saveHaptic();
+      toggleSavedOutfit(outfit);
+    },
+    [savedIds],
+  );
+
+  const ideaNumber = Math.min(deckIndex + 1, outfits.length);
 
   return (
-    <ScrollView
-      ref={scrollRef}
-      style={styles.scroll}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]}
-    >
-      <View style={styles.header}>
-        <Text style={styles.title} accessibilityRole="header">
-          Outfits
-        </Text>
-        <Text style={styles.subtitle}>Combinaciones según el color de tu ropa</Text>
-      </View>
+    <GestureHandlerRootView style={styles.root}>
+      <Animated.View style={[styles.root, { backgroundColor: tokens.body }, transition]}>
+        <ScrollView ref={scrollRef} contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]}>
+          <View style={styles.header}>
+            <View style={styles.headerText}>
+              <Animated.Text style={[styles.title, { color: tokens.text }, transition]} accessibilityRole="header">
+                Outfits
+              </Animated.Text>
+              <Animated.Text style={[styles.subtitle, { color: tokens.sub }, transition]}>
+                Combinaciones según el color de tu ropa
+              </Animated.Text>
+            </View>
+            <HeaderActions />
+          </View>
 
-      {status === 'loading' && <ActivityIndicator style={styles.loader} />}
-      {status === 'error' && (
-        <StateMessage
-          title="No pudimos armar tus outfits"
-          detail="Revisá tu conexión a internet y probá de nuevo."
-          actionLabel="Reintentar"
-          onAction={reload}
-        />
-      )}
-      {status === 'ready' && !current && (
-        <StateMessage
-          title="Todavía no hay combinaciones"
-          detail="Para armar un look necesitás al menos una prenda de arriba (o un top) y una de abajo (o una pollera)."
-        />
-      )}
-      {status === 'ready' && current && (
-        <>
-          <OutfitCard
-            outfit={current}
-            saved={savedIds.has(current.id)}
-            onToggleSave={() => toggleSave(current.id)}
-            onNext={outfits.length > 1 ? showNext : undefined}
-            onExplain={() => setExplained(current)}
-          />
-          {others.length > 0 && (
+          {status === 'loading' && <ActivityIndicator style={styles.loader} color={tokens.accent} />}
+          {status === 'error' && (
+            <StateMessage
+              title="No pudimos armar tus outfits"
+              detail="Revisá tu conexión a internet y probá de nuevo."
+              actionLabel="Reintentar"
+              onAction={reload}
+            />
+          )}
+          {status === 'ready' && outfits.length === 0 && (
+            <StateMessage
+              title="Todavía no hay combinaciones"
+              detail="Para armar un look necesitás al menos una prenda de arriba (o un top) y una de abajo (o una pollera)."
+            />
+          )}
+          {status === 'ready' && outfits.length > 0 && (
             <>
-              <Text style={styles.sectionTitle} accessibilityRole="header">
-                Más combinaciones
-              </Text>
-              <View style={styles.others}>
-                {others.map((outfit) => (
-                  <OutfitMiniCard
-                    key={outfit.id}
-                    outfit={outfit}
-                    onPress={() => setSelectedId(outfit.id)}
-                    onExplain={() => setExplained(outfit)}
-                  />
-                ))}
+              <View style={styles.deckLabelRow}>
+                <Animated.Text style={[styles.accentLabel, styles.deckLabel, { color: tokens.accent }, transition]}>
+                  Outfits según combinación de color
+                </Animated.Text>
+                <View
+                  style={styles.saved}
+                  accessible
+                  accessibilityLabel={`${savedIds.size} ${savedIds.size === 1 ? 'outfit guardado' : 'outfits guardados'}`}
+                >
+                  <Ionicons name="heart" size={14} color={tokens.primary} />
+                  <Animated.Text style={[styles.savedCount, { color: tokens.primary }, transition]}>{savedIds.size}</Animated.Text>
+                </View>
+                <Animated.Text style={[styles.ideaCount, { color: tokens.sub }, transition]}>
+                  Idea {ideaNumber} de {outfits.length}
+                </Animated.Text>
               </View>
+              <OutfitDeck
+                outfits={outfits}
+                index={deckIndex}
+                savedCount={savedIds.size}
+                onDecide={decide}
+                onAdvance={advance}
+                onExplain={setExplained}
+                onRestart={restart}
+              />
             </>
           )}
-        </>
-      )}
 
-      {stylesStatus === 'loading' && status !== 'loading' && <ActivityIndicator style={styles.loader} />}
-      {stylesStatus === 'error' && (
-        <StateMessage
-          title="No pudimos cargar los estilos"
-          detail="Revisá tu conexión a internet y probá de nuevo."
-          actionLabel="Reintentar"
-          onAction={reloadStyles}
-        />
-      )}
-      {stylesStatus === 'ready' && currentStyle && (
-        <View
-          onLayout={(event) => {
-            stylesY.current = event.nativeEvent.layout.y;
-            // Mientras cargan los outfits de arriba, esta sección todavía se va a mover.
-            if (pendingScroll.current && status !== 'loading') {
-              pendingScroll.current = false;
-              scrollRef.current?.scrollTo({ y: stylesY.current, animated: true });
-            }
-          }}
-        >
-          <Text style={styles.sectionTitle} accessibilityRole="header">
-            {currentStyle.reference.name}
-          </Text>
-          <StyleProgressCard match={currentStyle} />
-
-          <Text style={styles.sectionTitle} accessibilityRole="header">
-            Estilos
-          </Text>
-          <StyleList matches={matches} selectedId={currentStyle.reference.id} onSelect={setSelectedStyleId} />
-        </View>
-      )}
-
-      {/* El Modal se dibuja encima de toda la pantalla, aunque esté declarado dentro del ScrollView. */}
+          {sectionStatus === 'loading' && status !== 'loading' && <ActivityIndicator style={styles.loader} color={tokens.accent} />}
+          {sectionStatus === 'error' && (
+            <StateMessage
+              title="No pudimos cargar los estilos"
+              detail="Revisá tu conexión a internet y probá de nuevo."
+              actionLabel="Reintentar"
+              onAction={() => {
+                reloadStyles();
+                reloadGarments();
+              }}
+            />
+          )}
+          {sectionStatus === 'ready' && currentStyle && (
+            <View
+              onLayout={(event) => {
+                stylesY.current = event.nativeEvent.layout.y;
+                // Mientras cargan los outfits de arriba, esta sección todavía se va a mover.
+                if (pendingScroll.current && status !== 'loading') {
+                  pendingScroll.current = false;
+                  scrollRef.current?.scrollTo({ y: stylesY.current, animated: true });
+                }
+              }}
+            >
+              <Animated.View style={[styles.divider, { backgroundColor: tokens.line }, transition]} />
+              <View style={styles.sectionHeader}>
+                <Animated.Text style={[styles.accentLabel, { color: tokens.accent }, transition]}>Outfits según estilo</Animated.Text>
+                <Animated.Text style={[styles.sectionTitle, { color: tokens.text }, transition]} accessibilityRole="header">
+                  ¿Cómo querés vestirte hoy?
+                </Animated.Text>
+                <Animated.Text style={[styles.sectionSubtitle, { color: tokens.sub }, transition]}>
+                  Elegí un estilo y mirá qué piezas ya tenés.
+                </Animated.Text>
+              </View>
+              <StyleCarousel coverages={coverages} selectedId={currentStyle.reference.id} onSelect={setSelectedStyleId} />
+              <StyleDetailCard coverage={currentStyle} />
+              <StyleVariantsSection
+                key={currentStyle.reference.id}
+                coverage={currentStyle}
+                savedIds={savedIds}
+                onToggleSave={toggleVariant}
+              />
+            </View>
+          )}
+        </ScrollView>
+      </Animated.View>
       <OutfitExplanationModal outfit={explained} onClose={() => setExplained(null)} />
-    </ScrollView>
+    </GestureHandlerRootView>
   );
 }
 
-const useStyles = makeStyles((colors) => ({
-  scroll: { flex: 1, backgroundColor: colors.background },
-  content: { width: '100%', maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center', paddingHorizontal: 20, paddingBottom: 32 },
-  header: { paddingBottom: 14 },
-  title: { fontSize: 34, fontWeight: '700', color: colors.text },
-  subtitle: { fontSize: 15, color: colors.textMuted },
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  content: { width: '100%', maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center', paddingBottom: 32, overflow: 'hidden' },
+  header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, paddingHorizontal: 20, paddingBottom: 14 },
+  headerText: { flex: 1 },
+  title: { fontSize: 34, fontWeight: '700' },
+  subtitle: { fontSize: 16 },
   loader: { marginTop: 40 },
-  sectionTitle: { fontSize: 20, fontWeight: '700', color: colors.text, marginTop: 22, marginBottom: 10 },
-  others: { flexDirection: 'row', gap: 12 },
-}));
+  deckLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20 },
+  accentLabel: { fontSize: 15, fontWeight: '600' },
+  deckLabel: { flex: 1 },
+  saved: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  savedCount: { fontSize: 13, fontWeight: '700' },
+  ideaCount: { fontSize: 13 },
+  divider: { height: 1, marginHorizontal: 20, marginTop: 28 },
+  sectionHeader: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 6, gap: 4 },
+  sectionTitle: { fontSize: 22, fontWeight: '700' },
+  sectionSubtitle: { fontSize: 15 },
+});

@@ -5,7 +5,7 @@ import { useDataVersion } from '../state/dataVersion';
 
 type Status = 'loading' | 'ready' | 'error';
 
-export function useOutfitSuggestions() {
+export function useOutfitSuggestions(limit?: number) {
   const [outfits, setOutfits] = useState<Outfit[]>([]);
   const [status, setStatus] = useState<Status>('loading');
   const [reloadKey, setReloadKey] = useState(0);
@@ -15,7 +15,7 @@ export function useOutfitSuggestions() {
     let cancelled = false;
     setStatus('loading');
     container.suggestOutfits
-      .execute()
+      .execute(limit)
       .then((result) => {
         if (cancelled) return;
         setOutfits(result);
@@ -27,7 +27,7 @@ export function useOutfitSuggestions() {
     return () => {
       cancelled = true;
     };
-  }, [reloadKey, dataVersion]);
+  }, [limit, reloadKey, dataVersion]);
 
   return { outfits, status, reload: () => setReloadKey((key) => key + 1) };
 }

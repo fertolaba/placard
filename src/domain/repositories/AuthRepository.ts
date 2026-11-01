@@ -38,6 +38,8 @@ export interface AuthRepository {
   signUp(account: NewAccount): Promise<SignUpResult>;
   signIn(email: string, password: string): Promise<AuthUser>;
   signOut(): Promise<void>;
+  /** Elimina la cuenta y sus datos en el servidor. La clave de administrador nunca está en la app. */
+  deleteAccount(): Promise<void>;
   /** La sesión guardada en el teléfono (null si no hay). */
   getSession(): Promise<AuthUser | null>;
   /** Avisa cada vez que se inicia o se cierra la sesión. Devuelve la función para dejar de escuchar. */

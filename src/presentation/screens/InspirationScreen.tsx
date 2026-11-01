@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DESTACADO_CARD_WIDTH, DestacadoCard } from '../components/DestacadoCard';
+import { HeaderActions } from '../components/HeaderActions';
 import { ReferenteFilter, type ReferenteFilterValue } from '../components/ReferenteFilter';
 import { ReferenteRow } from '../components/ReferenteRow';
 import { StateMessage } from '../components/StateMessage';
@@ -66,9 +67,12 @@ export function InspirationScreen() {
   const header = (
     <View>
       <View style={styles.header}>
-        <Text style={styles.title} accessibilityRole="header">
-          Inspiración
-        </Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title} accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit>
+            Inspiración
+          </Text>
+          <HeaderActions />
+        </View>
         <Text style={styles.subtitle}>Referentes de la moda y su estilo</Text>
       </View>
       <ReferenteFilter value={filter} onChange={setFilter} />
@@ -142,7 +146,8 @@ const useStyles = makeStyles((colors) => ({
   scroll: { flex: 1, backgroundColor: colors.background },
   content: { width: '100%', maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center', paddingBottom: 32 },
   header: { paddingHorizontal: 20, paddingBottom: 14 },
-  title: { fontSize: 34, fontWeight: '700', color: colors.text },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  title: { flex: 1, fontSize: 34, fontWeight: '700', color: colors.text },
   subtitle: { fontSize: 15, color: colors.textMuted },
   loader: { marginTop: 40 },
   message: { paddingHorizontal: 20 },

@@ -17,6 +17,8 @@ interface AuthValue {
   signUp: (input: SignUpInput) => Promise<SignUpOutcome>;
   /** Devuelve null si cerró la sesión, o el mensaje de error. */
   signOut: () => Promise<string | null>;
+  /** Devuelve null si eliminó la cuenta, o el mensaje de error (la cuenta sigue intacta). */
+  deleteAccount: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthValue | null>(null);
@@ -84,10 +86,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const deleteAccount = useCallback(async () => {
+    try {
+      await container.deleteAccount.execute();
+      setUser(null);
+      return null;
+    } catch (error) {
+      return messageFor(error);
+    }
+  }, []);
+
   const status: AuthStatus = !loaded ? 'loading' : user ? 'signedIn' : 'signedOut';
   const value = useMemo<AuthValue>(
-    () => ({ user, status, configured: container.authConfigured, signIn, signUp, signOut }),
-    [user, status, signIn, signUp, signOut],
+    () => ({ user, status, configured: container.authConfigured, signIn, signUp, signOut, deleteAccount }),
+    [user, status, signIn, signUp, signOut, deleteAccount],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

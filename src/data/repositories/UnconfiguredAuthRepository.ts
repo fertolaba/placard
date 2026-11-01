@@ -15,6 +15,10 @@ export class UnconfiguredAuthRepository implements AuthRepository {
 
   async signOut(): Promise<void> {}
 
+  async deleteAccount(): Promise<void> {
+    throw new AuthError(NOT_CONFIGURED);
+  }
+
   async getSession(): Promise<AuthUser | null> {
     return null;
   }

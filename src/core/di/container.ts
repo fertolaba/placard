@@ -3,6 +3,9 @@ import { InMemoryGarmentRepository } from '../../data/repositories/InMemoryGarme
 import { createSqliteGarmentRepository } from '../../data/repositories/createSqliteGarmentRepository';
 import { AsyncStorageProfileRepository } from '../../data/repositories/AsyncStorageProfileRepository';
 import { AsyncStorageReferenteRepository } from '../../data/repositories/AsyncStorageReferenteRepository';
+import { AsyncStorageFavoriteStylesRepository } from '../../data/repositories/AsyncStorageFavoriteStylesRepository';
+import { AsyncStorageSavedOutfitRepository } from '../../data/repositories/AsyncStorageSavedOutfitRepository';
+import { AsyncStorageAccountLocalData } from '../../data/storage/AsyncStorageAccountLocalData';
 import { SupabaseAuthRepository } from '../../data/repositories/SupabaseAuthRepository';
 import { SupabaseGarmentRepository } from '../../data/repositories/SupabaseGarmentRepository';
 import { SupabasePhotoStorage } from '../../data/supabase/SupabasePhotoStorage';
@@ -20,7 +23,11 @@ import type { SessionCache } from '../../domain/services/SessionCache';
 import { AddGarment } from '../../domain/usecases/AddGarment';
 import { AddGarmentWithPhoto } from '../../domain/usecases/AddGarmentWithPhoto';
 import { ClearSessionData } from '../../domain/usecases/ClearSessionData';
+import { DeleteAccount } from '../../domain/usecases/DeleteAccount';
 import { DeleteGarment } from '../../domain/usecases/DeleteGarment';
+import { GetFavoriteStyles, SetFavoriteStyles } from '../../domain/usecases/FavoriteStyles';
+import { GetSavedOutfits } from '../../domain/usecases/GetSavedOutfits';
+import { ToggleSavedOutfit } from '../../domain/usecases/ToggleSavedOutfit';
 import { DetectGarmentColor } from '../../domain/usecases/DetectGarmentColor';
 import { GetGarment } from '../../domain/usecases/GetGarment';
 import { GetGarments } from '../../domain/usecases/GetGarments';
@@ -88,6 +95,9 @@ const referenteRepository = new AsyncStorageReferenteRepository(currentUserId);
 const themePreferenceRepository = new AsyncStorageThemePreferenceRepository();
 const seasonPreferenceRepository = new AsyncStorageSeasonPreferenceRepository();
 const addGarment = new AddGarment(garmentRepository);
+const savedOutfitRepository = new AsyncStorageSavedOutfitRepository(currentUserId);
+const favoriteStylesRepository = new AsyncStorageFavoriteStylesRepository(currentUserId);
+const setProfilePhoto = new SetProfilePhoto(profileRepository, localPhotoStorage);
 
 export const container = {
   getGarments: new GetGarments(garmentRepository),
@@ -101,7 +111,7 @@ export const container = {
   suggestOutfits: new SuggestOutfits(garmentRepository),
   getProfile: new GetProfile(profileRepository),
   updateProfile: new UpdateProfile(profileRepository),
-  setProfilePhoto: new SetProfilePhoto(profileRepository, localPhotoStorage),
+  setProfilePhoto,
   getWardrobeStats: new GetWardrobeStats(garmentRepository),
   getStyleMatches: new GetStyleMatches(garmentRepository),
   getReferentes: new GetReferentes(referenteRepository),
@@ -117,4 +127,9 @@ export const container = {
   signOut: new SignOut(authRepository),
   getSession: new GetSession(authRepository),
   clearSessionData: new ClearSessionData(sessionCaches),
+  getSavedOutfits: new GetSavedOutfits(savedOutfitRepository),
+  toggleSavedOutfit: new ToggleSavedOutfit(savedOutfitRepository),
+  getFavoriteStyles: new GetFavoriteStyles(favoriteStylesRepository),
+  setFavoriteStyles: new SetFavoriteStyles(favoriteStylesRepository),
+  deleteAccount: new DeleteAccount(authRepository, new AsyncStorageAccountLocalData(currentUserId, () => setProfilePhoto.execute(null))),
 };

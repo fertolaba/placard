@@ -12,7 +12,7 @@ import { PressableScale } from '../components/PressableScale';
 import { SeasonFilter } from '../components/SeasonFilter';
 import { StateMessage } from '../components/StateMessage';
 import { SwipeableContent } from '../components/SwipeableContent';
-import { ThemeToggle } from '../components/ThemeToggle';
+import { HeaderActions } from '../components/HeaderActions';
 import { useGarments, type CategoryFilterValue } from '../hooks/useGarments';
 import { SeasonScene } from '../scenes/SeasonScene';
 import { SEASON_UI } from '../seasonUi';
@@ -115,7 +115,7 @@ export function PlacardScreen() {
           <Animated.Text style={[styles.title, titleColors]} accessibilityRole="header">
             Mi Pilchapp
           </Animated.Text>
-          <ThemeToggle />
+          <HeaderActions seasonal />
         </View>
         <Animated.Text style={[styles.subtitle, subtitleColors]}>{subtitle}</Animated.Text>
       </View>

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import type { ColorValue } from 'react-native';
-import { SeasonThemeProvider, useSeasonTheme } from '../../presentation/theme/SeasonThemeProvider';
+import { useSeasonTheme } from '../../presentation/theme/SeasonThemeProvider';
 import { useTheme } from '../../presentation/theme/ThemeProvider';
 
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -12,7 +12,7 @@ const tabIcon = (name: IconName) =>
     return <Ionicons name={name} color={color as string} size={size} />;
   };
 
-function ThemedTabs() {
+export default function TabsLayout() {
   const { colors } = useTheme();
   const { theme } = useSeasonTheme();
   return (
@@ -50,20 +50,12 @@ function ThemedTabs() {
         }}
       />
       <Tabs.Screen
-        name="perfil"
+        name="guardados"
         options={{
-          title: 'Perfil',
-          tabBarIcon: tabIcon('person-outline'),
+          title: 'Guardados',
+          tabBarIcon: tabIcon('bookmark-outline'),
         }}
       />
     </Tabs>
-  );
-}
-
-export default function TabsLayout() {
-  return (
-    <SeasonThemeProvider>
-      <ThemedTabs />
-    </SeasonThemeProvider>
   );
 }

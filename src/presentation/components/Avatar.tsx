@@ -1,7 +1,11 @@
-import { Image, Text, View } from 'react-native';
-import { makeStyles } from '../theme/makeStyles';
+import { Image } from 'expo-image';
+import { memo } from 'react';
+import { StyleSheet, Text } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { useOutfitsTheme } from '../outfits/outfitsTheme';
+import { GradientFill } from './outfits/GradientFill';
 
-function initials(name: string): string {
+export function initials(name: string): string {
   const letters = name
     .trim()
     .split(/\s+/)
@@ -14,28 +18,32 @@ function initials(name: string): string {
 interface Props {
   name: string;
   photoUri: string | null;
-  size?: number;
+  size: number;
+  fontSize: number;
 }
 
-/** Foto de perfil en círculo; si no hay foto, las iniciales del nombre. */
-export function Avatar({ name, photoUri, size = 84 }: Props) {
-  const styles = useStyles();
+/** Foto de perfil en círculo; si no hay foto, las iniciales sobre el degradé. La etiqueta accesible la pone quien lo envuelve. */
+export const Avatar = memo(function Avatar({ name, photoUri, size, fontSize }: Props) {
+  const { tokens, transition } = useOutfitsTheme();
   return (
-    <View
-      style={[styles.circle, { width: size, height: size, borderRadius: size / 2 }]}
-      accessible
-      accessibilityLabel={photoUri ? 'Foto de perfil' : `Avatar de ${name}`}
+    <Animated.View
+      style={[styles.circle, { width: size, height: size, borderRadius: size / 2, borderColor: tokens.avatarBorder }, transition]}
     >
       {photoUri ? (
-        <Image source={{ uri: photoUri }} style={{ width: size, height: size }} resizeMode="cover" />
+        <Image source={{ uri: photoUri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
       ) : (
-        <Text style={[styles.initials, { fontSize: size * 0.36 }]}>{initials(name)}</Text>
+        <>
+          <GradientFill from="#D9482B" to="#F4A259" />
+          <Text style={[styles.initials, { fontSize }]} maxFontSizeMultiplier={1}>
+            {initials(name)}
+          </Text>
+        </>
       )}
-    </View>
+    </Animated.View>
   );
-}
+});
 
-const useStyles = makeStyles((colors) => ({
-  circle: { backgroundColor: colors.primaryFill, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  initials: { fontWeight: '700', color: colors.link },
-}));
+const styles = StyleSheet.create({
+  circle: { borderWidth: 2, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  initials: { fontWeight: '700', color: '#2B1810' },
+});

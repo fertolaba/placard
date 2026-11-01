@@ -110,6 +110,16 @@ export class SupabaseAuthRepository implements AuthRepository {
     if (result.error) throw toAuthError(result.error);
   }
 
+  async deleteAccount(): Promise<void> {
+    let error: unknown;
+    try {
+      ({ error } = await this.client.functions.invoke('delete-account', { method: 'POST' }));
+    } catch (caught) {
+      error = caught;
+    }
+    if (error) throw new AuthError('No pudimos eliminar tu cuenta. Revisá tu conexión y probá de nuevo.');
+  }
+
   async getSession(): Promise<AuthUser | null> {
     const { data, error } = await this.client.auth.getSession();
     if (error) throw toAuthError(error);

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useState, type ComponentProps } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ThemeMode } from '../../domain/entities/ThemeMode';
@@ -17,8 +17,16 @@ const OPTIONS: { value: ThemeMode; label: string; icon: IconName }[] = [
 
 const BUTTON_COLORS: ThemeColorMap = { backgroundColor: 'headerButtonBackground', borderColor: 'headerButtonBorder' };
 
+type ButtonStyle = ComponentProps<typeof PressableScale>['style'];
+
+interface Props {
+  style?: ButtonStyle; // medidas propias de la pantalla que lo muestra
+  colorsStyle?: ButtonStyle; // reemplaza los colores de la estación
+  iconColor?: string;
+}
+
 /** Botón del encabezado: de día muestra una luna y de noche un sol. Abre un menú con Automático, Día y Noche. */
-export function ThemeToggle() {
+export function ThemeToggle({ style, colorsStyle, iconColor }: Props = {}) {
   const { scheme, mode, setMode } = useTheme();
   const { theme } = useSeasonTheme();
   const insets = useSafeAreaInsets();
@@ -34,9 +42,9 @@ export function ThemeToggle() {
         accessibilityLabel={`Modo de la pantalla: ${current}`}
         accessibilityHint="Abre las opciones Automático, Día y Noche"
         hitSlop={4}
-        style={[styles.button, buttonColors]}
+        style={[styles.button, colorsStyle ?? buttonColors, style]}
       >
-        <Ionicons name={scheme === 'dark' ? 'sunny-outline' : 'moon-outline'} size={20} color={theme.headerButtonColor} />
+        <Ionicons name={scheme === 'dark' ? 'sunny-outline' : 'moon-outline'} size={20} color={iconColor ?? theme.headerButtonColor} />
       </PressableScale>
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
