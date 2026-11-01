@@ -1,6 +1,6 @@
 import { parseSavedOutfits } from '../../data/storage/savedOutfitsStorage';
 import type { Garment, GarmentCategory } from '../../domain/entities/Garment';
-import { savedOutfitView } from './savedOutfitView';
+import { matchesSavedFilter, savedOutfitDetail, savedOutfitView } from './savedOutfitView';
 
 function garment(id: string, category: GarmentCategory, colorHex: string): Garment {
   return {
@@ -38,11 +38,33 @@ describe('savedOutfitView', () => {
   });
 });
 
+describe('Guardados', () => {
+  const fromDeck = savedOutfitView({ id: 'c', garmentIds: ['t', 'p'], styleId: null, title: 'Base neutra' }, wardrobe)!;
+  const fromStyle = savedOutfitView({ id: 'e', garmentIds: ['t', 'p', 'z'], styleId: 'techwear' }, wardrobe)!;
+
+  it('nombra cada look según su origen', () => {
+    expect(fromDeck).toMatchObject({ title: 'Base neutra', origin: 'Por color' });
+    expect(fromStyle).toMatchObject({ title: 't + p', origin: 'Techwear' });
+  });
+
+  it('filtra por origen', () => {
+    expect(matchesSavedFilter(fromDeck, 'color')).toBe(true);
+    expect(matchesSavedFilter(fromDeck, 'estilo')).toBe(false);
+    expect(matchesSavedFilter(fromStyle, 'estilo')).toBe(true);
+    expect(matchesSavedFilter(fromStyle, 'todos')).toBe(true);
+  });
+
+  it('arma el detalle de "Ver por qué"', () => {
+    expect(savedOutfitDetail(fromStyle)).toMatchObject({ id: 'e', title: 't + p', summary: 't + p + z' });
+  });
+});
+
 describe('parseSavedOutfits', () => {
   it('tolera datos dañados', () => {
     expect(parseSavedOutfits('no es json')).toEqual([]);
     expect(parseSavedOutfits('[{"id":1},{"id":"a","garmentIds":["t"],"styleId":"inventado"}]')).toEqual([
       { id: 'a', garmentIds: ['t'], styleId: null },
     ]);
+    expect(parseSavedOutfits('[{"id":"b","garmentIds":[],"styleId":null,"title":"Base"}]')[0].title).toBe('Base');
   });
 });

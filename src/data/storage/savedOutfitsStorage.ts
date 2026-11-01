@@ -10,7 +10,8 @@ export function parseSavedOutfits(text: string | null): SavedOutfit[] {
     return parsed.flatMap((item: Partial<SavedOutfit> | null) => {
       if (typeof item?.id !== 'string' || !Array.isArray(item.garmentIds)) return [];
       const styleId = STYLE_IDS.find((id) => id === item.styleId) ?? null;
-      return [{ id: item.id, garmentIds: item.garmentIds.filter((id) => typeof id === 'string'), styleId }];
+      const title = typeof item.title === 'string' ? { title: item.title } : {};
+      return [{ id: item.id, garmentIds: item.garmentIds.filter((id) => typeof id === 'string'), styleId, ...title }];
     });
   } catch {
     return [];

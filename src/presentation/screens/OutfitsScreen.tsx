@@ -81,7 +81,7 @@ export function OutfitsScreen() {
       if (decision !== 'save') return;
       saveHaptic();
       if (!savedIds.has(outfit.id)) {
-        toggleSavedOutfit({ id: outfit.id, garmentIds: outfit.garments.map((garment) => garment.id), styleId: null });
+        toggleSavedOutfit({ id: outfit.id, garmentIds: outfit.garments.map((garment) => garment.id), styleId: null, title: outfit.title });
       }
     },
     [savedIds],

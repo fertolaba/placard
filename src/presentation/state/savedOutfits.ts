@@ -55,6 +55,25 @@ export function toggleSavedOutfit(outfit: SavedOutfit): void {
     });
 }
 
+/** Deshacer: lo repone donde estaba. Si mientras tanto se volvió a guardar desde Outfits, no hace nada. */
+export function restoreSavedOutfit(outfit: SavedOutfit, position: number): void {
+  if (saved.some((item) => item.id === outfit.id)) return;
+  const requested = generation;
+  publish([...saved.slice(0, position), outfit, ...saved.slice(position)]);
+
+  pending += 1;
+  queue = queue
+    .then(() => container.toggleSavedOutfit.execute(outfit, position))
+    .then((list) => {
+      pending -= 1;
+      if (requested === generation && pending === 0) publish(list);
+    })
+    .catch(() => {
+      pending -= 1;
+      load();
+    });
+}
+
 export function useSavedOutfits(): readonly SavedOutfit[] {
   return useSyncExternalStore(
     subscribe,
