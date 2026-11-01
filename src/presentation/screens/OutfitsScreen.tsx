@@ -212,7 +212,7 @@ export function OutfitsScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  content: { width: '100%', maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center', paddingBottom: 32, overflow: 'hidden' },
+  content: { width: '100%', maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center', paddingBottom: 32 + 72, overflow: 'hidden' }, // 72: lugar para el botón flotante
   header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, paddingHorizontal: 20, paddingBottom: 14 },
   headerText: { flex: 1 },
   title: { fontSize: 34, fontWeight: '700' },

@@ -144,7 +144,7 @@ function CardGap() {
 
 const useStyles = makeStyles((colors) => ({
   scroll: { flex: 1, backgroundColor: colors.background },
-  content: { width: '100%', maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center', paddingBottom: 32 },
+  content: { width: '100%', maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center', paddingBottom: 32 + 72 }, // 72: lugar para el botón flotante
   header: { paddingHorizontal: 20, paddingBottom: 14 },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   title: { flex: 1, fontSize: 34, fontWeight: '700', color: colors.text },

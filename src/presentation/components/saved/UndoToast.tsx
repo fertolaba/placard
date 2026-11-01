@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 16,
     right: 16,
-    bottom: 12,
+    bottom: 72, // arriba del botón flotante, que si no tapa "Deshacer"
     height: 52,
     borderRadius: 16,
     paddingLeft: 16,

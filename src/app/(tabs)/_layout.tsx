@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import type { ColorValue } from 'react-native';
+import { View, type ColorValue } from 'react-native';
+import { FloatingThemeToggle } from '../../presentation/components/FloatingThemeToggle';
 import { useSeasonTheme } from '../../presentation/theme/SeasonThemeProvider';
 import { useTheme } from '../../presentation/theme/ThemeProvider';
 
@@ -16,46 +17,49 @@ export default function TabsLayout() {
   const { colors } = useTheme();
   const { theme } = useSeasonTheme();
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.link,
-        tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.swatchBorder },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Pilchapp',
-          tabBarIcon: tabIcon('shirt-outline'),
-          // La barra toma las opciones de la pestaña abierta: la estación se ve solo en Mi Pilchapp.
-          tabBarActiveTintColor: theme.tabActive,
-          tabBarInactiveTintColor: theme.tabInactive,
-          tabBarStyle: { backgroundColor: theme.tabBar, borderTopColor: theme.tabBarBorder },
+    <View style={{ flex: 1 }}>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: colors.link,
+          tabBarInactiveTintColor: colors.textMuted,
+          tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.swatchBorder },
         }}
-      />
-      <Tabs.Screen
-        name="outfits"
-        options={{
-          title: 'Outfits',
-          tabBarIcon: tabIcon('sparkles-outline'),
-        }}
-      />
-      <Tabs.Screen
-        name="inspiracion"
-        options={{
-          title: 'Inspiración',
-          tabBarIcon: tabIcon('star-outline'),
-        }}
-      />
-      <Tabs.Screen
-        name="guardados"
-        options={{
-          title: 'Guardados',
-          tabBarIcon: tabIcon('bookmark-outline'),
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Pilchapp',
+            tabBarIcon: tabIcon('shirt-outline'),
+            // La barra toma las opciones de la pestaña abierta: la estación se ve solo en Mi Pilchapp.
+            tabBarActiveTintColor: theme.tabActive,
+            tabBarInactiveTintColor: theme.tabInactive,
+            tabBarStyle: { backgroundColor: theme.tabBar, borderTopColor: theme.tabBarBorder },
+          }}
+        />
+        <Tabs.Screen
+          name="outfits"
+          options={{
+            title: 'Outfits',
+            tabBarIcon: tabIcon('sparkles-outline'),
+          }}
+        />
+        <Tabs.Screen
+          name="inspiracion"
+          options={{
+            title: 'Inspiración',
+            tabBarIcon: tabIcon('star-outline'),
+          }}
+        />
+        <Tabs.Screen
+          name="guardados"
+          options={{
+            title: 'Guardados',
+            tabBarIcon: tabIcon('bookmark-outline'),
+          }}
+        />
+      </Tabs>
+      <FloatingThemeToggle />
+    </View>
   );
 }

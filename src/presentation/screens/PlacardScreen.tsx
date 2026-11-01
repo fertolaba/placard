@@ -8,7 +8,6 @@ import { useAuth } from '../auth/AuthProvider';
 import { AddGarmentCard } from '../components/AddGarmentCard';
 import { CategoryFilter, categoryFilterOptions } from '../components/CategoryFilter';
 import { GarmentCard } from '../components/GarmentCard';
-import { PressableScale } from '../components/PressableScale';
 import { SeasonFilter } from '../components/SeasonFilter';
 import { StateMessage } from '../components/StateMessage';
 import { SwipeableContent } from '../components/SwipeableContent';
@@ -39,8 +38,6 @@ const keyOf = (item: GridItem) => (item === ADD_ITEM ? ADD_ITEM : item.id);
 const SCREEN_COLORS: ThemeColorMap = { backgroundColor: 'background' };
 const TITLE_COLORS: ThemeColorMap = { color: 'text' };
 const SUBTITLE_COLORS: ThemeColorMap = { color: 'headerMuted' };
-const CLEAR_CHIP_COLORS: ThemeColorMap = { backgroundColor: 'categoryTrack' };
-const CLEAR_LABEL_COLORS: ThemeColorMap = { color: 'categoryText' };
 
 export function PlacardScreen() {
   const router = useRouter();
@@ -57,8 +54,6 @@ export function PlacardScreen() {
   const screenColors = useThemeColors(SCREEN_COLORS);
   const titleColors = useThemeColors(TITLE_COLORS);
   const subtitleColors = useThemeColors(SUBTITLE_COLORS);
-  const clearChipColors = useThemeColors(CLEAR_CHIP_COLORS);
-  const clearLabelColors = useThemeColors(CLEAR_LABEL_COLORS);
 
   const reducedMotion = useReducedMotion();
   const entranceDone = useSharedValue(reducedMotion);
@@ -75,10 +70,6 @@ export function PlacardScreen() {
   const filtering = category !== 'todo' || season !== 'todas';
   const openAddGarment = useCallback(() => router.push('/add-garment'), [router]);
   const openGarment = useCallback((id: string) => router.push({ pathname: '/garment/[id]', params: { id } }), [router]);
-  const clearFilters = () => {
-    setCategory('todo');
-    setSeason('todas');
-  };
 
   // Al cambiar de categoría o de clima, la lista vuelve al principio.
   useEffect(() => {
@@ -115,25 +106,12 @@ export function PlacardScreen() {
           <Animated.Text style={[styles.title, titleColors]} accessibilityRole="header">
             Mi Pilchapp
           </Animated.Text>
-          <HeaderActions seasonal />
+          <HeaderActions />
         </View>
         <Animated.Text style={[styles.subtitle, subtitleColors]}>{subtitle}</Animated.Text>
       </View>
       <SeasonFilter value={season} onChange={setSeason} />
       <CategoryFilter options={categoryOptions} value={category} onChange={setCategory} />
-      {filtering ? (
-        <View style={styles.clearRow}>
-          <PressableScale
-            onPress={clearFilters}
-            accessibilityRole="button"
-            accessibilityLabel="Quitar filtros"
-            hitSlop={8}
-            style={[styles.clearChip, clearChipColors]}
-          >
-            <Animated.Text style={[styles.clearLabel, clearLabelColors]}>Quitar filtro</Animated.Text>
-          </PressableScale>
-        </View>
-      ) : null}
 
       <SwipeableContent
         index={categoryOrder.indexOf(category)}
@@ -152,8 +130,6 @@ export function PlacardScreen() {
           <StateMessage
             title="No hay prendas con esos filtros"
             detail="Probá con otra época o categoría, o marcá más épocas en tus prendas."
-            actionLabel="Quitar filtros"
-            onAction={clearFilters}
           />
         )}
         {/* Sin filtros la grilla se muestra aunque esté vacía, para que siempre esté la tarjeta de agregar. */}
@@ -181,10 +157,7 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { fontSize: 34, fontWeight: '700' },
   subtitle: { fontSize: 15 },
-  clearRow: { alignItems: 'flex-end', paddingHorizontal: SIDE_PADDING, paddingTop: 10 },
-  clearChip: { borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
-  clearLabel: { fontSize: 12, fontWeight: '600' },
   loader: { marginTop: 40 },
   column: { gap: GAP },
-  grid: { gap: GAP, padding: SIDE_PADDING },
+  grid: { gap: GAP, padding: SIDE_PADDING, paddingBottom: SIDE_PADDING + 72 }, // 72: lugar para el botón flotante
 });

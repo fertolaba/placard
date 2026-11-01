@@ -134,7 +134,7 @@ export function SavedOutfitsScreen() {
         columnWrapperStyle={styles.column}
         ListHeaderComponent={header}
         ListEmptyComponent={status === 'ready' ? <SavedEmptyState hasSaved={total > 0} onGoToOutfits={goToOutfits} /> : undefined}
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + 8, paddingBottom: removed ? 84 : 24 }]}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 8, paddingBottom: (removed ? 84 : 24) + 72 }]} // 72: lugar para el botón flotante
       />
       {removed ? <UndoToast onUndo={undo} /> : null}
       <OutfitExplanationModal outfit={explained} onClose={() => setExplained(null)} />

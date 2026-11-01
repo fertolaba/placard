@@ -48,27 +48,27 @@ export const SCENE_DATA: Record<string, SceneData> = {
       },
       {
         "anim": "waveB",
-        "xml": "<g><path d=\"M-60 172q15 -12 30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0V230H-60Z\" fill=\"#35B0EA\"/></g>",
+        "xml": "<g><path d=\"M-120 172q15 -12 30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0V230H-120Z\" fill=\"#35B0EA\"/></g>",
         "box": [
-          -64,
+          -124,
           162,
-          518,
+          668,
           72
         ]
       },
       {
         "anim": "waveA",
-        "xml": "<g><path d=\"M-60 184q15 -12 30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0V230H-60Z\" fill=\"#82D6F5\"/><path d=\"M-60 184q15 -12 30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0\" fill=\"none\" stroke=\"#FFFFFF\" stroke-width=\"3\" stroke-linecap=\"round\"/></g>",
+        "xml": "<g><path d=\"M-120 184q15 -12 30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0V230H-120Z\" fill=\"#82D6F5\"/><path d=\"M-120 184q15 -12 30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0\" fill=\"none\" stroke=\"#FFFFFF\" stroke-width=\"3\" stroke-linecap=\"round\"/></g>",
         "box": [
-          -64,
+          -124,
           174,
-          518,
+          668,
           60
         ]
       },
       {
         "anim": null,
-        "xml": "<defs><clipPath id=\"domeV\"><path d=\"M290 126Q296 80 336 76Q376 80 382 126Q368 116 359 126Q347 116 336 126Q325 116 313 126Q302 116 290 126Z\"/></clipPath></defs><path d=\"M0 204Q90 190 200 200T390 194V230H0Z\" fill=\"#FFEFC4\"/><path d=\"M330 206L338 120\" stroke=\"#8B5A2B\" stroke-width=\"4\" stroke-linecap=\"round\"/><g clip-path=\"url(#domeV)\"><rect x=\"280\" y=\"70\" width=\"110\" height=\"60\" fill=\"#FFFFFF\"/><path d=\"M336 70L280 130H313ZM336 70L336 130H359ZM336 70L382 130H395Z\" fill=\"#FF5A4F\"/></g><path d=\"M290 126Q296 80 336 76Q376 80 382 126Q368 116 359 126Q347 116 336 126Q325 116 313 126Q302 116 290 126Z\" fill=\"none\" stroke=\"#C93A30\" stroke-width=\"2\" stroke-linejoin=\"round\"/>"
+        "xml": "<defs><clipPath id=\"domeV\"><path d=\"M290 126Q296 80 336 76Q376 80 382 126Q368 116 359 126Q347 116 336 126Q325 116 313 126Q302 116 290 126Z\"/></clipPath></defs><path d=\"M0 204Q90 190 200 200T390 194V230H0Z\" fill=\"#FFEFC4\"/><g transform=\"translate(0 30)\"><path d=\"M330 206L338 120\" stroke=\"#8B5A2B\" stroke-width=\"4\" stroke-linecap=\"round\"/><g clip-path=\"url(#domeV)\"><rect x=\"280\" y=\"70\" width=\"110\" height=\"60\" fill=\"#FFFFFF\"/><path d=\"M336 70L280 130H313ZM336 70L336 130H359ZM336 70L382 130H395Z\" fill=\"#FF5A4F\"/></g><path d=\"M290 126Q296 80 336 76Q376 80 382 126Q368 116 359 126Q347 116 336 126Q325 116 313 126Q302 116 290 126Z\" fill=\"none\" stroke=\"#C93A30\" stroke-width=\"2\" stroke-linejoin=\"round\"/></g>"
       },
       {
         "anim": "bob",
@@ -188,27 +188,27 @@ export const SCENE_DATA: Record<string, SceneData> = {
       },
       {
         "anim": "waveB",
-        "xml": "<g><path d=\"M-60 172q15 -12 30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0V230H-60Z\" fill=\"#2B3E9C\"/></g>",
+        "xml": "<g><path d=\"M-120 172q15 -12 30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0V230H-120Z\" fill=\"#2B3E9C\"/></g>",
         "box": [
-          -64,
+          -124,
           162,
-          518,
+          668,
           72
         ]
       },
       {
         "anim": "waveA",
-        "xml": "<g><path d=\"M-60 184q15 -12 30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0V230H-60Z\" fill=\"#3F5BD0\"/><path d=\"M-60 184q15 -12 30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0\" fill=\"none\" stroke=\"#9FB4FF\" stroke-width=\"3\" stroke-linecap=\"round\" opacity=\".8\"/></g>",
+        "xml": "<g><path d=\"M-120 184q15 -12 30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0V230H-120Z\" fill=\"#3F5BD0\"/><path d=\"M-120 184q15 -12 30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0t30 0\" fill=\"none\" stroke=\"#9FB4FF\" stroke-width=\"3\" stroke-linecap=\"round\" opacity=\".8\"/></g>",
         "box": [
-          -64,
+          -124,
           174,
-          518,
+          668,
           60
         ]
       },
       {
         "anim": null,
-        "xml": "<defs><clipPath id=\"domeVN\"><path d=\"M290 126Q296 80 336 76Q376 80 382 126Q368 116 359 126Q347 116 336 126Q325 116 313 126Q302 116 290 126Z\"/></clipPath></defs><path d=\"M0 204Q90 190 200 200T390 194V230H0Z\" fill=\"#1A1633\"/><path d=\"M330 206L338 120\" stroke=\"#6B4A2B\" stroke-width=\"4\" stroke-linecap=\"round\"/><g clip-path=\"url(#domeVN)\"><rect x=\"280\" y=\"70\" width=\"110\" height=\"60\" fill=\"#FFE9B0\"/><path d=\"M336 70L280 130H313ZM336 70L336 130H359ZM336 70L382 130H395Z\" fill=\"#FF8A3D\"/></g><path d=\"M290 126Q296 80 336 76Q376 80 382 126Q368 116 359 126Q347 116 336 126Q325 116 313 126Q302 116 290 126Z\" fill=\"none\" stroke=\"#C4621F\" stroke-width=\"2\" stroke-linejoin=\"round\"/><circle cx=\"296\" cy=\"200\" r=\"9\" fill=\"#E8E4F5\" stroke=\"#1F2937\" stroke-width=\"1.500\"/><path d=\"M296 191A9 9 0 0 1 305 200L296 200Z\" fill=\"#E0565B\"/><path d=\"M296 209A9 9 0 0 1 287 200L296 200Z\" fill=\"#3F6FD0\"/>"
+        "xml": "<defs><clipPath id=\"domeVN\"><path d=\"M290 126Q296 80 336 76Q376 80 382 126Q368 116 359 126Q347 116 336 126Q325 116 313 126Q302 116 290 126Z\"/></clipPath></defs><path d=\"M0 204Q90 190 200 200T390 194V230H0Z\" fill=\"#1A1633\"/><g transform=\"translate(0 30)\"><path d=\"M330 206L338 120\" stroke=\"#6B4A2B\" stroke-width=\"4\" stroke-linecap=\"round\"/><g clip-path=\"url(#domeVN)\"><rect x=\"280\" y=\"70\" width=\"110\" height=\"60\" fill=\"#FFE9B0\"/><path d=\"M336 70L280 130H313ZM336 70L336 130H359ZM336 70L382 130H395Z\" fill=\"#FF8A3D\"/></g><path d=\"M290 126Q296 80 336 76Q376 80 382 126Q368 116 359 126Q347 116 336 126Q325 116 313 126Q302 116 290 126Z\" fill=\"none\" stroke=\"#C4621F\" stroke-width=\"2\" stroke-linejoin=\"round\"/></g><circle cx=\"296\" cy=\"200\" r=\"9\" fill=\"#E8E4F5\" stroke=\"#1F2937\" stroke-width=\"1.500\"/><path d=\"M296 191A9 9 0 0 1 305 200L296 200Z\" fill=\"#E0565B\"/><path d=\"M296 209A9 9 0 0 1 287 200L296 200Z\" fill=\"#3F6FD0\"/>"
       },
       {
         "anim": "twinkle",
