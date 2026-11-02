@@ -11,4 +11,13 @@ export const REFERENTE_IMAGES: Record<string, { avatar?: number; looks: number[]
       require('../../../assets/referencia/rauw/look-05.jpg'),
     ],
   },
+  'tyler-the-creator': {
+    avatar: require('../../../assets/referencia/tyler-the-creator/avatar.jpg'),
+    looks: [
+      require('../../../assets/referencia/tyler-the-creator/look-01.jpg'),
+      require('../../../assets/referencia/tyler-the-creator/look-02.jpg'),
+      require('../../../assets/referencia/tyler-the-creator/look-03.jpg'),
+      require('../../../assets/referencia/tyler-the-creator/look-04.jpg'),
+    ],
+  },
 };
