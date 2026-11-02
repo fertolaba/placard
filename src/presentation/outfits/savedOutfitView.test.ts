@@ -33,8 +33,17 @@ describe('savedOutfitView', () => {
     expect(savedOutfitView({ id: 'x', garmentIds: ['t', 'p'], styleId: null }, wardrobe)?.variant.complete).toBe(false);
   });
 
-  it('descarta el look si se borró una prenda', () => {
-    expect(savedOutfitView({ id: 'x', garmentIds: ['t', 'borrada'], styleId: null }, wardrobe)).toBeNull();
+  it('conserva el look incompleto si se borró una prenda', () => {
+    const view = savedOutfitView({ id: 'x', garmentIds: ['t', 'borrada', 'z'], styleId: null }, wardrobe);
+    expect(view?.variant).toMatchObject({ complete: false, top: { id: 't' }, bottom: null, shoe: { id: 'z' } });
+  });
+
+  it('nombra el look con la prenda que queda si solo sobrevive el calzado', () => {
+    expect(savedOutfitView({ id: 'x', garmentIds: ['borrada', 'z'], styleId: null }, wardrobe)?.title).toBe('z');
+  });
+
+  it('descarta el look si se borraron todas sus prendas', () => {
+    expect(savedOutfitView({ id: 'x', garmentIds: ['borrada'], styleId: null }, wardrobe)).toBeNull();
   });
 });
 

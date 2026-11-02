@@ -1,5 +1,4 @@
 import { memo } from 'react';
-import { StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { BodyZone } from '../../../domain/entities/Garment';
 
@@ -13,6 +12,12 @@ const SHAPES: Record<BodyZone, { width: number; height: number; path: string; sc
   piernas: { width: 80, height: 100, scale: 0.62, path: 'M16 6H64L70 94H46L40 40L34 94H10Z' },
   pies: { width: 44, height: 20, scale: 1.5, path: 'M1 14Q1 6 8 5L16 1Q20 8 30 9Q40 10 43 14V18H1Z' },
 };
+
+/** Lo que ocupa en pantalla la silueta de una zona. */
+export function zoneDimensions(zone: BodyZone, size: number): { width: number; height: number } {
+  const { width, height, scale } = SHAPES[zone];
+  return { width: width * scale * size, height: height * scale * size };
+}
 
 interface SilhouetteProps {
   zone: BodyZone;
@@ -43,22 +48,3 @@ export const Silhouette = memo(function Silhouette({ zone, color, size, dashColo
   );
 });
 
-interface Props {
-  colors: Record<BodyZone, string | null>; // null = no hay prenda de ese tipo: va solo el contorno punteado
-  size?: number;
-}
-
-/** Remera, pantalón y zapatilla apoyados sobre la misma línea. */
-export const GarmentSilhouettes = memo(function GarmentSilhouettes({ colors, size = 1 }: Props) {
-  return (
-    <View style={[styles.row, { gap: 6 * size }]} pointerEvents="none">
-      <Silhouette zone="torso" color={colors.torso} size={size} />
-      <Silhouette zone="piernas" color={colors.piernas} size={size} />
-      <Silhouette zone="pies" color={colors.pies} size={size} />
-    </View>
-  );
-});
-
-const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center' },
-});

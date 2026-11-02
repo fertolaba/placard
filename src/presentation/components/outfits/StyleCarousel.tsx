@@ -1,13 +1,12 @@
-import { memo, useCallback, useEffect, useRef } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
-import type { BodyZone } from '../../../domain/entities/Garment';
 import type { StyleId } from '../../../domain/entities/StyleReference';
 import { useOutfitsTheme } from '../../outfits/outfitsTheme';
 import { STYLE_GRADIENTS } from '../../outfits/styleGradients';
-import type { StyleCoverage } from '../../outfits/styleVariants';
-import { GarmentSilhouettes } from './GarmentSilhouettes';
+import { zoneGarments, type StyleCoverage } from '../../outfits/styleVariants';
 import { GradientFill } from './GradientFill';
+import { StyleGarmentsRow } from './StyleGarmentsRow';
 
 const CARD_WIDTH = 236;
 const GAP = 12;
@@ -20,12 +19,6 @@ export function styleBadge({ complete, combinations }: StyleCoverage): string {
   return `${combinations} ${combinations === 1 ? 'look' : 'looks'}`;
 }
 
-const firstColors = ({ byZone }: StyleCoverage): Record<BodyZone, string | null> => ({
-  torso: byZone.torso[0]?.colorHex ?? null,
-  piernas: byZone.piernas[0]?.colorHex ?? null,
-  pies: byZone.pies[0]?.colorHex ?? null,
-});
-
 interface CardProps {
   coverage: StyleCoverage;
   selected: boolean;
@@ -37,6 +30,7 @@ const StyleCard = memo(function StyleCard({ coverage, selected, onSelect }: Card
   const { reference, garments, coveredCount } = coverage;
   const { c1, c2 } = STYLE_GRADIENTS[reference.id];
   const count = `Tenés ${garments.length} ${garments.length === 1 ? 'prenda' : 'prendas'} · ${coveredCount} de 3 tipos`;
+  const shownGarments = useMemo(() => zoneGarments(coverage), [coverage]);
 
   return (
     <Animated.View
@@ -53,7 +47,7 @@ const StyleCard = memo(function StyleCard({ coverage, selected, onSelect }: Card
             <GradientFill from={c1} to={c2} />
             <View style={styles.circle} />
             <View style={styles.silhouettes}>
-              <GarmentSilhouettes colors={firstColors(coverage)} />
+              <StyleGarmentsRow garments={shownGarments} />
             </View>
           </View>
           <View style={styles.bottom}>

@@ -19,11 +19,13 @@ export interface SavedOutfitView {
   origin: string; // "Por color" o el nombre del estilo
 }
 
-/** Arma lo que muestra Guardados. Devuelve null si alguna prenda del look ya no está en el placard. */
+/**
+ * Arma lo que muestra Guardados. Una prenda borrada deja su zona vacía y el look queda incompleto;
+ * devuelve null solo si no queda ninguna prenda para mostrar.
+ */
 export function savedOutfitView(saved: SavedOutfit, wardrobe: ReadonlyMap<string, Garment>): SavedOutfitView | null {
-  const found = saved.garmentIds.map((id) => wardrobe.get(id));
-  if (found.length === 0 || found.some((garment) => garment === undefined)) return null;
-  const garments = found as Garment[];
+  const garments = saved.garmentIds.flatMap((id) => wardrobe.get(id) ?? []);
+  if (garments.length === 0) return null;
   const inZone = (zone: BodyZone) => garments.find((item) => CATEGORY_ZONE[item.category] === zone) ?? null;
   const top = inZone('torso');
   const bottom = inZone('piernas');
@@ -43,7 +45,8 @@ export function savedOutfitView(saved: SavedOutfit, wardrobe: ReadonlyMap<string
       matchPercent: Math.min(100, scoreOutfit(garments.map((item) => item.colorHex)) + echoBonus(garments)),
     },
     gradient: styleColors ? { from: styleColors.c1, to: styleColors.c2 } : { from: fallback.bg1, to: fallback.bg2 },
-    title: saved.title ?? [top, bottom].flatMap((item) => (item ? [item.name] : [])).join(' + '),
+    // Si solo queda el calzado, no hay arriba ni abajo para nombrar el look.
+    title: saved.title ?? ([top, bottom].flatMap((item) => (item ? [item.name] : [])).join(' + ') || garments[0].name),
     origin: styleName ?? 'Por color',
   };
 }

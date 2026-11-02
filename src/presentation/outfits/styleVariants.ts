@@ -56,6 +56,19 @@ export function styleCoverage(reference: StyleReference, wardrobe: readonly Garm
   };
 }
 
+/** La prenda que representa a una zona: la primera con foto o, si ninguna tiene, la primera. */
+export function representativeGarment(items: readonly Garment[]): Garment | null {
+  return items.find((item) => item.imageUri !== null) ?? items[0] ?? null;
+}
+
+export function zoneGarments({ byZone }: StyleCoverage): Record<BodyZone, Garment | null> {
+  return {
+    torso: representativeGarment(byZone.torso),
+    piernas: representativeGarment(byZone.piernas),
+    pies: representativeGarment(byZone.pies),
+  };
+}
+
 /** Recorta la lista más larga hasta que el producto entre en el tope de combinaciones a puntuar. */
 function boundedOptions({ byZone }: StyleCoverage): (Garment | null)[][] {
   const options: (Garment | null)[][] = STYLE_ZONES.map((zone) => (byZone[zone].length > 0 ? [...byZone[zone]] : [null]));

@@ -5,8 +5,8 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 import { PAPER, useOutfitsTheme } from '../../outfits/outfitsTheme';
 import type { SavedOutfitView } from '../../outfits/savedOutfitView';
-import { GarmentSilhouettes } from '../outfits/GarmentSilhouettes';
 import { GradientFill } from '../outfits/GradientFill';
+import { StyleGarmentsRow } from '../outfits/StyleGarmentsRow';
 
 const ENTERING = FadeInDown.duration(350).withInitialValues({ opacity: 0, transform: [{ translateY: 12 }] });
 const SHARE_ICON = 'M12 15V3M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6';
@@ -22,14 +22,7 @@ export const SavedOutfitCard = memo(function SavedOutfitCard({ view, width, onRe
   const { tokens, transition, reducedMotion } = useOutfitsTheme();
   const { variant, gradient, title, origin } = view;
   const matchLabel = variant.complete ? `${variant.matchPercent}% match` : 'Incompleto';
-  const colors = useMemo(
-    () => ({
-      torso: variant.top?.colorHex ?? null,
-      piernas: variant.bottom?.colorHex ?? null,
-      pies: variant.shoe?.colorHex ?? null,
-    }),
-    [variant],
-  );
+  const garments = useMemo(() => ({ torso: variant.top, piernas: variant.bottom, pies: variant.shoe }), [variant]);
 
   return (
     <Animated.View entering={reducedMotion ? undefined : ENTERING} style={{ width }}>
@@ -40,7 +33,7 @@ export const SavedOutfitCard = memo(function SavedOutfitCard({ view, width, onRe
             <GradientFill from={gradient.from} to={gradient.to} />
             <View style={styles.circle} />
             <View style={styles.silhouettes}>
-              <GarmentSilhouettes colors={colors} size={0.68} />
+              <StyleGarmentsRow garments={garments} size={0.68} />
             </View>
           </View>
           <View style={styles.bottom}>

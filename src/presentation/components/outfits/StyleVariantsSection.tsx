@@ -6,8 +6,8 @@ import type { SavedOutfit } from '../../../domain/entities/SavedOutfit';
 import { PAPER, useOutfitsTheme } from '../../outfits/outfitsTheme';
 import { STYLE_GRADIENTS } from '../../outfits/styleGradients';
 import { buildStyleVariants, type StyleCoverage, type StyleVariant } from '../../outfits/styleVariants';
-import { GarmentSilhouettes } from './GarmentSilhouettes';
 import { GradientFill } from './GradientFill';
+import { StyleGarmentsRow } from './StyleGarmentsRow';
 
 const CARD_WIDTH = 152;
 const GAP = 12;
@@ -29,20 +29,13 @@ interface CardProps {
 
 export const VariantCard = memo(function VariantCard({ variant, gradient, width, saved, onToggleSave }: CardProps) {
   const title = variantTitle(variant);
-  const colors = useMemo(
-    () => ({
-      torso: variant.top?.colorHex ?? null,
-      piernas: variant.bottom?.colorHex ?? null,
-      pies: variant.shoe?.colorHex ?? null,
-    }),
-    [variant],
-  );
+  const garments = useMemo(() => ({ torso: variant.top, piernas: variant.bottom, pies: variant.shoe }), [variant]);
   return (
     <View style={[styles.card, { width }]}>
       <View style={styles.cardTop}>
         <GradientFill from={gradient.from} to={gradient.to} />
         <View style={styles.cardSilhouettes}>
-          <GarmentSilhouettes colors={colors} size={0.56} />
+          <StyleGarmentsRow garments={garments} size={0.56} />
         </View>
         <Pressable
           onPress={() => onToggleSave(variant)}

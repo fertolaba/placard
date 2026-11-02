@@ -4,8 +4,8 @@ import Animated from 'react-native-reanimated';
 import { CATEGORY_ZONE, type BodyZone, type Garment } from '../../../domain/entities/Garment';
 import type { PaletteEntry } from '../../../domain/usecases/GetWardrobeStats';
 import { useOutfitsTheme } from '../../outfits/outfitsTheme';
-import { STYLE_ZONES, ZONE_LABELS } from '../../outfits/styleVariants';
-import { Silhouette } from '../outfits/GarmentSilhouettes';
+import { representativeGarment, STYLE_ZONES, ZONE_LABELS } from '../../outfits/styleVariants';
+import { ZoneGarment } from '../outfits/StyleGarmentsRow';
 
 interface TileProps {
   zone: BodyZone;
@@ -23,7 +23,7 @@ const Tile = memo(function Tile({ zone, items }: TileProps) {
       accessibilityLabel={count > 0 ? `${ZONE_LABELS[zone]}: ${count}` : `${ZONE_LABELS[zone]}: te falta`}
     >
       <View style={styles.silhouette}>
-        <Silhouette zone={zone} color={items[0]?.colorHex ?? null} size={0.82} dashColor={tokens.sub2} />
+        <ZoneGarment zone={zone} garment={representativeGarment(items)} size={0.82} dashColor={tokens.sub2} />
       </View>
       <Animated.Text style={[styles.tileCount, { color: tokens.text }, transition]}>{count}</Animated.Text>
       <Animated.Text style={[styles.tileLabel, { color: tokens.sub }, transition]} numberOfLines={1} adjustsFontSizeToFit>
