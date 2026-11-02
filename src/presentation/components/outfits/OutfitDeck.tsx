@@ -35,8 +35,10 @@ const EXIT_MS = 360;
 const ADVANCE_MS = 240;
 
 const CardPhoto = memo(function CardPhoto({ garment, side }: { garment: Garment; side: 'left' | 'right' }) {
+  // Con foto no se pinta fondo: detrás de un recorte transparente tiene que verse el fondo de la carta.
+  const backgroundColor = garment.imageUri ? 'transparent' : garment.colorHex;
   return (
-    <View style={[styles.photo, side === 'left' ? styles.photoLeft : styles.photoRight, { backgroundColor: garment.colorHex }]}>
+    <View style={[styles.photo, side === 'left' ? styles.photoLeft : styles.photoRight, { backgroundColor }]}>
       {garment.imageUri ? (
         <Image source={{ uri: garment.imageUri }} style={StyleSheet.absoluteFill} contentFit="cover" recyclingKey={garment.id} />
       ) : (

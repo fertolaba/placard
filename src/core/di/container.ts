@@ -14,6 +14,7 @@ import { createSupabaseClient } from '../../data/supabase/supabaseClient';
 import { AsyncStorageSeasonPreferenceRepository } from '../../data/repositories/AsyncStorageSeasonPreferenceRepository';
 import { AsyncStorageThemePreferenceRepository } from '@/domain/repositories/AsyncStorageThemePreferenceRepository';
 import { createColorDetector } from '../../data/color/createColorDetector';
+import { createBackgroundRemover } from '../../data/imaging/createBackgroundRemover';
 import { createPhotoStorage } from '../../data/photos/createPhotoStorage';
 import { HttpClient } from '../../data/http/HttpClient';
 import type { AuthRepository, CurrentUserId } from '../../domain/repositories/AuthRepository';
@@ -39,6 +40,7 @@ import { GetSession } from '../../domain/usecases/GetSession';
 import { GetStyleMatches } from '../../domain/usecases/GetStyleMatches';
 import { GetThemeMode } from '../../domain/usecases/GetThemeMode';
 import { GetWardrobeStats } from '../../domain/usecases/GetWardrobeStats';
+import { RemoveGarmentBackground } from '../../domain/usecases/RemoveGarmentBackground';
 import { SetProfilePhoto } from '../../domain/usecases/SetProfilePhoto';
 import { SetSeasonPreference } from '../../domain/usecases/SetSeasonPreference';
 import { SetThemeMode } from '../../domain/usecases/SetThemeMode';
@@ -108,6 +110,7 @@ export const container = {
   deleteGarment: new DeleteGarment(garmentRepository, photoStorage),
   detectGarmentColor: new DetectGarmentColor(colorDetector),
   detectGarmentCategory: new DetectGarmentCategory(categoryDetector),
+  removeGarmentBackground: new RemoveGarmentBackground(createBackgroundRemover(env.bgRemoverUrl)),
   suggestOutfits: new SuggestOutfits(garmentRepository),
   getProfile: new GetProfile(profileRepository),
   updateProfile: new UpdateProfile(profileRepository),

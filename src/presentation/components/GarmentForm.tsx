@@ -9,12 +9,14 @@ import { closestAllowedCategory, cutsFor } from '../../domain/services/garmentCa
 import { GARMENT_COLORS, type GarmentColor } from '../../domain/services/garmentColors';
 import { useAuth } from '../auth/AuthProvider';
 import { CATEGORY_LABELS, categoryOptionsFor } from '../categoryUi';
+import { useBackgroundRemoval, type PhotoChoice } from '../hooks/useBackgroundRemoval';
 import { useCategoryDetection } from '../hooks/useCategoryDetection';
 import { useColorDetection } from '../hooks/useColorDetection';
 import { usePhotoPicker, type PhotoSource } from '../hooks/usePhotoPicker';
 import { SEASON_UI } from '../seasonUi';
 import { makeStyles } from '../theme/makeStyles';
 import { useTheme } from '../theme/ThemeProvider';
+import { CheckerboardBackground } from './CheckerboardBackground';
 import { ColorPicker } from './ColorPicker';
 import { CutPicker } from './CutPicker';
 import { FormGroup, SwitchRow, TextRow } from './FormGroup';
@@ -22,6 +24,11 @@ import { SeasonPicker } from './SeasonPicker';
 import { SegmentedControl } from './SegmentedControl';
 
 const MAX_CONTENT_WIDTH = 480;
+
+const PHOTO_CHOICES: readonly { value: PhotoChoice; label: string }[] = [
+  { value: 'original', label: 'Original' },
+  { value: 'cutout', label: 'Sin fondo' },
+];
 
 function seasonsLabel(values: readonly Season[]): string {
   return values.map((season) => SEASON_UI[season].label).join(', ');
@@ -87,6 +94,7 @@ export function GarmentForm({
   const { pick, error: pickerError } = usePhotoPicker();
   const { detect, detecting } = useColorDetection();
   const { detect: detectType, analyzing: analyzingType } = useCategoryDetection();
+  const removal = useBackgroundRemoval(Boolean(initial?.imageUri));
   const sex = useAuth().user?.sex ?? null;
 
   // Las categorías según el sexo del perfil. Al editar, la de la prenda se muestra igual aunque no corresponda.
@@ -149,12 +157,18 @@ export function GarmentForm({
   const detectedCut = detectedType?.cut && detectedType.category === category && cutOptions.includes(detectedType.cut) ? detectedType.cut : null;
   const shownCorte = corte !== undefined && cutOptions.includes(corte) ? corte : undefined;
 
-  const shownPhoto = newPhotoUri ?? initial?.imageUri ?? null;
-  const canSave = name.trim() !== '' && seasons.length > 0 && color !== null && !submitting;
+  const showingCutout = removal.review?.selected === 'cutout';
+  const shownPhoto = showingCutout ? removal.review!.cutoutUri : (newPhotoUri ?? initial?.imageUri ?? null);
+  // Foto nueva: si no toca nada, va el recorte. Foto ya guardada: se reemplaza solo si la persona lo confirma con un botón.
+  const photoToSave = showingCutout ? removal.review!.cutoutUri : newPhotoUri;
+  const reviewingSavedPhoto = removal.review !== null && newPhotoUri === null;
+  const canSave = name.trim() !== '' && seasons.length > 0 && color !== null && !submitting && !removal.removing && !reviewingSavedPhoto;
   const missing = [
     name.trim() === '' ? 'un nombre' : null,
     seasons.length === 0 ? 'al menos una época' : null,
     color === null ? 'un color' : null,
+    removal.removing ? 'que termine de quitarse el fondo' : null,
+    reviewingSavedPhoto ? 'elegir qué foto usar' : null,
   ].filter((item): item is string => item !== null);
   const shownError = error ?? pickerError;
   const analyzing = detecting || analyzingType;
@@ -200,8 +214,10 @@ export function GarmentForm({
     setNewPhotoUri(uri);
     setDetected(null);
     setDetectedType(null);
+    void removal.start(uri); // en paralelo: no demora el análisis
 
-    // El color y el tipo de prenda se analizan a la vez.
+    // El color y el tipo de prenda se analizan a la vez, siempre sobre la foto ORIGINAL y no sobre el recorte:
+    // el recorte puede comerse partes de la prenda y su fondo transparente alteraría la lectura de los colores.
     const [foundColor, foundType] = await Promise.all([detect(uri), detectType(uri)]);
     if (requestId !== latestRequest.current) return; // mientras tanto eligió otra foto
 
@@ -238,6 +254,11 @@ export function GarmentForm({
     }
   };
 
+  const chooseCutout = () => {
+    setNewPhotoUri(removal.review!.cutoutUri);
+    removal.dismiss();
+  };
+
   return (
     <ScrollView
       style={styles.scroll}
@@ -256,6 +277,7 @@ export function GarmentForm({
       </View>
 
       <View style={styles.photoBox}>
+        {showingCutout ? <CheckerboardBackground /> : null}
         {shownPhoto ? (
           <Image source={{ uri: shownPhoto }} style={styles.photo} resizeMode="cover" accessibilityLabel="Foto de la prenda" />
         ) : (
@@ -266,6 +288,58 @@ export function GarmentForm({
           </>
         )}
       </View>
+      {removal.removing ? (
+        <View style={styles.removal}>
+          <View style={styles.analyzing} accessibilityLiveRegion="polite">
+            <ActivityIndicator size="small" color={colors.link} />
+            <Text style={styles.analyzingText}>
+              {removal.slow ? 'Quitando el fondo… puede tardar unos segundos' : 'Quitando el fondo…'}
+            </Text>
+          </View>
+          <Pressable onPress={removal.dismiss} accessibilityRole="button" hitSlop={8}>
+            <Text style={styles.suggestionAction}>Usar la original</Text>
+          </Pressable>
+        </View>
+      ) : null}
+      {removal.review ? (
+        <View style={styles.removal}>
+          <SegmentedControl options={PHOTO_CHOICES} value={removal.review.selected} onChange={removal.select} />
+          <View style={styles.choiceButtons}>
+            <Pressable
+              onPress={removal.dismiss}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.photoButton, pressed && styles.photoButtonPressed]}
+            >
+              <Text style={styles.photoButtonLabel}>Usar la original</Text>
+            </Pressable>
+            <Pressable
+              onPress={chooseCutout}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.photoButton, pressed && styles.photoButtonPressed]}
+            >
+              <Text style={styles.photoButtonLabel}>Usar sin fondo</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
+      {removal.notice ? (
+        <Text style={styles.removalNotice} accessibilityLiveRegion="polite">
+          {removal.notice}
+        </Text>
+      ) : null}
+      {initial?.imageUri && removal.available && newPhotoUri === null && !removal.removing && !removal.review ? (
+        <Pressable
+          onPress={() => removal.start(initial.imageUri!)}
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.removeBackground, pressed && styles.photoButtonPressed]}
+        >
+          <Ionicons name="cut-outline" size={20} color={colors.link} />
+          <Text style={styles.photoButtonLabel}>Quitar fondo</Text>
+        </Pressable>
+      ) : null}
+      {initial && newPhotoUri !== null && !removal.review ? (
+        <Text style={styles.removalNotice}>La foto nueva se guarda al tocar “{submitLabel}”.</Text>
+      ) : null}
       <View style={styles.photoActions}>
         <Pressable
           onPress={() => choosePhoto('camera')}
@@ -422,7 +496,7 @@ export function GarmentForm({
         </Text>
       ) : null}
       <Pressable
-        onPress={() => color && onSubmit({ name, category, seasons, corte: shownCorte, sporty, color, secondaryColors: shownSecondary, newPhotoUri })}
+        onPress={() => color && onSubmit({ name, category, seasons, corte: shownCorte, sporty, color, secondaryColors: shownSecondary, newPhotoUri: photoToSave })}
         disabled={!canSave}
         accessibilityRole="button"
         style={[styles.save, !canSave && styles.saveDisabled]}
@@ -459,6 +533,19 @@ const useStyles = makeStyles((colors) => ({
   photoHint: { fontSize: 16, fontWeight: '600', color: colors.text, marginTop: 10 },
   photoSubHint: { fontSize: 13, color: colors.textMuted, marginTop: 2, paddingHorizontal: 16, textAlign: 'center' },
   photoActions: { flexDirection: 'row', gap: 10, marginTop: 12, marginBottom: 20 },
+  removal: { marginTop: 12, gap: 10, alignItems: 'stretch' },
+  choiceButtons: { flexDirection: 'row', gap: 10 },
+  removalNotice: { fontSize: 13, color: colors.textMuted, marginTop: 10, paddingHorizontal: 4, textAlign: 'center' },
+  removeBackground: {
+    height: 44,
+    marginTop: 12,
+    borderRadius: 12,
+    backgroundColor: colors.primaryFill,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
   photoButton: {
     flex: 1,
     height: 44,

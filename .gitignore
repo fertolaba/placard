@@ -33,6 +33,9 @@ yarn-error.*
 # local env files
 .env*.local
 
+# borradores de scripts/analyze-referentes.js
+scripts/out/
+
 # typescript
 *.tsbuildinfo
 

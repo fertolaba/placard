@@ -41,4 +41,7 @@ export const env = {
   // La "anon key" (o "publishable key") es pública por diseño; nunca pongas acá la "service_role key".
   supabaseUrl: (process.env.EXPO_PUBLIC_SUPABASE_URL ?? '').trim().replace(/\/+$/, ''),
   supabaseAnonKey: (process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '').trim(),
+  // Servidor de recorte de fondo (tools/rembg-server). Si está vacía, el recorte queda desactivado.
+  // En el iPhone usá la IP de tu PC, ej: http://192.168.1.20:7000
+  bgRemoverUrl: (process.env.EXPO_PUBLIC_BG_REMOVER_URL ?? '').trim().replace(/\/+$/, ''),
 } as const;

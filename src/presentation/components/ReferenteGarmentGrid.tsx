@@ -23,8 +23,7 @@ export function ReferenteGarmentGrid({ match, width }: Props) {
           accessible
           accessibilityLabel={`${prenda.nombre}: tenés ${garment.name}`}
         >
-          {/* Las fotos todavía tienen el fondo: van como cuadrados iguales con resizeMode="cover" (lo hace GarmentSwatch).
-              TODO: cambiar a recortes sin fondo cuando exista el quitar fondo. */}
+          {/* Las fotos, con o sin fondo, van como cuadrados iguales con resizeMode="cover" (lo hace GarmentSwatch). */}
           <GarmentSwatch garment={garment} height={side} />
           <Text style={styles.name} numberOfLines={1}>
             {garment.name}

@@ -41,6 +41,25 @@ This command will move the starter code to the **app-example** directory and cre
 - If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
 - Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
 
+## Analizar un referente con IA
+
+`scripts/analyze-referentes.js` mira los looks de `assets/referencia/<id>/` con Gemini y deja un borrador para el seed. No modifica `referentes.ts`.
+
+1. Revisá que `EXPO_PUBLIC_GEMINI_API_KEY` esté en `.env.local`.
+2. Corré el script. El id es el nombre de la carpeta:
+
+   ```bash
+   node scripts/analyze-referentes.js rauw
+   ```
+
+   - `--all`: analiza todas las carpetas.
+   - `--force`: vuelve a pedir un borrador que ya existe.
+   - `--nombre "Nombre Apellido"`: obligatorio si el referente todavía no está en el seed.
+   - Variable `GEMINI_MODEL`: usa otro modelo si hace falta más precisión.
+
+3. Leé la confianza, las notas y los avisos al principio de `scripts/out/<id>.seed.txt`, y compará el borrador con las fotos.
+4. Pegá a mano en `SAMPLE_REFERENTES` (`src/data/seed/referentes.ts`) lo que quieras conservar. `scripts/out/<id>.json` tiene los mismos datos normalizados, y la carpeta `scripts/out/` no se sube a git.
+
 ## Learn more
 
 To learn more about developing your project with Expo, look at the following resources:

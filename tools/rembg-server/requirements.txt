@@ -1,0 +1,6 @@
+rembg[cpu]
+flask
+pillow
+numpy
+scipy
+opencv-python-headless

@@ -22,7 +22,8 @@ interface Props {
 export function GarmentSwatch({ garment, height, iconSize = 40 }: Props) {
   const styles = useStyles();
   return (
-    <View style={[styles.swatch, { backgroundColor: garment.colorHex, height }]}>
+    // Con foto no se pinta fondo: detrás de un recorte transparente tiene que verse el color de la tarjeta.
+    <View style={[styles.swatch, { backgroundColor: garment.imageUri ? 'transparent' : garment.colorHex, height }]}>
       {garment.imageUri ? (
         <Image
           source={{ uri: garment.imageUri }}

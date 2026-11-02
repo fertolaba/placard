@@ -7,6 +7,7 @@ import type { ReferenteConMatch } from '../hooks/useReferentes';
 import { LookIllustration } from './LookIllustration';
 import { MatchRing } from './MatchRing';
 import { PaletteDots } from './PaletteDots';
+import { PressableScale } from './PressableScale';
 import { getReferenteImages } from './referenteImages';
 import { SaveButton } from './SaveButton';
 
@@ -33,7 +34,18 @@ export const DestacadoCard = memo(function DestacadoCard({ item, etiqueta, saved
     </View>
   );
   return (
-    <View style={[styles.card, { backgroundColor: referente.colorTarjeta }]}>
+    <PressableScale
+      onPress={() => onPress(referente.id)}
+      accessibilityRole="button"
+      accessibilityLabel={`${referente.nombre}. ${referente.resumen}`}
+      accessibilityHint="Abre el detalle de su estilo"
+      // En iOS, VoiceOver no entra a los hijos de la tarjeta: el marcador se ofrece como una acción.
+      accessibilityActions={[{ name: 'toggleSave', label: saved ? `Quitar a ${referente.nombre} de guardados` : `Guardar a ${referente.nombre}` }]}
+      onAccessibilityAction={(event) => {
+        if (event.nativeEvent.actionName === 'toggleSave') onToggleSave(referente.id);
+      }}
+      style={[styles.card, { backgroundColor: referente.colorTarjeta }]}
+    >
       {avatar !== undefined ? (
         <View style={styles.photoWrap}>
           <Image
@@ -92,14 +104,14 @@ export const DestacadoCard = memo(function DestacadoCard({ item, etiqueta, saved
 
       <Pressable
         onPress={() => onPress(referente.id)}
-        accessibilityRole="button"
-        accessibilityLabel={`Ver el estilo de ${referente.nombre}`}
+        accessible={false}
+        importantForAccessibility="no"
         style={({ pressed }) => [styles.button, pressed && styles.pressed]}
       >
         <Text style={styles.buttonLabel}>Ver su estilo</Text>
         <Ionicons name="chevron-forward" size={18} color={BUTTON_TEXT} />
       </Pressable>
-    </View>
+    </PressableScale>
   );
 });
 
