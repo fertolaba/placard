@@ -195,4 +195,30 @@ export const SAMPLE_REFERENTES: Referente[] = [
     ],
     destacado: false,
   },
+  // El id es el nombre de su carpeta en assets/referencia/. Textos orientativos, como los de los demás.
+  {
+    id: 'rauw',
+    nombre: 'Rauw Alejandro',
+    iniciales: 'RA',
+    colorAvatar: FUCSIA,
+    colorTarjeta: '#3A1530',
+    estilo: 'Vanguardia',
+    etiquetas: ['Vanguardia', 'Color', 'Lujo'],
+    resumen: 'Futurista y atrevido: sastrería, cuero y color con mucha actitud',
+    claves: [
+      { titulo: 'Futurismo con actitud', descripcion: 'Siluetas y accesorios llamativos.' },
+      { titulo: 'Cuero y texturas', descripcion: 'Cuero, brillos y materiales que se notan.' },
+      { titulo: 'Color como acento', descripcion: 'Negro de base con fucsia o plateado.' },
+    ],
+    paleta: [NEGRO, FUCSIA, GRIS],
+    prendasClave: [
+      { nombre: 'Chaqueta negra', categoria: 'arriba', colorHex: NEGRO, corte: 'boxy' },
+      { nombre: 'Pantalón negro', categoria: 'abajo', colorHex: NEGRO, corte: 'wide leg' },
+      { nombre: 'Camisa fucsia', categoria: 'arriba', colorHex: FUCSIA, corte: 'regular' },
+      { nombre: 'Jean gris', categoria: 'abajo', colorHex: GRIS, corte: 'baggy' },
+      { nombre: 'Botas negras', categoria: 'calzado', colorHex: NEGRO },
+      { nombre: 'Zapatillas blancas', categoria: 'calzado', colorHex: BLANCO },
+    ],
+    destacado: true,
+  },
 ];

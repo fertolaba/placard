@@ -6,6 +6,7 @@ import { ESTILO_OUTFIT } from '../../domain/entities/Referente';
 import { FormGroup } from '../components/FormGroup';
 import { ReferenteAvatar } from '../components/ReferenteAvatar';
 import { ReferenteGarmentGrid } from '../components/ReferenteGarmentGrid';
+import { ReferenteLooks } from '../components/ReferenteLooks';
 import { SaveButton } from '../components/SaveButton';
 import { StateMessage } from '../components/StateMessage';
 import { useReferentes } from '../hooks/useReferentes';
@@ -73,7 +74,12 @@ export function ReferenteDetailScreen() {
         <>
           <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
             <View style={styles.hero}>
-              <ReferenteAvatar iniciales={item.referente.iniciales} color={item.referente.colorAvatar} size={96} />
+              <ReferenteAvatar
+                referenteId={item.referente.id}
+                iniciales={item.referente.iniciales}
+                color={item.referente.colorAvatar}
+                size={96}
+              />
               <Text style={styles.name} accessibilityRole="header">
                 {item.referente.nombre}
               </Text>
@@ -85,6 +91,8 @@ export function ReferenteDetailScreen() {
                 ))}
               </View>
             </View>
+
+            <ReferenteLooks referenteId={item.referente.id} nombre={item.referente.nombre} sidePadding={SIDE_PADDING} />
 
             <Text style={styles.sectionTitle} accessibilityRole="header">
               Su estilo en {item.referente.claves.length} claves

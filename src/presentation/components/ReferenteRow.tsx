@@ -33,7 +33,7 @@ export const ReferenteRow = memo(function ReferenteRow({ item, first, last, save
         accessibilityHint="Abre el detalle de su estilo"
         style={({ pressed }) => [styles.main, pressed && styles.pressed]}
       >
-        <ReferenteAvatar iniciales={referente.iniciales} color={referente.colorAvatar} size={48} />
+        <ReferenteAvatar referenteId={referente.id} iniciales={referente.iniciales} color={referente.colorAvatar} size={48} />
         <View style={styles.info}>
           <Text style={styles.name} numberOfLines={1}>
             {referente.nombre}

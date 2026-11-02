@@ -1,14 +1,18 @@
+import { Image } from 'expo-image';
 import { Text, View } from 'react-native';
 import { readableOn } from '../../core/utils/color';
+import { getReferenteImages } from './referenteImages';
 
 interface Props {
+  referenteId: string;
   iniciales: string;
   color: string;
   size: number;
 }
 
-/** Círculo de color con las iniciales: no se usan fotos reales de personas. El nombre siempre está al lado. */
-export function ReferenteAvatar({ iniciales, color, size }: Props) {
+/** La foto de portada en círculo; si no tiene, círculo de color con las iniciales. El nombre siempre está al lado. */
+export function ReferenteAvatar({ referenteId, iniciales, color, size }: Props) {
+  const { avatar } = getReferenteImages(referenteId);
   return (
     <View
       accessibilityElementsHidden
@@ -20,9 +24,20 @@ export function ReferenteAvatar({ iniciales, color, size }: Props) {
         backgroundColor: color,
         alignItems: 'center',
         justifyContent: 'center',
+        overflow: 'hidden',
       }}
     >
-      <Text style={{ fontSize: size * 0.36, fontWeight: '700', color: readableOn(color) }}>{iniciales}</Text>
+      {avatar !== undefined ? (
+        <Image
+          source={avatar}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+          recyclingKey={referenteId}
+          style={{ width: size, height: size }}
+        />
+      ) : (
+        <Text style={{ fontSize: size * 0.36, fontWeight: '700', color: readableOn(color) }}>{iniciales}</Text>
+      )}
     </View>
   );
 }

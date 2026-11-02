@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { memo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { readableOn } from '../../core/utils/color';
@@ -6,6 +7,7 @@ import type { ReferenteConMatch } from '../hooks/useReferentes';
 import { LookIllustration } from './LookIllustration';
 import { MatchRing } from './MatchRing';
 import { PaletteDots } from './PaletteDots';
+import { getReferenteImages } from './referenteImages';
 import { SaveButton } from './SaveButton';
 
 export const DESTACADO_CARD_WIDTH = 300;
@@ -22,28 +24,52 @@ interface Props {
 export const DestacadoCard = memo(function DestacadoCard({ item, etiqueta, saved, onToggleSave, onPress }: Props) {
   const { referente, match } = item;
   const foreground = readableOn(referente.colorTarjeta);
+  const { avatar } = getReferenteImages(referente.id);
+  const tag = (
+    <View style={styles.tag}>
+      <Text style={styles.tagLabel} numberOfLines={1}>
+        {etiqueta}
+      </Text>
+    </View>
+  );
   return (
     <View style={[styles.card, { backgroundColor: referente.colorTarjeta }]}>
-      <View style={styles.top}>
-        <View style={styles.tag}>
-          <Text style={styles.tagLabel} numberOfLines={1}>
-            {etiqueta}
-          </Text>
+      {avatar !== undefined ? (
+        <View style={styles.photoWrap}>
+          <Image
+            source={avatar}
+            contentFit="cover"
+            contentPosition="top"
+            cachePolicy="memory-disk"
+            recyclingKey={referente.id}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={[StyleSheet.absoluteFill, styles.photoScrim]} pointerEvents="none" />
+          <View style={styles.photoTop}>
+            {tag}
+            <SaveButton nombre={referente.nombre} saved={saved} color="#FFFFFF" onPress={() => onToggleSave(referente.id)} />
+          </View>
         </View>
-        <SaveButton nombre={referente.nombre} saved={saved} color={foreground} onPress={() => onToggleSave(referente.id)} />
-      </View>
+      ) : (
+        <>
+          <View style={styles.top}>
+            {tag}
+            <SaveButton nombre={referente.nombre} saved={saved} color={foreground} onPress={() => onToggleSave(referente.id)} />
+          </View>
 
-      <View style={styles.center}>
-        <Text
-          style={[styles.initials, { color: foreground }]}
-          numberOfLines={1}
-          accessibilityElementsHidden
-          importantForAccessibility="no"
-        >
-          {referente.iniciales}
-        </Text>
-        <LookIllustration referente={referente} height={160} />
-      </View>
+          <View style={styles.center}>
+            <Text
+              style={[styles.initials, { color: foreground }]}
+              numberOfLines={1}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            >
+              {referente.iniciales}
+            </Text>
+            <LookIllustration referente={referente} height={160} />
+          </View>
+        </>
+      )}
 
       <Text style={[styles.name, { color: foreground }]} numberOfLines={1} adjustsFontSizeToFit accessibilityRole="header">
         {referente.nombre}
@@ -51,6 +77,8 @@ export const DestacadoCard = memo(function DestacadoCard({ item, etiqueta, saved
       <Text style={[styles.summary, { color: foreground }]} numberOfLines={2}>
         {referente.resumen}
       </Text>
+
+      <View style={styles.spacer} />
 
       <View style={styles.matchRow}>
         <MatchRing percent={match.porcentaje} color={foreground} trackColor={`${foreground}33`} />
@@ -78,7 +106,20 @@ export const DestacadoCard = memo(function DestacadoCard({ item, etiqueta, saved
 const BUTTON_TEXT = '#1C1C1E';
 
 const styles = StyleSheet.create({
-  card: { width: DESTACADO_CARD_WIDTH, borderRadius: 24, padding: 16, overflow: 'hidden' },
+  // flexGrow: todas las tarjetas del carrusel miden lo que la más alta, tengan foto o ilustración.
+  card: { width: DESTACADO_CARD_WIDTH, flexGrow: 1, borderRadius: 24, padding: 16, overflow: 'hidden' },
+  photoWrap: { height: 160, marginTop: -16, marginHorizontal: -16, borderRadius: 16, overflow: 'hidden' },
+  photoScrim: { backgroundColor: 'rgba(0,0,0,0.25)' },
+  photoTop: {
+    position: 'absolute',
+    top: 10,
+    left: 16,
+    right: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  spacer: { flexGrow: 1 },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginRight: -10, marginTop: -6 },
   tag: {
     flexShrink: 1,

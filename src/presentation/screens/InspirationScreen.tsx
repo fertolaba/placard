@@ -102,6 +102,8 @@ export function InspirationScreen() {
             renderItem={renderDestacado}
             ItemSeparatorComponent={CardGap}
             getItemLayout={(_, index) => ({ length: DESTACADO_CARD_WIDTH, offset: CARD_INTERVAL * index, index })}
+            initialNumToRender={2}
+            windowSize={3}
             showsHorizontalScrollIndicator={false}
             snapToInterval={CARD_INTERVAL}
             snapToAlignment="start"
