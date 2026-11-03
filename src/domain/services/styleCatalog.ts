@@ -31,11 +31,12 @@ export const STYLE_REFERENCES: StyleReference[] = [
   {
     id: 'y2k',
     name: 'Y2K',
-    description: 'Colores vivos y aire de los 2000',
+    description: 'Baggy, remeras oversize y colores vivos con aire retro de los 2000',
     palette: ['#E59BC4', '#9CC6E8', '#C9CCD1'],
+    excludesClassic: true,
     slots: [
       { label: 'top de color', categories: ['top', 'arriba'], tone: 'color' },
-      { label: 'pollera o jean', categories: ['pollera', 'abajo'], tone: 'cualquiera' },
+      { label: 'jean, pantalón baggy o pollera', categories: ['pollera', 'abajo'], tone: 'cualquiera' },
       { label: 'zapatillas claras', categories: ['calzado'], tone: 'claro' },
     ],
   },

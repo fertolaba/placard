@@ -6,6 +6,7 @@ import { STYLE_REFERENCES } from './styleCatalog';
 // Los colores cumplen el tono de las piezas de los dos estilos: lo único que decide cada caso es la marca.
 const CLARO_NEUTRO = '#EDEAE4';
 const OSCURO_NEUTRO = '#26262B';
+const COLOR_VIVO = '#C8102E';
 
 function garment(category: GarmentCategory, colorHex: string, flags: Partial<Pick<Garment, 'classic' | 'sporty'>> = {}): Garment {
   return {
@@ -58,6 +59,19 @@ describe('garmentFitsSlot', () => {
   it('unas zapatillas no entran en Old Money, aunque sean oscuras', () => {
     const zapatillas = garment('calzado', OSCURO_NEUTRO);
     expect(entersStyle('old-money', zapatillas)).toBe(false);
+  });
+
+  it('un pantalón clásico no entra en Y2K', () => {
+    expect(entersStyle('y2k', garment('abajo', OSCURO_NEUTRO, { classic: true }))).toBe(false);
+  });
+
+  it('una chomba clásica no entra en Y2K, aunque sea de color', () => {
+    expect(entersStyle('y2k', garment('arriba', COLOR_VIVO, { classic: true }))).toBe(false);
+  });
+
+  it('una remera oversize de color y un jean baggy entran en Y2K', () => {
+    expect(entersStyle('y2k', garment('arriba', COLOR_VIVO))).toBe(true);
+    expect(entersStyle('y2k', garment('abajo', OSCURO_NEUTRO))).toBe(true);
   });
 
   it('una prenda clásica sigue entrando en los otros estilos', () => {
