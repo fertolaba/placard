@@ -21,6 +21,7 @@ export function AddGarmentScreen() {
         secondaryColors: values.secondaryColors,
         seasons: values.seasons,
         sporty: values.sporty,
+        classic: values.classic,
         corte: values.corte,
         photoUri: values.newPhotoUri,
       });

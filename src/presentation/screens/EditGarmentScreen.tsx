@@ -32,6 +32,7 @@ export function EditGarmentScreen() {
         secondaryColors: values.secondaryColors,
         seasons: values.seasons,
         sporty: values.sporty,
+        classic: values.classic,
         corte: values.corte,
         newPhotoUri: values.newPhotoUri,
       });
@@ -100,6 +101,7 @@ export function EditGarmentScreen() {
         secondaryColors: garment.secondaryColors,
         seasons: garment.seasons,
         sporty: garment.sporty,
+        classic: garment.classic,
         corte: garment.corte,
         imageUri: garment.imageUri,
       }}

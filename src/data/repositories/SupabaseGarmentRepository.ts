@@ -17,12 +17,13 @@ interface GarmentRow {
   secondary_colors: unknown; // jsonb: [{"name":"Blanco","hex":"#EDEAE4"}]
   seasons: string[];
   sporty: boolean;
+  classic: boolean;
   corte: string | null;
   photo_path: string | null;
   created_at: string;
 }
 
-const COLUMNS = 'id, name, category, color_hex, color_name, secondary_colors, seasons, sporty, corte, photo_path, created_at';
+const COLUMNS = 'id, name, category, color_hex, color_name, secondary_colors, seasons, sporty, classic, corte, photo_path, created_at';
 const SIGNED_URL_SECONDS = 60 * 60 * 24; // las direcciones de las fotos vencen en un día
 const SIGNED_URL_MARGIN_MS = 60 * 60 * 1000; // se renuevan si les queda menos de una hora
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -46,6 +47,7 @@ function toRow(data: NewGarment) {
     secondary_colors: data.secondaryColors,
     seasons: data.seasons,
     sporty: data.sporty,
+    classic: data.classic,
     corte: data.corte ?? null, // sin corte = se borra el que tenía
     photo_path: data.photoRef,
   };
@@ -105,6 +107,7 @@ export class SupabaseGarmentRepository implements GarmentRepository, SessionCach
         secondaryColors: parseSecondaryColors(row.secondary_colors),
         seasons: seasons.length > 0 ? seasons : [...SEASONS], // si el dato está dañado, no se esconde la prenda
         sporty: row.sporty,
+        classic: row.classic,
         corte: row.corte ?? undefined,
         photoRef: row.photo_path,
         imageUri: row.photo_path ? (urls.get(row.photo_path) ?? null) : null,

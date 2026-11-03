@@ -14,6 +14,7 @@ function sampleRecords(): StoredGarment[] {
     ...sample,
     secondaryColors: [],
     sporty: false,
+    classic: false,
     photoRef: null,
     createdAt: new Date(),
   }));

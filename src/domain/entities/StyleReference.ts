@@ -7,7 +7,8 @@ export interface StyleSlot {
   label: string;
   categories: readonly GarmentCategory[]; // las que cubren la pieza, de la preferida a la menos preferida
   tone: Tone;
-  requiresSporty?: boolean; // true = solo la cubre una prenda deportiva (por ejemplo, la camiseta de fútbol)
+  requiresSporty?: boolean; // true = solo la cubre una prenda con `sporty`, es decir, una camiseta de fútbol
+  requiresClassic?: boolean; // true = solo la cubre una prenda con `classic`
 }
 
 export const STYLE_IDS = ['streetwear', 'old-money', 'y2k', 'techwear', 'blokecore'] as const;
@@ -19,7 +20,8 @@ export interface StyleReference {
   description: string;
   note?: string;
   palette: string[]; // colores representativos (#RRGGBB)
-  allowsSporty?: boolean; // sin esto, las prendas deportivas no se usan en ninguna pieza del estilo
+  allowsSporty?: boolean; // sin esto, las prendas con `sporty` (camisetas de fútbol) no se usan en ninguna pieza del estilo
+  excludesClassic?: boolean; // true = las prendas con `classic` no se usan en ninguna pieza del estilo
   slots: StyleSlot[];
 }
 

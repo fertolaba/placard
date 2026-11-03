@@ -14,6 +14,7 @@ export interface GarmentEdit {
   secondaryColors: GarmentColor[];
   seasons: Season[];
   sporty: boolean;
+  classic: boolean;
   corte?: string; // sin corte = se borra el que tenía
   newPhotoUri: string | null; // null = dejar la foto que ya tiene
 }

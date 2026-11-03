@@ -39,7 +39,8 @@ export interface Garment {
   secondaryColors: GarmentColor[]; // colores de detalles (rayas, estampa, logo, costuras); hasta MAX_SECONDARY_COLORS
   seasons: Season[]; // épocas del año en las que se usa (al menos una)
   corte?: string; // uno de GARMENT_CUTS[category]; opcional
-  sporty: boolean; // ropa deportiva (camiseta de fútbol, etc.): en los estilos solo se usa en Blokecore
+  sporty: boolean; // camiseta de fútbol (la IA también marca shorts de fútbol y botines): en los estilos solo se usa en Blokecore
+  classic: boolean; // prenda clásica o formal: camisa, chomba, sweater fino, pantalón de vestir o sastrero, mocasines
   photoRef: string | null; // referencia de la foto en PhotoStorage (es lo que se guarda)
   imageUri: string | null; // dirección lista para mostrar la foto (se calcula desde photoRef)
   createdAt: Date;

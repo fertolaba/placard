@@ -43,7 +43,8 @@ const PROMPT = `Mirá la foto y decí qué prenda es. Usá nombres comunes en Ar
   - Calzado: "no_aplica".
 - color_dominante: el color que ocupa más superficie de la prenda (no del fondo ni de la piel). Elegí el nombre más parecido de esta lista, escrito exactamente igual: ${COLOR_NAMES}.
 - colores_secundarios: los colores de los detalles que se ven a simple vista (rayas, estampa, logo, escudo, cuello, puños, costuras contrastantes, suela de un calzado), de más a menos visible, como mucho ${MAX_SECONDARY_COLORS}. Mismos nombres exactos de la lista. No repitas el dominante ni pongas sombras o pliegues del mismo color. Si la prenda es lisa, devolvé [].
-- es_deportiva: true si es una camiseta de fútbol (de un club, de una selección o retro: suele tener escudo, sponsor, número o tela técnica brillante) o indumentaria deportiva similar (camisetas de otros deportes, ropa de entrenamiento, shorts de fútbol, botines). false para ropa de uso diario, aunque sea cómoda: una remera lisa, un buzo, un jogger o unas zapatillas urbanas no son deportivas.`;
+- es_deportiva: true SOLO para camisetas de fútbol con mangas (de un club, de una selección o retro: suelen tener escudo, sponsor o número), shorts de fútbol y botines. false para todo lo demás: musculosas y cualquier prenda sin mangas, camisetas de otros deportes (básquet/NBA, NFL, hockey, rugby, béisbol), ropa de entrenamiento o gimnasio y ropa urbana cómoda (una remera lisa, un buzo, un jogger, unas zapatillas urbanas). Ejemplos: musculosa de la NBA → false; camiseta de Boca → true; camiseta de manga corta de River → true.
+- es_clasica: true para camisas, chombas o polos, sweaters o cardigans finos y lisos, blazers, pantalones de vestir o sastreros (incluidos los de pinzas y los chinos), polleras lápiz o tableadas de tela fina, mocasines y zapatos de vestir. false para remeras (lisas o estampadas), buzos y hoodies, camperas deportivas o técnicas, joggers, jeans, shorts, cualquier prenda oversize o baggy, zapatillas, botas urbanas y ropa deportiva. Si no es claramente clásica, false.`;
 
 /** Esquema de la respuesta: Gemini devuelve un JSON que lo cumple. */
 const RESPONSE_SCHEMA = {
@@ -57,6 +58,7 @@ const RESPONSE_SCHEMA = {
     // El esquema no puede atar el corte a la categoría: eso lo revisa parseGarmentAnalysis.
     corte: { type: 'STRING', enum: [...ALL_GARMENT_CUTS, 'no_aplica'] },
     es_deportiva: { type: 'BOOLEAN' },
+    es_clasica: { type: 'BOOLEAN' },
     color_dominante: { type: 'STRING', enum: GARMENT_COLORS.map((color) => color.name) },
     colores_secundarios: {
       type: 'ARRAY',
@@ -64,7 +66,7 @@ const RESPONSE_SCHEMA = {
       maxItems: MAX_SECONDARY_COLORS,
     },
   },
-  required: ['esPrenda', 'tipo', 'categoria', 'manga', 'temporadas', 'corte', 'es_deportiva', 'color_dominante', 'colores_secundarios'],
+  required: ['esPrenda', 'tipo', 'categoria', 'manga', 'temporadas', 'corte', 'es_deportiva', 'es_clasica', 'color_dominante', 'colores_secundarios'],
   propertyOrdering: [
     'esPrenda',
     'tipo',
@@ -73,6 +75,7 @@ const RESPONSE_SCHEMA = {
     'temporadas',
     'corte',
     'es_deportiva',
+    'es_clasica',
     'color_dominante',
     'colores_secundarios',
   ],
@@ -154,7 +157,7 @@ export async function detectGarmentCategory(image: GeminiImage, options: GeminiO
   if (__DEV__) {
     console.log(
       '[detección de prenda] categoría asignada:',
-      detection ? `${detection.type} → ${detection.category} · manga ${detection.sleeve ?? 'no aplica'} · épocas ${detection.seasons?.join(', ') ?? 'sin deducir'} · corte ${detection.cut ?? 'sin deducir'}${detection.sporty ? ' · deportiva' : ''} · color ${detection.dominantColor?.name ?? 'sin deducir'}${detection.secondaryColors.length > 0 ? ` + ${detection.secondaryColors.map((color) => color.name).join(', ')}` : ''}` : 'ninguna (no es una prenda que la app maneje)',
+      detection ? `${detection.type} → ${detection.category} · manga ${detection.sleeve ?? 'no aplica'} · épocas ${detection.seasons?.join(', ') ?? 'sin deducir'} · corte ${detection.cut ?? 'sin deducir'}${detection.sporty ? ' · deportiva' : ''}${detection.classic ? ' · clásica' : ''} · color ${detection.dominantColor?.name ?? 'sin deducir'}${detection.secondaryColors.length > 0 ? ` + ${detection.secondaryColors.map((color) => color.name).join(', ')}` : ''}` : 'ninguna (no es una prenda que la app maneje)',
     );
   }
   return detection;

@@ -12,7 +12,8 @@ export interface GarmentTypeDetection {
   sleeve: SleeveLength | null; // null = no se sabe o no aplica (solo "arriba" y "top" tienen mangas)
   seasons: Season[] | null; // épocas deducidas del largo de manga; null = no se pudo deducir
   cut: string | null; // corte deducido de la silueta (uno de GARMENT_CUTS[category]); null = no se sabe o no aplica (calzado)
-  sporty: boolean; // camiseta de fútbol u otra ropa deportiva (viene de "es_deportiva" en la respuesta de la IA)
+  sporty: boolean; // camiseta de fútbol; la IA también marca shorts de fútbol y botines (viene de "es_deportiva", ya filtrado)
+  classic: boolean; // prenda clásica o formal (viene de "es_clasica", ya filtrado)
   dominantColor: GarmentColor | null; // el color que ocupa más superficie de la prenda (de "color_dominante"); null = no lo dijo
   secondaryColors: GarmentColor[]; // colores de detalles (de "colores_secundarios"), sin el dominante; vacío si es lisa
 }

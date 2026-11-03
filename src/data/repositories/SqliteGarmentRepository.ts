@@ -15,6 +15,7 @@ interface GarmentRow {
   secondary_colors: string; // JSON: [{"name":"Blanco","hex":"#EDEAE4"}]
   seasons: string; // "verano,invierno"
   sporty: number; // 0 o 1
+  classic: number; // 0 o 1
   corte: string | null; // null = sin corte
   photo_ref: string | null;
   created_at: string;
@@ -47,6 +48,7 @@ export class SqliteGarmentRepository implements GarmentRepository {
       secondaryColors: parseSecondaryColors(row.secondary_colors),
       seasons: parseSeasons(row.seasons),
       sporty: row.sporty === 1,
+      classic: row.classic === 1,
       corte: row.corte ?? undefined,
       photoRef: row.photo_ref,
       imageUri: row.photo_ref === null ? null : this.resolvePhoto(row.photo_ref),
@@ -75,7 +77,7 @@ export class SqliteGarmentRepository implements GarmentRepository {
     const id = newId();
     const createdAt = new Date();
     await db.runAsync(
-      'INSERT INTO garments (id, user_id, name, category, color_hex, color_name, secondary_colors, seasons, sporty, corte, photo_ref, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO garments (id, user_id, name, category, color_hex, color_name, secondary_colors, seasons, sporty, classic, corte, photo_ref, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       id,
       userId,
       input.name,
@@ -85,6 +87,7 @@ export class SqliteGarmentRepository implements GarmentRepository {
       JSON.stringify(input.secondaryColors),
       input.seasons.join(','),
       input.sporty ? 1 : 0,
+      input.classic ? 1 : 0,
       input.corte ?? null,
       input.photoRef,
       createdAt.toISOString(),
@@ -100,7 +103,7 @@ export class SqliteGarmentRepository implements GarmentRepository {
   async update(id: string, data: NewGarment): Promise<Garment> {
     const [db, userId] = await Promise.all([this.getDatabase(), this.currentUserId()]);
     const result = await db.runAsync(
-      'UPDATE garments SET name = ?, category = ?, color_hex = ?, color_name = ?, secondary_colors = ?, seasons = ?, sporty = ?, corte = ?, photo_ref = ? WHERE id = ? AND user_id = ?',
+      'UPDATE garments SET name = ?, category = ?, color_hex = ?, color_name = ?, secondary_colors = ?, seasons = ?, sporty = ?, classic = ?, corte = ?, photo_ref = ? WHERE id = ? AND user_id = ?',
       data.name,
       data.category,
       data.colorHex,
@@ -108,6 +111,7 @@ export class SqliteGarmentRepository implements GarmentRepository {
       JSON.stringify(data.secondaryColors),
       data.seasons.join(','),
       data.sporty ? 1 : 0,
+      data.classic ? 1 : 0,
       data.corte ?? null, // sin corte = se borra el que tenía
       data.photoRef,
       id,

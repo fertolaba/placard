@@ -11,7 +11,8 @@ export interface GarmentAnalysis {
   manga: SleeveLength | 'no_aplica';
   temporadas: Season[];
   corte: string; // uno de GARMENT_CUTS[categoria], o "no_aplica" para calzado
-  es_deportiva: boolean; // camiseta de fútbol, camiseta de un club o selección, ropa de entrenamiento
+  es_deportiva: boolean; // camiseta de fútbol con mangas, short de fútbol o botines
+  es_clasica: boolean; // camisa, chomba, sweater fino, blazer, pantalón sastrero, mocasines
   color_dominante: string; // uno de los nombres de GARMENT_COLORS
   colores_secundarios: string[]; // nombres de GARMENT_COLORS; vacío si la prenda es lisa
 }
@@ -32,6 +33,27 @@ const SLEEVE_SEASONS: Record<SleeveLength, Season[]> = {
 /** Las épocas que corresponden a un largo de manga (null si no se sabe). */
 export function seasonsForSleeve(sleeve: SleeveLength | null): Season[] | null {
   return sleeve ? [...SLEEVE_SEASONS[sleeve]] : null;
+}
+
+/**
+ * Si el tipo contiene alguna de estas palabras, la prenda nunca es deportiva, aunque el modelo diga lo contrario.
+ * Para ampliar la lista, agregá la palabra acá: se compara sin distinguir mayúsculas ni tildes.
+ */
+const NEVER_SPORTY_WORDS = ['musculosa', 'tank', 'sin mangas', 'nba', 'básquet', 'basquet', 'basket', 'jersey de basket'];
+
+const withoutAccents = (text: string) =>
+  text
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase();
+
+/** Si el tipo contiene alguna de estas palabras, o el corte es uno de estos, la prenda nunca es clásica. */
+const NEVER_CLASSIC_WORDS = ['buzo', 'hoodie', 'jogger', 'zapatilla', 'camiseta', 'musculosa'];
+const NEVER_CLASSIC_CUTS = ['oversize', 'baggy'];
+
+function containsAnyWord(type: string, words: readonly string[]): boolean {
+  const wanted = withoutAccents(type);
+  return words.some((word) => wanted.includes(withoutAccents(word)));
 }
 
 const isCategory = (value: unknown): value is GarmentCategory =>
@@ -58,7 +80,12 @@ export function parseGarmentAnalysis(raw: unknown): GarmentTypeDetection | null 
   const fromModel = normalizeSeasons(Array.isArray(data.temporadas) ? data.temporadas : []);
   const seasons = fromModel.length > 0 ? fromModel : seasonsForSleeve(sleeve);
   const cut = typeof data.corte === 'string' && GARMENT_CUTS[category].includes(data.corte) ? data.corte : null;
-  const sporty = data.es_deportiva === true; // si el modelo no lo dice, se asume que no es deportiva
+  const sporty = data.es_deportiva === true && !containsAnyWord(type, NEVER_SPORTY_WORDS); // si el modelo no lo dice, se asume que no es deportiva
+  // Se mira el corte que dijo el modelo y no `cut`: un "baggy" descartado por no corresponder a la categoría igual delata la prenda.
+  const classic =
+    data.es_clasica === true &&
+    !(typeof data.corte === 'string' && NEVER_CLASSIC_CUTS.includes(data.corte)) &&
+    !containsAnyWord(type, NEVER_CLASSIC_WORDS);
   const dominantColor = colorNamed(data.color_dominante);
   const secondaryColors: GarmentColor[] = [];
   for (const name of Array.isArray(data.colores_secundarios) ? data.colores_secundarios : []) {
@@ -67,5 +94,5 @@ export function parseGarmentAnalysis(raw: unknown): GarmentTypeDetection | null 
     secondaryColors.push(color);
     if (secondaryColors.length === MAX_SECONDARY_COLORS) break;
   }
-  return { type, category, sleeve, seasons, cut, sporty, dominantColor, secondaryColors };
+  return { type, category, sleeve, seasons, cut, sporty, classic, dominantColor, secondaryColors };
 }

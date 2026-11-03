@@ -10,6 +10,7 @@ export const STYLE_REFERENCES: StyleReference[] = [
     name: 'Streetwear',
     description: 'Prendas holgadas y cómodas, con zapatillas claras',
     palette: ['#26262B', '#8A8D91', '#E4DED2'],
+    excludesClassic: true,
     slots: [
       { label: 'buzo, remera o top', categories: ['arriba', 'top'], tone: 'cualquiera' },
       { label: 'pantalón o pollera', categories: ['abajo', 'pollera'], tone: 'cualquiera' },
@@ -22,9 +23,9 @@ export const STYLE_REFERENCES: StyleReference[] = [
     description: 'Clásico y prolijo, en tonos claros y neutros',
     palette: ['#E9E1D0', '#B08D63', '#23324A'],
     slots: [
-      { label: 'camisa o sweater claro', categories: ['arriba'], tone: 'claro' },
-      { label: 'pantalón o pollera neutra', categories: ['abajo', 'pollera'], tone: 'neutro' },
-      { label: 'mocasines oscuros', categories: ['calzado'], tone: 'oscuro' },
+      { label: 'camisa o sweater claro', categories: ['arriba'], tone: 'claro', requiresClassic: true },
+      { label: 'pantalón o pollera neutra', categories: ['abajo', 'pollera'], tone: 'neutro', requiresClassic: true },
+      { label: 'mocasines oscuros', categories: ['calzado'], tone: 'oscuro', requiresClassic: true },
     ],
   },
   {

@@ -24,6 +24,7 @@ import { SeasonPicker } from './SeasonPicker';
 import { SegmentedControl } from './SegmentedControl';
 
 const MAX_CONTENT_WIDTH = 480;
+const SPORTY_HELP = 'Solo para camisetas de fútbol con mangas: se usan en el estilo Blokecore. Musculosas y camisetas de otros deportes no van acá.';
 
 const PHOTO_CHOICES: readonly { value: PhotoChoice; label: string }[] = [
   { value: 'original', label: 'Original' },
@@ -47,6 +48,7 @@ export interface GarmentFormValues {
   seasons: Season[];
   corte?: string;
   sporty: boolean;
+  classic: boolean;
   color: GarmentColor;
   secondaryColors: GarmentColor[];
   newPhotoUri: string | null; // null = no se eligió una foto nueva
@@ -61,6 +63,7 @@ export interface GarmentFormInitial {
   seasons: Season[];
   corte?: string;
   sporty: boolean;
+  classic: boolean;
   imageUri: string | null;
 }
 
@@ -110,6 +113,8 @@ export function GarmentForm({
   const [seasons, setSeasons] = useState<Season[]>(initial?.seasons ?? []);
   const [corte, setCorte] = useState<string | undefined>(initial?.corte);
   const [sporty, setSporty] = useState(initial?.sporty ?? false);
+  const [classic, setClassic] = useState(initial?.classic ?? false);
+  const [classicFromAi, setClassicFromAi] = useState(false); // el valor actual lo puso la IA y nadie lo tocó
   const [color, setColor] = useState<GarmentColor | null>(
     initial ? { name: initial.colorName, hex: initial.colorHex } : null,
   );
@@ -122,6 +127,7 @@ export function GarmentForm({
   const seasonsTouched = useRef(Boolean(initial)); // lo mismo con las épocas
   const corteTouched = useRef(Boolean(initial)); // y con el corte
   const sportyTouched = useRef(Boolean(initial)); // y con "deportiva"
+  const classicTouched = useRef(Boolean(initial)); // y con "clásica"
   const secondaryTouched = useRef(Boolean(initial)); // y con los colores secundarios
   const latestRequest = useRef(0); // para ignorar resultados de una foto anterior
 
@@ -207,6 +213,12 @@ export function GarmentForm({
     setSporty(value);
   };
 
+  const chooseClassic = (value: boolean) => {
+    classicTouched.current = true;
+    setClassicFromAi(false);
+    setClassic(value);
+  };
+
   const choosePhoto = async (source: PhotoSource) => {
     const uri = await pick(source);
     if (!uri) return;
@@ -214,6 +226,7 @@ export function GarmentForm({
     setNewPhotoUri(uri);
     setDetected(null);
     setDetectedType(null);
+    setClassicFromAi(false);
     void removal.start(uri); // en paralelo: no demora el análisis
 
     // El color y el tipo de prenda se analizan a la vez, siempre sobre la foto ORIGINAL y no sobre el recorte:
@@ -239,6 +252,10 @@ export function GarmentForm({
         setCorte(foundType.cut);
       }
       if (!sportyTouched.current) setSporty(foundType.sporty);
+      if (!classicTouched.current) {
+        setClassic(foundType.classic);
+        setClassicFromAi(true);
+      }
     }
 
     // Las épocas deducidas de la foto (largo de manga y tipo de prenda) se aplican solo si la persona no las eligió a mano.
@@ -483,11 +500,17 @@ export function GarmentForm({
       <FormGroup
         footer={
           !analyzing && detectedType && detectedType.sporty === sporty
-            ? 'Detectado de la foto. Las prendas deportivas solo se usan en el estilo Blokecore.'
-            : 'Camisetas de fútbol y ropa deportiva. Solo se usan en el estilo Blokecore.'
+            ? `Detectado de la foto. ${SPORTY_HELP}`
+            : SPORTY_HELP
         }
       >
-        <SwitchRow label="Prenda deportiva" value={sporty} onValueChange={chooseSporty} />
+        <SwitchRow
+          label="Prenda clásica"
+          subtitle={classicFromAi ? 'Detectada automáticamente' : 'Se usa en Old Money; no se mezcla con Streetwear'}
+          value={classic}
+          onValueChange={chooseClassic}
+        />
+        <SwitchRow label="Camiseta de fútbol" value={sporty} onValueChange={chooseSporty} />
       </FormGroup>
 
       {shownError ? (
@@ -496,7 +519,7 @@ export function GarmentForm({
         </Text>
       ) : null}
       <Pressable
-        onPress={() => color && onSubmit({ name, category, seasons, corte: shownCorte, sporty, color, secondaryColors: shownSecondary, newPhotoUri: photoToSave })}
+        onPress={() => color && onSubmit({ name, category, seasons, corte: shownCorte, sporty, classic, color, secondaryColors: shownSecondary, newPhotoUri: photoToSave })}
         disabled={!canSave}
         accessibilityRole="button"
         style={[styles.save, !canSave && styles.saveDisabled]}

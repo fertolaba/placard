@@ -2,11 +2,11 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import { SEASONS } from '../../domain/entities/Season';
 import { SAMPLE_GARMENTS } from '../seed/sampleGarments';
 
-export const LATEST_VERSION = 8;
+export const LATEST_VERSION = 9;
 
 /**
  * Lleva la base a la última versión. La versión se guarda en la propia base (PRAGMA user_version),
- * así que para cambiar la estructura más adelante se agrega un bloque "if (version < 9)" y se sube LATEST_VERSION.
+ * así que para cambiar la estructura más adelante se agrega un bloque "if (version < 10)" y se sube LATEST_VERSION.
  */
 export async function runMigrations(db: SQLiteDatabase): Promise<void> {
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
@@ -80,6 +80,10 @@ export async function runMigrations(db: SQLiteDatabase): Promise<void> {
       // Colores secundarios (detalles, estampa, logo) como JSON: [{"name":"Blanco","hex":"#EDEAE4"}].
       // El color dominante sigue en color_hex y color_name. Las prendas que ya existían quedan sin secundarios.
       await db.execAsync(`ALTER TABLE garments ADD COLUMN secondary_colors TEXT NOT NULL DEFAULT '[]'`);
+    }
+    if (version < 9) {
+      // Prenda clásica o formal (0 o 1). Las prendas que ya existían quedan como no clásicas; se pueden marcar al editarlas.
+      await db.execAsync('ALTER TABLE garments ADD COLUMN classic INTEGER NOT NULL DEFAULT 0 CHECK (classic IN (0, 1))');
     }
     await db.execAsync(`PRAGMA user_version = ${LATEST_VERSION}`);
   });

@@ -1,8 +1,8 @@
 import { CATEGORY_ZONE, type BodyZone, type Garment } from '../../domain/entities/Garment';
-import type { StyleReference, StyleSlot } from '../../domain/entities/StyleReference';
+import type { StyleReference } from '../../domain/entities/StyleReference';
 import { scoreOutfit } from '../../domain/services/colorHarmony';
+import { garmentFitsSlot } from '../../domain/services/garmentFitsSlot';
 import { echoBonus } from '../../domain/services/outfitExplanation';
-import { matchesTone } from '../../domain/services/tone';
 
 export const STYLE_ZONES: readonly BodyZone[] = ['torso', 'piernas', 'pies'];
 export const ZONE_LABELS: Record<BodyZone, string> = { torso: 'Arriba', piernas: 'Abajo', pies: 'Calzado' };
@@ -29,18 +29,8 @@ export interface StyleVariant {
   matchPercent: number;
 }
 
-/**
- * Copia de la regla privada `fitsSlot` de GetStyleMatches: la pantalla necesita TODAS las prendas de un estilo
- * y el caso de uso devuelve una por pieza. styleVariants.test.ts avisa si las dos reglas se separan.
- */
-function fitsSlot(garment: Garment, slot: StyleSlot, reference: StyleReference): boolean {
-  if (!slot.categories.includes(garment.category) || !matchesTone(garment.colorHex, slot.tone)) return false;
-  if (slot.requiresSporty) return garment.sporty;
-  return reference.allowsSporty === true || !garment.sporty;
-}
-
 export function styleCoverage(reference: StyleReference, wardrobe: readonly Garment[]): StyleCoverage {
-  const garments = wardrobe.filter((garment) => reference.slots.some((slot) => fitsSlot(garment, slot, reference)));
+  const garments = wardrobe.filter((garment) => reference.slots.some((slot) => garmentFitsSlot(reference, slot, garment)));
   const byZone: Record<BodyZone, Garment[]> = { torso: [], piernas: [], pies: [] };
   for (const garment of garments) byZone[CATEGORY_ZONE[garment.category]].push(garment);
 

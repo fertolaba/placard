@@ -12,6 +12,7 @@ export interface GarmentDraft {
   secondaryColors: GarmentColor[];
   seasons: Season[];
   sporty: boolean;
+  classic: boolean;
   corte?: string;
   photoUri: string | null; // foto recién sacada o elegida (todavía en una carpeta temporal)
 }

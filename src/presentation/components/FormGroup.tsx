@@ -96,16 +96,26 @@ export function ValueRow({ label, value }: { label: string; value: string }) {
 
 interface SwitchRowProps {
   label: string;
+  subtitle?: string;
   value: boolean;
   onValueChange: (value: boolean) => void;
 }
 
-export function SwitchRow({ label, value, onValueChange }: SwitchRowProps) {
+export function SwitchRow({ label, subtitle, value, onValueChange }: SwitchRowProps) {
   const styles = useStyles();
   return (
     <>
-      <Text style={[styles.label, styles.grow]}>{label}</Text>
-      <Switch value={value} onValueChange={onValueChange} accessibilityLabel={label} trackColor={{ true: '#34C759' }} />
+      <View style={[styles.grow, subtitle ? styles.switchText : null]}>
+        <Text style={styles.label}>{label}</Text>
+        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      </View>
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        accessibilityLabel={label}
+        accessibilityHint={subtitle}
+        trackColor={{ true: '#34C759' }}
+      />
     </>
   );
 }
@@ -117,6 +127,8 @@ const useStyles = makeStyles((colors) => ({
   separator: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.swatchBorder },
   label: { fontSize: 17, color: colors.text },
   grow: { flex: 1 },
+  switchText: { paddingVertical: 8 },
+  subtitle: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
   input: { flex: 1, fontSize: 17, textAlign: 'right', color: colors.text, minHeight: 44 },
   eye: { width: 44, height: 44, marginRight: -10, alignItems: 'center', justifyContent: 'center' },
   valueRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },

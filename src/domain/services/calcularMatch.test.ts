@@ -40,6 +40,7 @@ function garment(category: GarmentCategory, colorHex: string, sporty = false): G
     secondaryColors: [],
     seasons: [],
     sporty,
+    classic: false,
     photoRef: null,
     imageUri: null,
     createdAt: new Date(0),

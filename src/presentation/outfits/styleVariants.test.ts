@@ -14,6 +14,7 @@ function garment(id: string, category: GarmentCategory, colorHex: string, sporty
     secondaryColors: [],
     seasons: ['verano'],
     sporty,
+    classic: false,
     photoRef: null,
     imageUri: null,
     createdAt: new Date(0),
