@@ -11,6 +11,10 @@ export const ESTILO_OUTFIT: Partial<Record<EstiloReferente, StyleId>> = {
   Vanguardia: 'techwear',
 };
 
+/** A qué perfil se muestra un referente: 'unisex' (o sin dato) se muestra a todos. Ver referentesParaPerfil. */
+export const GENEROS_REFERENTE = ['male', 'female', 'unisex'] as const;
+export type GeneroReferente = (typeof GENEROS_REFERENTE)[number];
+
 export interface ClaveDeEstilo {
   titulo: string;
   descripcion: string;
@@ -37,6 +41,7 @@ export interface Referente {
   paleta: string[]; // 3 o 4 colores (#RRGGBB)
   prendasClave: PrendaClave[];
   destacado: boolean;
+  gender?: GeneroReferente;
 }
 
 /** Cuánto del look del referente se puede armar con el placard. */

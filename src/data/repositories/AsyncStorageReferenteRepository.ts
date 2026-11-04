@@ -25,8 +25,10 @@ export class AsyncStorageReferenteRepository implements ReferenteRepository {
     return SAMPLE_REFERENTES;
   }
 
+  /** Un id de un referente que ya no está en el catálogo se ignora; se borra del teléfono la próxima vez que se guarde. */
   async getGuardados(): Promise<string[]> {
-    return parseGuardados(await AsyncStorage.getItem(keyFor(await this.currentUserId())));
+    const ids = parseGuardados(await AsyncStorage.getItem(keyFor(await this.currentUserId())));
+    return ids.filter((id) => SAMPLE_REFERENTES.some((referente) => referente.id === id));
   }
 
   async setGuardados(ids: string[]): Promise<void> {

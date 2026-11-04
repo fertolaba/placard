@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { container } from '../../core/di/container';
 import type { MatchReferente, Referente } from '../../domain/entities/Referente';
 import { calcularMatch } from '../../domain/services/calcularMatch';
+import { referentesParaPerfil } from '../../domain/services/referentesParaPerfil';
+import { useAuth } from '../auth/AuthProvider';
 import { useGarments } from './useGarments';
 
 type Status = 'loading' | 'ready' | 'error';
@@ -11,12 +13,17 @@ export interface ReferenteConMatch {
   match: MatchReferente;
 }
 
-/** Los referentes con su match contra el placard: se recalcula solo cuando cambian las prendas. */
+/**
+ * Los referentes que corresponden al perfil, con su match contra el placard. Lo usan la lista, los destacados,
+ * el detalle y los guardados: filtrar acá evita que se cuele un referente en cualquiera de ellos.
+ * Se recalcula cuando cambian las prendas o el sexo del perfil.
+ */
 export function useReferentes() {
   const [referentes, setReferentes] = useState<Referente[]>([]);
   const [referentesStatus, setReferentesStatus] = useState<Status>('loading');
   const [reloadKey, setReloadKey] = useState(0);
   const { garments, status: garmentsStatus, reload: reloadGarments } = useGarments('todo');
+  const sex = useAuth().user?.sex ?? null;
 
   useEffect(() => {
     let cancelled = false;
@@ -36,8 +43,8 @@ export function useReferentes() {
   }, [reloadKey]);
 
   const items = useMemo<ReferenteConMatch[]>(
-    () => referentes.map((referente) => ({ referente, match: calcularMatch(referente, garments) })),
-    [referentes, garments],
+    () => referentesParaPerfil(referentes, sex).map((referente) => ({ referente, match: calcularMatch(referente, garments) })),
+    [referentes, garments, sex],
   );
 
   const status: Status =
