@@ -33,7 +33,7 @@ export const SavedOutfitCard = memo(function SavedOutfitCard({ view, width, onRe
             <GradientFill from={gradient.from} to={gradient.to} />
             <View style={styles.circle} />
             <View style={styles.silhouettes}>
-              <StyleGarmentsRow garments={garments} size={0.68} />
+              <StyleGarmentsRow garments={garments} size={0.68} styleId={view.saved.styleId} />
             </View>
           </View>
           <View style={styles.bottom}>

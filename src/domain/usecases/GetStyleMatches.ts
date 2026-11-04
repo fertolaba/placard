@@ -2,6 +2,7 @@ import type { Garment } from '../entities/Garment';
 import type { StyleMatch, StyleReference } from '../entities/StyleReference';
 import type { GarmentRepository } from '../repositories/GarmentRepository';
 import { garmentFitsSlot } from '../services/garmentFitsSlot';
+import { sortByPrincipal } from '../services/styleAffinity';
 import { STYLE_REFERENCES } from '../services/styleCatalog';
 
 function matchReference(reference: StyleReference, garments: Garment[]): StyleMatch {
@@ -10,10 +11,12 @@ function matchReference(reference: StyleReference, garments: Garment[]): StyleMa
     .map((slot, index) => ({
       slot,
       index,
-      // Entre las candidatas van primero las de la categoría preferida de la pieza (en Y2K, un top antes que una remera).
-      candidates: garments
-        .filter((garment) => garmentFitsSlot(reference, slot, garment))
-        .sort((a, b) => slot.categories.indexOf(a.category) - slot.categories.indexOf(b.category)),
+      // Entre las candidatas va primero la protagonista del estilo, igual que en la pantalla Outfits.
+      candidates: sortByPrincipal(
+        garments.filter((garment) => garmentFitsSlot(reference, slot, garment)),
+        reference,
+        STYLE_REFERENCES,
+      ),
     }))
     .sort((a, b) => a.candidates.length - b.candidates.length);
 

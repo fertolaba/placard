@@ -1,50 +1,71 @@
 import { memo } from 'react';
 import Svg, { Path } from 'react-native-svg';
 import type { BodyZone } from '../../../domain/entities/Garment';
+import type { StyleId } from '../../../domain/entities/StyleReference';
+import { GENERIC_SHAPES, silhouetteBox, silhouetteShape } from '../../outfits/silhouetteShapes';
 
-const SHAPES: Record<BodyZone, { width: number; height: number; path: string; scale: number }> = {
-  torso: {
-    width: 120,
-    height: 120,
-    scale: 0.56,
-    path: 'M30 22L48 14Q60 24 72 14L90 22L112 44L98 58L88 52L88 98L32 98L32 52L22 58L8 44Z',
-  },
-  piernas: { width: 80, height: 100, scale: 0.62, path: 'M16 6H64L70 94H46L40 40L34 94H10Z' },
-  pies: { width: 44, height: 20, scale: 1.5, path: 'M1 14Q1 6 8 5L16 1Q20 8 30 9Q40 10 43 14V18H1Z' },
-};
-
-/** Lo que ocupa en pantalla la silueta de una zona. */
+/** Lo que ocupa en pantalla la foto de una zona: el cuadro de la silueta genérica, igual que antes. */
 export function zoneDimensions(zone: BodyZone, size: number): { width: number; height: number } {
-  const { width, height, scale } = SHAPES[zone];
-  return { width: width * scale * size, height: height * scale * size };
+  return silhouetteBox(GENERIC_SHAPES[zone], zone, size);
 }
+
+const viewBoxSize = (vb: string) => {
+  const [, , width, height] = vb.split(' ').map(Number);
+  return { width, height };
+};
 
 interface SilhouetteProps {
   zone: BodyZone;
   color: string | null;
   size: number;
+  styleId?: StyleId | null; // sin estilo, o sin silueta propia, va la genérica
   dashColor?: string; // el contorno blanco no se ve sobre fondos claros
 }
 
-export const Silhouette = memo(function Silhouette({ zone, color, size, dashColor = 'rgba(255,255,255,.9)' }: SilhouetteProps) {
-  const { width, height, path, scale } = SHAPES[zone];
-  const rendered = scale * size;
+export const Silhouette = memo(function Silhouette({
+  zone,
+  color,
+  size,
+  styleId,
+  dashColor = 'rgba(255,255,255,.9)',
+}: SilhouetteProps) {
+  const { shape, generic } = silhouetteShape(zone, styleId);
+  const box = silhouetteBox(shape, zone, size);
+  const view = viewBoxSize(shape.vb);
+  // Con "meet" el dibujo entra por el lado más justo: esa es su escala real en pantalla.
+  const fit = Math.min(box.width / view.width, box.height / view.height);
   // El trazo se expresa en puntos de pantalla: sin esto, cada viewBox lo agrandaría distinto.
-  const unit = 1 / rendered;
+  const unit = 1 / fit;
+
   return (
-    <Svg width={width * rendered} height={height * rendered} viewBox={`0 0 ${width} ${height}`}>
+    <Svg width={box.width} height={box.height} viewBox={shape.vb} preserveAspectRatio="xMidYMid meet">
       {color ? (
-        <Path d={path} fill={color} stroke="rgba(0,0,0,.3)" strokeWidth={unit} />
+        <Path d={shape.main} fill={color} stroke="rgba(0,0,0,.3)" strokeWidth={unit} />
+      ) : generic ? (
+        <Path d={shape.main} fill="none" stroke={dashColor} strokeWidth={1.5 * unit} strokeDasharray={`${4 * unit} ${4 * unit}`} />
       ) : (
-        <Path
-          d={path}
-          fill="none"
-          stroke={dashColor}
-          strokeWidth={1.5 * unit}
-          strokeDasharray={`${4 * unit} ${4 * unit}`}
-        />
+        <>
+          <Path
+            d={shape.main}
+            fill="none"
+            stroke={dashColor}
+            strokeWidth={1.6 * unit}
+            strokeDasharray={`${5 * unit} ${4 * unit}`}
+            strokeLinejoin="round"
+          />
+          {shape.det ? (
+            <Path
+              d={shape.det}
+              fill="none"
+              stroke={dashColor}
+              strokeOpacity={0.55}
+              strokeWidth={unit}
+              strokeDasharray={`${3 * unit} ${3 * unit}`}
+              strokeLinejoin="round"
+            />
+          ) : null}
+        </>
       )}
     </Svg>
   );
 });
-

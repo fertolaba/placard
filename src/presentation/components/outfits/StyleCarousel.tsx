@@ -47,7 +47,7 @@ const StyleCard = memo(function StyleCard({ coverage, selected, onSelect }: Card
             <GradientFill from={c1} to={c2} />
             <View style={styles.circle} />
             <View style={styles.silhouettes}>
-              <StyleGarmentsRow garments={shownGarments} />
+              <StyleGarmentsRow garments={shownGarments} styleId={reference.id} />
             </View>
           </View>
           <View style={styles.bottom}>

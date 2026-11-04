@@ -3,6 +3,7 @@ import { memo, useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View, type DimensionValue } from 'react-native';
 import Animated from 'react-native-reanimated';
 import type { SavedOutfit } from '../../../domain/entities/SavedOutfit';
+import type { StyleId } from '../../../domain/entities/StyleReference';
 import { PAPER, useOutfitsTheme } from '../../outfits/outfitsTheme';
 import { STYLE_GRADIENTS } from '../../outfits/styleGradients';
 import { buildStyleVariants, type StyleCoverage, type StyleVariant } from '../../outfits/styleVariants';
@@ -22,12 +23,13 @@ function variantTitle({ top, bottom }: StyleVariant): string {
 interface CardProps {
   variant: StyleVariant;
   gradient: { from: string; to: string };
+  styleId: StyleId;
   width: DimensionValue;
   saved: boolean;
   onToggleSave: (variant: StyleVariant) => void;
 }
 
-export const VariantCard = memo(function VariantCard({ variant, gradient, width, saved, onToggleSave }: CardProps) {
+export const VariantCard = memo(function VariantCard({ variant, gradient, styleId, width, saved, onToggleSave }: CardProps) {
   const title = variantTitle(variant);
   const garments = useMemo(() => ({ torso: variant.top, piernas: variant.bottom, pies: variant.shoe }), [variant]);
   return (
@@ -35,7 +37,7 @@ export const VariantCard = memo(function VariantCard({ variant, gradient, width,
       <View style={styles.cardTop}>
         <GradientFill from={gradient.from} to={gradient.to} />
         <View style={styles.cardSilhouettes}>
-          <StyleGarmentsRow garments={garments} size={0.56} />
+          <StyleGarmentsRow garments={garments} size={0.56} styleId={styleId} />
         </View>
         <Pressable
           onPress={() => onToggleSave(variant)}
@@ -89,9 +91,9 @@ export function StyleVariantsSection({ coverage, savedIds, onToggleSave }: Props
 
   const renderItem = useCallback(
     ({ item }: { item: StyleVariant }) => (
-      <VariantCard variant={item} gradient={gradient} width={CARD_WIDTH} saved={savedIds.has(item.id)} onToggleSave={toggle} />
+      <VariantCard variant={item} gradient={gradient} styleId={styleId} width={CARD_WIDTH} saved={savedIds.has(item.id)} onToggleSave={toggle} />
     ),
-    [gradient, savedIds, toggle],
+    [gradient, styleId, savedIds, toggle],
   );
 
   return (
@@ -114,6 +116,7 @@ export function StyleVariantsSection({ coverage, savedIds, onToggleSave }: Props
               key={variant.id}
               variant={variant}
               gradient={gradient}
+              styleId={styleId}
               width={GRID_CARD_WIDTH}
               saved={savedIds.has(variant.id)}
               onToggleSave={toggle}

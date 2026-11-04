@@ -8,7 +8,7 @@ const CLARO_NEUTRO = '#EDEAE4';
 const OSCURO_NEUTRO = '#26262B';
 const COLOR_VIVO = '#C8102E';
 
-function garment(category: GarmentCategory, colorHex: string, flags: Partial<Pick<Garment, 'classic' | 'sporty'>> = {}): Garment {
+function garment(category: GarmentCategory, colorHex: string, flags: Partial<Pick<Garment, 'classic' | 'sporty' | 'corte' | 'secondaryColors'>> = {}): Garment {
   return {
     id: 'g',
     name: 'g',
@@ -75,7 +75,51 @@ describe('garmentFitsSlot', () => {
   });
 
   it('una prenda clásica sigue entrando en los otros estilos', () => {
-    expect(entersStyle('techwear', garment('abajo', OSCURO_NEUTRO, { classic: true }))).toBe(true);
+    expect(entersStyle('blokecore', garment('abajo', OSCURO_NEUTRO, { classic: true }))).toBe(true);
+  });
+
+  describe('Techwear', () => {
+    const BLANCO = { name: 'Blanco', hex: '#EDEAE4' };
+    const NEGRO = { name: 'Negro', hex: '#26262B' };
+
+    it('el color es libre', () => {
+      expect(entersStyle('techwear', garment('arriba', '#C7C7CC', { corte: 'regular' }))).toBe(true); // buzo gris claro
+      expect(entersStyle('techwear', garment('arriba', COLOR_VIVO, { corte: 'ajustado' }))).toBe(true); // buzo rojo
+      expect(entersStyle('techwear', garment('abajo', OSCURO_NEUTRO, { corte: 'slim' }))).toBe(true); // jogger negro
+    });
+
+    it('acepta zapatillas de cualquier color', () => {
+      expect(entersStyle('techwear', garment('calzado', '#F2F2F2'))).toBe(true);
+      expect(entersStyle('techwear', garment('calzado', COLOR_VIVO))).toBe(true);
+    });
+
+    it('rechaza los cortes holgados', () => {
+      expect(entersStyle('techwear', garment('abajo', OSCURO_NEUTRO, { corte: 'baggy' }))).toBe(false); // jean baggy
+      expect(entersStyle('techwear', garment('arriba', OSCURO_NEUTRO, { corte: 'oversize' }))).toBe(false); // remera oversize
+      for (const corte of ['boxy']) expect(entersStyle('techwear', garment('arriba', OSCURO_NEUTRO, { corte }))).toBe(false);
+      for (const corte of ['wide leg', 'flared']) expect(entersStyle('techwear', garment('abajo', OSCURO_NEUTRO, { corte }))).toBe(false);
+    });
+
+    it('deja pasar una prenda sin corte guardado', () => {
+      expect(entersStyle('techwear', garment('abajo', OSCURO_NEUTRO))).toBe(true);
+    });
+
+    it('rechaza un pantalón sastrero clásico, aunque el corte sirva', () => {
+      expect(entersStyle('techwear', garment('abajo', OSCURO_NEUTRO, { classic: true, corte: 'slim' }))).toBe(false);
+    });
+
+    it('acepta hasta un color de detalle', () => {
+      expect(entersStyle('techwear', garment('arriba', COLOR_VIVO, { corte: 'regular', secondaryColors: [BLANCO] }))).toBe(true);
+      expect(entersStyle('techwear', garment('arriba', COLOR_VIVO, { corte: 'regular', secondaryColors: [BLANCO, NEGRO] }))).toBe(false);
+    });
+  });
+
+  it('los cortes y los colores de detalle de Techwear no afectan a los demás estilos', () => {
+    const colores = [
+      { name: 'Blanco', hex: '#EDEAE4' },
+      { name: 'Negro', hex: '#26262B' },
+    ];
+    expect(entersStyle('streetwear', garment('abajo', OSCURO_NEUTRO, { corte: 'baggy', secondaryColors: colores }))).toBe(true);
   });
 
   it('mantiene la regla de la camiseta de fútbol', () => {
