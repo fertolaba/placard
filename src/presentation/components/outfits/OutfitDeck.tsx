@@ -12,20 +12,23 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { scheduleOnRN, scheduleOnUI } from 'react-native-worklets';
-import type { Garment } from '../../../domain/entities/Garment';
+import { readableOn } from '../../../core/utils/color';
+import { CATEGORY_ZONE, type Garment } from '../../../domain/entities/Garment';
 import type { Outfit } from '../../../domain/entities/Outfit';
 import { deckGradient, hexToRgba, paletteLabel } from '../../outfits/deckAppearance';
 import { PAPER, useOutfitsTheme } from '../../outfits/outfitsTheme';
 import { PressableScale } from '../PressableScale';
+import { Silhouette } from './GarmentSilhouettes';
 import { GradientFill } from './GradientFill';
 
 export type DeckDecision = 'save' | 'skip';
 
 const CARD_WIDTH = 310;
 const CARD_HEIGHT = 372;
-const STAGE_HEIGHT = 400;
+const SHOE_EXTRA = 30; // con calzado, la zona del degradé pasa de 232 a 262
 const VISIBLE_CARDS = 3;
 const Y_STEP = 14;
+const STACK_PEEK = (VISIBLE_CARDS - 1) * Y_STEP; // lo que asoman por debajo las cartas de atrás
 const SCALE_STEP = 0.06;
 const MAX_ROTATION = 18;
 const SWIPE_DISTANCE = 110;
@@ -34,11 +37,29 @@ const EXIT_X = 620;
 const EXIT_MS = 360;
 const ADVANCE_MS = 240;
 
-const CardPhoto = memo(function CardPhoto({ garment, side }: { garment: Garment; side: 'left' | 'right' }) {
+const shoeOf = (outfit: Outfit) => outfit.garments.find((garment) => CATEGORY_ZONE[garment.category] === 'pies') ?? null;
+const cardHeight = (outfit: Outfit) => CARD_HEIGHT + (shoeOf(outfit) ? SHOE_EXTRA : 0);
+
+const CardPhoto = memo(function CardPhoto({
+  garment,
+  side,
+  compact,
+}: {
+  garment: Garment;
+  side: 'left' | 'right';
+  compact: boolean; // con calzado debajo, las dos fotos van más chicas y más arriba
+}) {
   // Con foto no se pinta fondo: detrás de un recorte transparente tiene que verse el fondo de la carta.
   const backgroundColor = garment.imageUri ? 'transparent' : garment.colorHex;
+  const position = compact
+    ? side === 'left'
+      ? styles.photoLeftCompact
+      : styles.photoRightCompact
+    : side === 'left'
+      ? styles.photoLeft
+      : styles.photoRight;
   return (
-    <View style={[styles.photo, side === 'left' ? styles.photoLeft : styles.photoRight, { backgroundColor }]}>
+    <View style={[styles.photo, compact && styles.photoCompact, position, { backgroundColor }]}>
       {garment.imageUri ? (
         <Image source={{ uri: garment.imageUri }} style={StyleSheet.absoluteFill} contentFit="cover" recyclingKey={garment.id} />
       ) : (
@@ -48,18 +69,42 @@ const CardPhoto = memo(function CardPhoto({ garment, side }: { garment: Garment;
   );
 });
 
+/** Cuadro ancho del calzado: la foto entera (contain) o, sin foto, la silueta punteada de calzado. */
+const ShoePhoto = memo(function ShoePhoto({ garment }: { garment: Garment }) {
+  const backgroundColor = garment.imageUri ? 'transparent' : garment.colorHex;
+  return (
+    <View style={[styles.shoe, { backgroundColor }]}>
+      {garment.imageUri ? (
+        <Image source={{ uri: garment.imageUri }} style={StyleSheet.absoluteFill} contentFit="contain" recyclingKey={garment.id} />
+      ) : (
+        <Silhouette zone="pies" color={null} size={1.4} dashColor={readableOn(garment.colorHex)} />
+      )}
+    </View>
+  );
+});
+
 const CardFace = memo(function CardFace({ outfit }: { outfit: Outfit }) {
   const { bg1, bg2 } = deckGradient(outfit);
-  const [first, second] = outfit.garments;
+  const shoe = shoeOf(outfit);
+  const [first, second] = outfit.garments.filter((garment) => garment !== shoe);
+  const compact = shoe !== null;
   return (
     <View style={styles.face}>
-      <View style={styles.faceTop}>
+      <View style={[styles.faceTop, compact && styles.faceTopWithShoe]}>
         <GradientFill from={bg1} to={bg2} />
-        {first ? <CardPhoto garment={first} side="left" /> : null}
-        {second ? <CardPhoto garment={second} side="right" /> : null}
-        <View style={styles.plus}>
+        {first ? <CardPhoto garment={first} side="left" compact={compact} /> : null}
+        {second ? <CardPhoto garment={second} side="right" compact={compact} /> : null}
+        <View style={[styles.plus, compact && styles.plusCompact]}>
           <Ionicons name="add" size={20} color={PAPER.heart} />
         </View>
+        {shoe ? (
+          <>
+            <ShoePhoto garment={shoe} />
+            <View style={[styles.plus, styles.plusShoe]}>
+              <Ionicons name="add" size={16} color={PAPER.heart} />
+            </View>
+          </>
+        ) : null}
       </View>
       <View style={styles.faceBottom}>
         <View style={styles.titleRow}>
@@ -176,7 +221,7 @@ const DeckSlot = memo(function DeckSlot({ outfit, position, reducedMotion, onDec
   return (
     <GestureDetector gesture={pan} touchAction="pan-y">
       <Animated.View
-        style={[styles.card, { zIndex: VISIBLE_CARDS - position }, cardStyle]}
+        style={[styles.card, { height: cardHeight(outfit), zIndex: VISIBLE_CARDS - position }, cardStyle]}
         accessible={isTop}
         accessibilityLabel={`${outfit.title}, ${outfit.matchPercent}% match. ${outfit.description}`}
         accessibilityElementsHidden={!isTop}
@@ -235,7 +280,7 @@ export function OutfitDeck({ outfits, index, savedCount, onDecide, onAdvance, on
 
   return (
     <View style={styles.deck}>
-      <View style={styles.stage}>
+      <View style={[styles.stage, { height: cardHeight(top) + STACK_PEEK }]}>
         <Animated.View
           style={[
             styles.panel,
@@ -321,7 +366,7 @@ const RoundButton = memo(function RoundButton({ size, icon, color, label, backgr
 
 const styles = StyleSheet.create({
   deck: { alignItems: 'center' },
-  stage: { width: CARD_WIDTH, height: STAGE_HEIGHT, marginTop: 24, marginBottom: 22 },
+  stage: { width: CARD_WIDTH, marginTop: 24, marginBottom: 22 }, // alto: la carta de arriba + lo que asoman las de atrás
   panel: { position: 'absolute', top: -22, bottom: -22, left: -22, right: -22, borderRadius: 38 },
   panelTransition: { transitionProperty: 'backgroundColor', transitionDuration: 300 },
   card: {
@@ -329,14 +374,14 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     width: CARD_WIDTH,
-    height: CARD_HEIGHT,
     borderRadius: 28,
     backgroundColor: PAPER.background,
     boxShadow: '0px 10px 24px rgba(0,0,0,0.22)',
-    transformOrigin: 'center bottom', // las cartas de abajo asoman por debajo: 372 + 28 = los 400 del contenedor
+    transformOrigin: 'center bottom', // las cartas de abajo asoman por debajo: alto de la carta + STACK_PEEK = el contenedor
   },
   face: { flex: 1, borderRadius: 28, overflow: 'hidden' },
   faceTop: { height: 232 },
+  faceTopWithShoe: { height: 232 + SHOE_EXTRA },
   photo: {
     position: 'absolute',
     width: 124,
@@ -349,6 +394,22 @@ const styles = StyleSheet.create({
   },
   photoLeft: { left: 22, top: 30, transform: [{ rotate: '-4deg' }] },
   photoRight: { right: 22, top: 34, transform: [{ rotate: '4deg' }] },
+  photoCompact: { width: 116, height: 140 },
+  photoLeftCompact: { left: 24, top: 16, transform: [{ rotate: '-4deg' }] },
+  photoRightCompact: { right: 24, top: 20, transform: [{ rotate: '4deg' }] },
+  shoe: {
+    position: 'absolute',
+    left: (CARD_WIDTH - 160) / 2,
+    top: 176,
+    width: 160,
+    height: 68,
+    borderRadius: 16,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0px 6px 14px rgba(0,0,0,0.2)',
+    transform: [{ rotate: '-2deg' }],
+  },
   plus: {
     position: 'absolute',
     left: CARD_WIDTH / 2 - 16,
@@ -360,6 +421,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  plusCompact: { top: 72 },
+  plusShoe: { left: CARD_WIDTH / 2 - 13, top: 176 - 13, width: 26, height: 26, borderRadius: 13 },
   faceBottom: { height: 140, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: PAPER.background, gap: 3 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   title: { flex: 1, fontSize: 22, lineHeight: 25, fontWeight: '700', color: PAPER.text },
