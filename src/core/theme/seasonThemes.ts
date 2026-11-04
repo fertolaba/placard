@@ -1,5 +1,5 @@
 import type { SeasonSelection } from '../../domain/entities/Season';
-import { darkPalette } from './palettes';
+import { DAY_TOKENS, NIGHT_TOKENS, type ThemeTokens } from './palettes';
 
 /** Colores de Mi Pilchapp. Todos son texto plano para poder interpolarlos en el hilo nativo. */
 export interface SeasonTheme {
@@ -34,66 +34,40 @@ export interface SeasonTheme {
 export type SeasonThemeColor = keyof SeasonTheme;
 export type SeasonScheme = 'light' | 'dark';
 
+function warmSeasonTheme(t: ThemeTokens): SeasonTheme {
+  return {
+    background: t.body,
+    text: t.text,
+    textMuted: t.sub,
+    headerMuted: t.sub,
+    card: t.card,
+    cardBorder: t.cardBorder,
+    headerButtonBackground: t.card,
+    headerButtonBorder: t.cardBorder,
+    headerButtonColor: t.text,
+    seasonCircle: t.card,
+    seasonCircleBorder: t.cardBorder,
+    seasonIcon: t.text,
+    seasonActive: t.primary,
+    seasonActiveIcon: t.onPrimary,
+    seasonLabel: t.sub,
+    activeText: t.accent,
+    categoryTrack: t.card,
+    categorySelected: t.primary,
+    categorySelectedText: t.onPrimary,
+    categoryText: t.sub,
+    tabBar: t.tabBar,
+    tabBarBorder: t.cardBorder,
+    tabActive: t.tabActive,
+    tabInactive: t.sub2,
+    dashedBorder: t.sub2,
+    addButton: t.accent,
+  };
+}
+
 export const SEASON_THEMES: Record<SeasonSelection, Record<SeasonScheme, SeasonTheme>> = {
-  todas: {
-    light: {
-      background: '#F2F2F7',
-      text: '#000000',
-      textMuted: '#6C6C70',
-      headerMuted: '#6C6C70',
-      card: '#FFFFFF',
-      cardBorder: 'rgba(0,0,0,0)',
-      headerButtonBackground: '#F2F2F7',
-      headerButtonBorder: 'rgba(0,0,0,0.12)',
-      headerButtonColor: '#000000',
-      seasonCircle: '#FFFFFF',
-      seasonCircleBorder: 'rgba(0,0,0,0.12)',
-      seasonIcon: '#000000',
-      seasonActive: '#0A60D6',
-      seasonActiveIcon: '#FFFFFF',
-      seasonLabel: '#6C6C70',
-      activeText: '#0A60D6',
-      categoryTrack: '#FFFFFF',
-      categorySelected: '#0A60D6',
-      categorySelectedText: '#FFFFFF',
-      categoryText: '#6C6C70',
-      tabBar: '#FFFFFF',
-      tabBarBorder: 'rgba(0,0,0,0.12)',
-      tabActive: '#0A60D6',
-      tabInactive: '#6C6C70',
-      dashedBorder: '#6C6C70',
-      addButton: '#0A60D6',
-    },
-    // Es la pantalla oscura de siempre: sale de la paleta general para que no se separen.
-    dark: {
-      background: darkPalette.background,
-      text: darkPalette.text,
-      textMuted: darkPalette.textMuted,
-      headerMuted: darkPalette.textMuted,
-      card: darkPalette.surface,
-      cardBorder: 'rgba(255,255,255,0)',
-      headerButtonBackground: darkPalette.background,
-      headerButtonBorder: darkPalette.swatchBorder,
-      headerButtonColor: darkPalette.text,
-      seasonCircle: darkPalette.surface,
-      seasonCircleBorder: darkPalette.swatchBorder,
-      seasonIcon: darkPalette.text,
-      seasonActive: darkPalette.primary,
-      seasonActiveIcon: darkPalette.onPrimary,
-      seasonLabel: darkPalette.textMuted,
-      activeText: darkPalette.link,
-      categoryTrack: darkPalette.surface,
-      categorySelected: darkPalette.primary,
-      categorySelectedText: darkPalette.onPrimary,
-      categoryText: darkPalette.textMuted,
-      tabBar: darkPalette.surface,
-      tabBarBorder: darkPalette.swatchBorder,
-      tabActive: darkPalette.link,
-      tabInactive: darkPalette.textMuted,
-      dashedBorder: darkPalette.textMuted,
-      addButton: darkPalette.textMuted,
-    },
-  },
+  // Sin estación elegida se ve la paleta cálida general, la misma de Outfits.
+  todas: { light: warmSeasonTheme(DAY_TOKENS), dark: warmSeasonTheme(NIGHT_TOKENS) },
   verano: {
     light: {
       background: '#FFEFC4',

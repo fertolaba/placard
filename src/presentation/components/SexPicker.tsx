@@ -52,7 +52,7 @@ const useStyles = makeStyles((colors) => ({
     justifyContent: 'center',
     gap: 10,
   },
-  optionChecked: { backgroundColor: colors.primaryFill, borderColor: colors.link, borderWidth: 2 },
+  optionChecked: { backgroundColor: colors.primaryFill, borderColor: colors.primary, borderWidth: 2 },
   dot: {
     width: 20,
     height: 20,
@@ -62,8 +62,8 @@ const useStyles = makeStyles((colors) => ({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dotChecked: { borderColor: colors.link },
-  dotInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.link },
+  dotChecked: { borderColor: colors.primary },
+  dotInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primary },
   label: { fontSize: 16, fontWeight: '500', color: colors.text },
   labelChecked: { fontWeight: '600', color: colors.link },
 }));

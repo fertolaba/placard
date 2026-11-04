@@ -12,7 +12,7 @@ interface Props<T extends string> {
   onChange: (value: T) => void;
 }
 
-/** Control segmentado con el estilo de iOS. */
+/** Control segmentado: el segmento elegido va en el color primario del tema. */
 export function SegmentedControl<T extends string>({ options, value, onChange }: Props<T>) {
   const styles = useStyles();
   return (
@@ -38,7 +38,7 @@ export function SegmentedControl<T extends string>({ options, value, onChange }:
 const useStyles = makeStyles((colors) => ({
   track: { flexDirection: 'row', backgroundColor: colors.fillMuted, borderRadius: 9, padding: 2 },
   segment: { flex: 1, height: 28, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
-  segmentSelected: { backgroundColor: colors.segmentSelected, boxShadow: '0 1px 3px rgba(0,0,0,0.12)' },
+  segmentSelected: { backgroundColor: colors.primary, boxShadow: '0 1px 3px rgba(0,0,0,0.12)' },
   label: { fontSize: 13, color: colors.text },
-  labelSelected: { fontWeight: '600' },
+  labelSelected: { fontWeight: '600', color: colors.onPrimary },
 }));

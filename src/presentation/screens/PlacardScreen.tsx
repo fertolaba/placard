@@ -48,7 +48,7 @@ export function PlacardScreen() {
   const categoryOptions = categoryFilterOptions(sex);
   const categoryOrder = categoryOptions.map((option) => option.value);
   const [category, setCategory] = useState<CategoryFilterValue>('todo');
-  const { season, setSeason } = useSeasonTheme();
+  const { season, setSeason, theme } = useSeasonTheme();
   const { garments, status, reload } = useGarments(category, season);
 
   const screenColors = useThemeColors(SCREEN_COLORS);
@@ -117,7 +117,7 @@ export function PlacardScreen() {
         index={categoryOrder.indexOf(category)}
         onSwipe={(direction) => setCategory((current) => neighbor(categoryOrder, current, direction, SWIPE_RIGHT_GOES_NEXT))}
       >
-        {status === 'loading' && <ActivityIndicator style={styles.loader} />}
+        {status === 'loading' && <ActivityIndicator color={theme.textMuted} style={styles.loader} />}
         {status === 'error' && (
           <StateMessage
             title="No pudimos cargar tus prendas"

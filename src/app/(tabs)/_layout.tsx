@@ -17,13 +17,14 @@ export default function TabsLayout() {
   const { colors } = useTheme();
   const { theme } = useSeasonTheme();
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Tabs
         screenOptions={{
           headerShown: false,
-          tabBarActiveTintColor: colors.link,
-          tabBarInactiveTintColor: colors.textMuted,
-          tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.swatchBorder },
+          tabBarActiveTintColor: colors.tabActive,
+          tabBarInactiveTintColor: colors.sub2,
+          tabBarStyle: { backgroundColor: colors.tabBar, borderTopColor: colors.cardBorder },
+          sceneStyle: { backgroundColor: colors.background }, // sin destellos al cambiar de pestaña
         }}
       >
         <Tabs.Screen

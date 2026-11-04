@@ -21,7 +21,6 @@ import { useOutfitSuggestions } from '../hooks/useOutfitSuggestions';
 import { useStyleMatches } from '../hooks/useStyleMatches';
 import { useOutfitsTheme } from '../outfits/outfitsTheme';
 import { styleCoverage } from '../outfits/styleVariants';
-import { useWarmTabBar } from '../outfits/useWarmTabBar';
 import { toggleSavedOutfit, useSavedOutfits } from '../state/savedOutfits';
 
 const MAX_CONTENT_WIDTH = 480;
@@ -74,7 +73,6 @@ export function OutfitsScreen() {
     router.setParams({ estilo: undefined }); // así el mismo estilo se puede volver a pedir más tarde
   }, [requestedStyleId, router]);
 
-  useWarmTabBar();
 
   const decide = useCallback(
     (outfit: Outfit, decision: DeckDecision) => {

@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { memo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { readableOn } from '../../core/utils/color';
 import type { ReferenteConMatch } from '../hooks/useReferentes';
 import { LookIllustration } from './LookIllustration';
 import { MatchRing } from './MatchRing';
@@ -10,6 +9,8 @@ import { PaletteDots } from './PaletteDots';
 import { PressableScale } from './PressableScale';
 import { getReferenteImages } from './referenteImages';
 import { SaveButton } from './SaveButton';
+import { makeStyles } from '../theme/makeStyles';
+import { useTheme } from '../theme/ThemeProvider';
 
 export const DESTACADO_CARD_WIDTH = 300;
 
@@ -21,10 +22,12 @@ interface Props {
   onPress: (id: string) => void;
 }
 
-/** Los colores salen del referente y no del tema: la tarjeta se ve igual en modo claro y oscuro. */
+/** Tarjeta del carrusel de destacados, con los colores del tema (la foto y la paleta del referente no cambian). */
 export const DestacadoCard = memo(function DestacadoCard({ item, etiqueta, saved, onToggleSave, onPress }: Props) {
   const { referente, match } = item;
-  const foreground = readableOn(referente.colorTarjeta);
+  const styles = useStyles();
+  const { colors } = useTheme();
+  const foreground = colors.text;
   const { avatar } = getReferenteImages(referente.id);
   const tag = (
     <View style={styles.tag}>
@@ -44,7 +47,7 @@ export const DestacadoCard = memo(function DestacadoCard({ item, etiqueta, saved
       onAccessibilityAction={(event) => {
         if (event.nativeEvent.actionName === 'toggleSave') onToggleSave(referente.id);
       }}
-      style={[styles.card, { backgroundColor: referente.colorTarjeta }]}
+      style={styles.card}
     >
       {avatar !== undefined ? (
         <View style={styles.photoWrap}>
@@ -66,7 +69,7 @@ export const DestacadoCard = memo(function DestacadoCard({ item, etiqueta, saved
         <>
           <View style={styles.top}>
             {tag}
-            <SaveButton nombre={referente.nombre} saved={saved} color={foreground} onPress={() => onToggleSave(referente.id)} />
+            <SaveButton nombre={referente.nombre} saved={saved} color={saved ? colors.accent : colors.sub} onPress={() => onToggleSave(referente.id)} />
           </View>
 
           <View style={styles.center}>
@@ -93,7 +96,7 @@ export const DestacadoCard = memo(function DestacadoCard({ item, etiqueta, saved
       <View style={styles.spacer} />
 
       <View style={styles.matchRow}>
-        <MatchRing percent={match.porcentaje} color={foreground} trackColor={`${foreground}33`} />
+        <MatchRing percent={match.porcentaje} color={colors.accent} trackColor={colors.line} />
         <View style={styles.matchInfo}>
           <Text style={[styles.matchText, { color: foreground }]}>
             Tenés {match.tengo} de {match.total} prendas
@@ -109,17 +112,24 @@ export const DestacadoCard = memo(function DestacadoCard({ item, etiqueta, saved
         style={({ pressed }) => [styles.button, pressed && styles.pressed]}
       >
         <Text style={styles.buttonLabel}>Ver su estilo</Text>
-        <Ionicons name="chevron-forward" size={18} color={BUTTON_TEXT} />
+        <Ionicons name="chevron-forward" size={18} color={colors.onPrimary} />
       </Pressable>
     </PressableScale>
   );
 });
 
-const BUTTON_TEXT = '#1C1C1E';
-
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   // flexGrow: todas las tarjetas del carrusel miden lo que la más alta, tengan foto o ilustración.
-  card: { width: DESTACADO_CARD_WIDTH, flexGrow: 1, borderRadius: 24, padding: 16, overflow: 'hidden' },
+  card: {
+    width: DESTACADO_CARD_WIDTH,
+    flexGrow: 1,
+    borderRadius: 24,
+    padding: 16,
+    overflow: 'hidden',
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+  },
   photoWrap: { height: 160, marginTop: -16, marginHorizontal: -16, borderRadius: 16, overflow: 'hidden' },
   photoScrim: { backgroundColor: 'rgba(0,0,0,0.25)' },
   photoTop: {
@@ -156,8 +166,8 @@ const styles = StyleSheet.create({
     gap: 4,
     borderRadius: 14,
     marginTop: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.primary,
   },
   pressed: { opacity: 0.7 },
-  buttonLabel: { fontSize: 16, fontWeight: '600', color: BUTTON_TEXT },
-});
+  buttonLabel: { fontSize: 16, fontWeight: '600', color: colors.onPrimary },
+}));

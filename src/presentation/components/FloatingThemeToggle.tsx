@@ -10,14 +10,15 @@ const TAB_BAR_HEIGHT = 49; // sin contar el área segura
 const GAP_ABOVE_TAB_BAR = 16;
 const SEASONAL_BACKGROUND = { dark: 'rgba(15,15,30,0.72)', light: 'rgba(255,255,255,0.82)' };
 
-/** Botón luna/sol flotante, arriba de la barra de pestañas. En Mi Pilchapp toma los colores de la estación. */
+/** Botón luna/sol flotante, arriba de la barra de pestañas. En Mi Pilchapp con una estación elegida toma sus colores. */
 export function FloatingThemeToggle() {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const { scheme } = useTheme();
-  const { theme } = useSeasonTheme();
+  const { season, theme } = useSeasonTheme();
   const { tokens, transition } = useOutfitsTheme();
-  const seasonal = pathname === '/' || pathname === '/index';
+  // Solo las estaciones con escena tienen colores propios; "Todas" usa la paleta general.
+  const seasonal = (pathname === '/' || pathname === '/index') && season !== 'todas';
 
   return (
     <ThemeToggle

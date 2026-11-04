@@ -59,7 +59,7 @@ const useStyles = makeStyles((colors) => ({
     justifyContent: 'center',
     gap: 4,
   },
-  chipSelected: { backgroundColor: colors.primaryFill, borderColor: colors.link, borderWidth: 2 },
+  chipSelected: { backgroundColor: colors.primaryFill, borderColor: colors.primary, borderWidth: 2 },
   label: { fontSize: 13, fontWeight: '500', color: colors.text },
   labelSelected: { fontWeight: '600', color: colors.link },
   badge: {

@@ -22,7 +22,6 @@ import {
   type SavedFilter,
   type SavedOutfitView,
 } from '../outfits/savedOutfitView';
-import { useWarmTabBar } from '../outfits/useWarmTabBar';
 import { restoreSavedOutfit, toggleSavedOutfit, useSavedOutfits } from '../state/savedOutfits';
 
 const MAX_CONTENT_WIDTH = 480;
@@ -38,7 +37,6 @@ export function SavedOutfitsScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { tokens, transition, reducedMotion } = useOutfitsTheme();
-  useWarmTabBar();
   const saved = useSavedOutfits();
   const { garments, status, reload } = useGarments('todo');
   const [filter, setFilter] = useState<SavedFilter>('todos');

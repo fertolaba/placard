@@ -1,8 +1,9 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors } from '../../core/theme/colors';
+import { makeStyles } from '../theme/makeStyles';
 
 export function ComingSoonScreen({ title }: { title: string }) {
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   return (
     <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
@@ -14,8 +15,8 @@ export function ComingSoonScreen({ title }: { title: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: { flex: 1, backgroundColor: colors.background, paddingHorizontal: 20 },
   title: { fontSize: 34, fontWeight: '700', color: colors.text },
   detail: { fontSize: 15, color: colors.textMuted, marginTop: 8 },
-});
+}));

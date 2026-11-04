@@ -103,6 +103,7 @@ interface SwitchRowProps {
 
 export function SwitchRow({ label, subtitle, value, onValueChange }: SwitchRowProps) {
   const styles = useStyles();
+  const { colors } = useTheme();
   return (
     <>
       <View style={[styles.grow, subtitle ? styles.switchText : null]}>
@@ -114,7 +115,7 @@ export function SwitchRow({ label, subtitle, value, onValueChange }: SwitchRowPr
         onValueChange={onValueChange}
         accessibilityLabel={label}
         accessibilityHint={subtitle}
-        trackColor={{ true: '#34C759' }}
+        trackColor={{ true: colors.primary, false: colors.switchOff }}
       />
     </>
   );

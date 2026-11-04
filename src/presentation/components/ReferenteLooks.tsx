@@ -3,6 +3,7 @@ import { Image } from 'expo-image';
 import { useCallback, useState } from 'react';
 import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { PHOTO_VIEWER_BACKGROUND } from '../../core/theme/palettes';
 import { makeStyles } from '../theme/makeStyles';
 import { getReferenteImages } from './referenteImages';
 
@@ -105,9 +106,9 @@ const useStyles = makeStyles((colors) => ({
   pressed: { opacity: 0.7 },
 }));
 
-// El visor es negro en modo claro y oscuro: no depende del tema.
+// El visor es oscuro en modo claro y oscuro: no depende del tema.
 const fullScreen = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#000000' },
+  screen: { flex: 1, backgroundColor: PHOTO_VIEWER_BACKGROUND },
   close: {
     position: 'absolute',
     right: 12,

@@ -45,7 +45,7 @@ const useStyles = makeStyles((colors) => ({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  chipSelected: { backgroundColor: colors.primaryFill, borderColor: colors.link, borderWidth: 2 },
+  chipSelected: { backgroundColor: colors.primaryFill, borderColor: colors.primary, borderWidth: 2 },
   label: { fontSize: 15, fontWeight: '500', color: colors.text },
   labelSelected: { fontWeight: '600', color: colors.link },
 }));

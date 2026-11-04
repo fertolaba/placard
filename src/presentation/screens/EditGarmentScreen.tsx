@@ -7,10 +7,12 @@ import { StateMessage } from '../components/StateMessage';
 import { useGarment } from '../hooks/useGarment';
 import { notifyDataChanged } from '../state/dataVersion';
 import { makeStyles } from '../theme/makeStyles';
+import { useTheme } from '../theme/ThemeProvider';
 import { confirmDestructive } from '../utils/confirm';
 
 export function EditGarmentScreen() {
   const styles = useStyles();
+  const { colors } = useTheme();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { garment, status } = useGarment(id);
@@ -70,7 +72,7 @@ export function EditGarmentScreen() {
   if (status === 'loading') {
     return (
       <View style={styles.center}>
-        <ActivityIndicator />
+        <ActivityIndicator color={colors.textMuted} />
       </View>
     );
   }

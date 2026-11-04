@@ -10,6 +10,7 @@ import { StateMessage } from '../components/StateMessage';
 import { useReferentes, type ReferenteConMatch } from '../hooks/useReferentes';
 import { toggleReferenteGuardado, useReferentesGuardados } from '../hooks/useReferentesGuardados';
 import { makeStyles } from '../theme/makeStyles';
+import { useTheme } from '../theme/ThemeProvider';
 
 const MAX_CONTENT_WIDTH = 480;
 const CARD_GAP = 12;
@@ -19,6 +20,7 @@ const keyOf = (item: ReferenteConMatch) => item.referente.id;
 
 export function InspirationScreen() {
   const styles = useStyles();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { items, status, reload } = useReferentes();
@@ -77,7 +79,7 @@ export function InspirationScreen() {
       </View>
       <ReferenteFilter value={filter} onChange={setFilter} />
 
-      {status === 'loading' && <ActivityIndicator style={styles.loader} />}
+      {status === 'loading' && <ActivityIndicator color={colors.textMuted} style={styles.loader} />}
       {status === 'error' && (
         <View style={styles.message}>
           <StateMessage
