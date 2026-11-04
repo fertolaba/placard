@@ -1,4 +1,4 @@
-import type { Garment, GarmentCategory } from '../entities/Garment';
+import type { CalzadoTipo, Garment, GarmentCategory } from '../entities/Garment';
 import type { StyleId } from '../entities/StyleReference';
 import { garmentFitsSlot } from './garmentFitsSlot';
 import { STYLE_REFERENCES } from './styleCatalog';
@@ -8,7 +8,7 @@ const CLARO_NEUTRO = '#EDEAE4';
 const OSCURO_NEUTRO = '#26262B';
 const COLOR_VIVO = '#C8102E';
 
-function garment(category: GarmentCategory, colorHex: string, flags: Partial<Pick<Garment, 'classic' | 'sporty' | 'corte' | 'secondaryColors'>> = {}): Garment {
+function garment(category: GarmentCategory, colorHex: string, flags: Partial<Pick<Garment, 'classic' | 'sporty' | 'corte' | 'secondaryColors' | 'calzadoTipo'>> = {}): Garment {
   return {
     id: 'g',
     name: 'g',
@@ -127,5 +127,48 @@ describe('garmentFitsSlot', () => {
     expect(entersStyle('blokecore', camiseta)).toBe(true);
     expect(entersStyle('streetwear', camiseta)).toBe(false);
     expect(entersStyle('blokecore', garment('arriba', CLARO_NEUTRO))).toBe(false);
+  });
+});
+
+describe('garmentFitsSlot: tipo de calzado', () => {
+  /** Si un calzado cubre la pieza de calzado del estilo (con un color que cumple su tono). */
+  function fitsShoeSlot(id: StyleId, calzadoTipo: CalzadoTipo | undefined, classic = false): boolean {
+    const reference = STYLE_REFERENCES.find((style) => style.id === id)!;
+    const slot = reference.slots.find((item) => item.categories.includes('calzado'))!;
+    const color = id === 'old-money' ? OSCURO_NEUTRO : CLARO_NEUTRO;
+    return garmentFitsSlot(reference, slot, garment('calzado', color, { calzadoTipo, classic }));
+  }
+
+  // [estilo, baja, gruesa, alta, botita]
+  const cases: [StyleId, boolean, boolean, boolean, boolean][] = [
+    ['streetwear', true, true, true, false],
+    ['y2k', true, true, false, true],
+    ['techwear', false, true, false, true],
+    ['blokecore', true, false, false, false],
+  ];
+
+  it.each(cases)('%s acepta baja=%s, gruesa=%s, alta=%s, botita=%s', (id, baja, gruesa, alta, botita) => {
+    expect(fitsShoeSlot(id, 'baja')).toBe(baja);
+    expect(fitsShoeSlot(id, 'gruesa')).toBe(gruesa);
+    expect(fitsShoeSlot(id, 'alta')).toBe(alta);
+    expect(fitsShoeSlot(id, 'botita')).toBe(botita);
+  });
+
+  it.each(['streetwear', 'y2k', 'techwear', 'blokecore'] as const)('en %s un calzado sin tipo (dato viejo) no queda excluido', (id) => {
+    expect(fitsShoeSlot(id, undefined)).toBe(true);
+  });
+
+  it('Old Money no filtra por tipo: pide clásico, con o sin tipo', () => {
+    for (const tipo of [undefined, 'baja', 'gruesa', 'alta', 'botita'] as const) {
+      expect(fitsShoeSlot('old-money', tipo, true)).toBe(true);
+      expect(fitsShoeSlot('old-money', tipo, false)).toBe(false);
+    }
+  });
+
+  it('un mocasín (baja + clásico) entra en Old Money y no en Streetwear, Y2K ni Techwear', () => {
+    expect(fitsShoeSlot('old-money', 'baja', true)).toBe(true);
+    expect(fitsShoeSlot('streetwear', 'baja', true)).toBe(false);
+    expect(fitsShoeSlot('y2k', 'baja', true)).toBe(false);
+    expect(fitsShoeSlot('techwear', 'baja', true)).toBe(false);
   });
 });

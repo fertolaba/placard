@@ -34,6 +34,7 @@ export function EditGarmentScreen() {
         sporty: values.sporty,
         classic: values.classic,
         corte: values.corte,
+        calzadoTipo: values.calzadoTipo,
         newPhotoUri: values.newPhotoUri,
       });
       notifyDataChanged();
@@ -103,6 +104,7 @@ export function EditGarmentScreen() {
         sporty: garment.sporty,
         classic: garment.classic,
         corte: garment.corte,
+        calzadoTipo: garment.calzadoTipo,
         imageUri: garment.imageUri,
       }}
       submitting={submitting}

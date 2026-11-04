@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MAX_SECONDARY_COLORS, type GarmentCategory } from '../../domain/entities/Garment';
+import { CALZADO_TIPO_LABELS, CALZADO_TIPOS, MAX_SECONDARY_COLORS, type CalzadoTipo, type GarmentCategory } from '../../domain/entities/Garment';
 import type { Season } from '../../domain/entities/Season';
 import type { GarmentTypeDetection } from '../../domain/services/CategoryDetector';
 import { closestAllowedCategory, cutsFor } from '../../domain/services/garmentCatalog';
@@ -47,6 +47,7 @@ export interface GarmentFormValues {
   category: GarmentCategory;
   seasons: Season[];
   corte?: string;
+  calzadoTipo?: CalzadoTipo; // solo calzado
   sporty: boolean;
   classic: boolean;
   color: GarmentColor;
@@ -62,6 +63,7 @@ export interface GarmentFormInitial {
   secondaryColors: GarmentColor[];
   seasons: Season[];
   corte?: string;
+  calzadoTipo?: CalzadoTipo;
   sporty: boolean;
   classic: boolean;
   imageUri: string | null;
@@ -112,6 +114,7 @@ export function GarmentForm({
   const [category, setCategory] = useState<GarmentCategory>(initial?.category ?? categoryOptions[0].value);
   const [seasons, setSeasons] = useState<Season[]>(initial?.seasons ?? []);
   const [corte, setCorte] = useState<string | undefined>(initial?.corte);
+  const [calzadoTipo, setCalzadoTipo] = useState<CalzadoTipo | undefined>(initial?.calzadoTipo);
   const [sporty, setSporty] = useState(initial?.sporty ?? false);
   const [classic, setClassic] = useState(initial?.classic ?? false);
   const [classicFromAi, setClassicFromAi] = useState(false); // el valor actual lo puso la IA y nadie lo tocó
@@ -126,6 +129,7 @@ export function GarmentForm({
   const categoryTouched = useRef(Boolean(initial));
   const seasonsTouched = useRef(Boolean(initial)); // lo mismo con las épocas
   const corteTouched = useRef(Boolean(initial)); // y con el corte
+  const calzadoTipoTouched = useRef(Boolean(initial)); // y con el tipo de calzado
   const sportyTouched = useRef(Boolean(initial)); // y con "deportiva"
   const classicTouched = useRef(Boolean(initial)); // y con "clásica"
   const secondaryTouched = useRef(Boolean(initial)); // y con los colores secundarios
@@ -162,6 +166,10 @@ export function GarmentForm({
   // Un corte detectado en la foto que no se ofrece (por ejemplo, "cropped" en un perfil masculino) no se sugiere.
   const detectedCut = detectedType?.cut && detectedType.category === category && cutOptions.includes(detectedType.cut) ? detectedType.cut : null;
   const shownCorte = corte !== undefined && cutOptions.includes(corte) ? corte : undefined;
+  // El tipo de calzado solo se muestra y se guarda en calzado (vuelve si se elige calzado de nuevo).
+  const isCalzado = category === 'calzado';
+  const shownCalzadoTipo = isCalzado ? calzadoTipo : undefined;
+  const detectedCalzadoTipo = isCalzado && detectedType?.category === 'calzado' ? detectedType.calzadoTipo : null;
 
   const showingCutout = removal.review?.selected === 'cutout';
   const shownPhoto = showingCutout ? removal.review!.cutoutUri : (newPhotoUri ?? initial?.imageUri ?? null);
@@ -192,6 +200,11 @@ export function GarmentForm({
   const chooseCorte = (value: string | undefined) => {
     corteTouched.current = true;
     setCorte(value);
+  };
+
+  const chooseCalzadoTipo = (value: CalzadoTipo | undefined) => {
+    calzadoTipoTouched.current = true;
+    setCalzadoTipo(value);
   };
 
   const chooseSecondary = (value: GarmentColor[]) => {
@@ -251,6 +264,7 @@ export function GarmentForm({
       if (foundType.cut && !corteTouched.current && categoryAllowed && cutsFor(foundType.category, sex).includes(foundType.cut)) {
         setCorte(foundType.cut);
       }
+      if (foundType.calzadoTipo && !calzadoTipoTouched.current) setCalzadoTipo(foundType.calzadoTipo);
       if (!sportyTouched.current) setSporty(foundType.sporty);
       if (!classicTouched.current) {
         setClassic(foundType.classic);
@@ -451,6 +465,34 @@ export function GarmentForm({
         </>
       ) : null}
 
+      {isCalzado ? (
+        <>
+          <Text style={styles.groupLabel} accessibilityRole="header">
+            Tipo de calzado
+          </Text>
+          <View style={styles.section}>
+            <CutPicker
+              options={CALZADO_TIPOS}
+              value={shownCalzadoTipo}
+              onChange={chooseCalzadoTipo}
+              labelFor={(option) => CALZADO_TIPO_LABELS[option]}
+            />
+            {!analyzing && detectedCalzadoTipo && detectedCalzadoTipo === shownCalzadoTipo ? (
+              <Text style={styles.detectHint}>Detectado de la foto</Text>
+            ) : null}
+            {!analyzing && detectedCalzadoTipo && detectedCalzadoTipo !== shownCalzadoTipo ? (
+              <View style={styles.suggestion}>
+                <Text style={styles.suggestionText}>Por la foto: {CALZADO_TIPO_LABELS[detectedCalzadoTipo]}</Text>
+                <Pressable onPress={() => chooseCalzadoTipo(detectedCalzadoTipo)} accessibilityRole="button" hitSlop={8}>
+                  <Text style={styles.suggestionAction}>Usar</Text>
+                </Pressable>
+              </View>
+            ) : null}
+            <Text style={styles.seasonHint}>Opcional. Decide en qué estilos entra: un mocasín va como Baja y clásica.</Text>
+          </View>
+        </>
+      ) : null}
+
       <Text style={styles.groupLabel} accessibilityRole="header">
         Color
       </Text>
@@ -519,7 +561,7 @@ export function GarmentForm({
         </Text>
       ) : null}
       <Pressable
-        onPress={() => color && onSubmit({ name, category, seasons, corte: shownCorte, sporty, classic, color, secondaryColors: shownSecondary, newPhotoUri: photoToSave })}
+        onPress={() => color && onSubmit({ name, category, seasons, corte: shownCorte, calzadoTipo: shownCalzadoTipo, sporty, classic, color, secondaryColors: shownSecondary, newPhotoUri: photoToSave })}
         disabled={!canSave}
         accessibilityRole="button"
         style={[styles.save, !canSave && styles.saveDisabled]}

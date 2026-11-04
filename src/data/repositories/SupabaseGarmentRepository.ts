@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Garment, GarmentCategory, NewGarment } from '../../domain/entities/Garment';
+import { isCalzadoTipo, type Garment, type GarmentCategory, type NewGarment } from '../../domain/entities/Garment';
 import { SEASONS, normalizeSeasons } from '../../domain/entities/Season';
 import type { CurrentUserId } from '../../domain/repositories/AuthRepository';
 import type { GarmentRepository } from '../../domain/repositories/GarmentRepository';
@@ -19,11 +19,12 @@ interface GarmentRow {
   sporty: boolean;
   classic: boolean;
   corte: string | null;
+  calzado_tipo: string | null; // null = no es calzado o es una prenda vieja
   photo_path: string | null;
   created_at: string;
 }
 
-const COLUMNS = 'id, name, category, color_hex, color_name, secondary_colors, seasons, sporty, classic, corte, photo_path, created_at';
+const COLUMNS = 'id, name, category, color_hex, color_name, secondary_colors, seasons, sporty, classic, corte, calzado_tipo, photo_path, created_at';
 const SIGNED_URL_SECONDS = 60 * 60 * 24; // las direcciones de las fotos vencen en un día
 const SIGNED_URL_MARGIN_MS = 60 * 60 * 1000; // se renuevan si les queda menos de una hora
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -49,6 +50,7 @@ function toRow(data: NewGarment) {
     sporty: data.sporty,
     classic: data.classic,
     corte: data.corte ?? null, // sin corte = se borra el que tenía
+    calzado_tipo: data.calzadoTipo ?? null,
     photo_path: data.photoRef,
   };
 }
@@ -109,6 +111,7 @@ export class SupabaseGarmentRepository implements GarmentRepository, SessionCach
         sporty: row.sporty,
         classic: row.classic,
         corte: row.corte ?? undefined,
+        calzadoTipo: isCalzadoTipo(row.calzado_tipo) ? row.calzado_tipo : undefined,
         photoRef: row.photo_path,
         imageUri: row.photo_path ? (urls.get(row.photo_path) ?? null) : null,
         createdAt: new Date(row.created_at),

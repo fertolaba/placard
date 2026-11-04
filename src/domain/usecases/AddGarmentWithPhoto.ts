@@ -1,4 +1,4 @@
-import type { Garment, GarmentCategory } from '../entities/Garment';
+import type { CalzadoTipo, Garment, GarmentCategory } from '../entities/Garment';
 import type { Season } from '../entities/Season';
 import type { GarmentColor } from '../services/garmentColors';
 import type { PhotoStorage } from '../services/PhotoStorage';
@@ -13,6 +13,7 @@ export interface GarmentDraft {
   seasons: Season[];
   sporty: boolean;
   classic: boolean;
+  calzadoTipo?: CalzadoTipo; // solo calzado
   corte?: string;
   photoUri: string | null; // foto recién sacada o elegida (todavía en una carpeta temporal)
 }

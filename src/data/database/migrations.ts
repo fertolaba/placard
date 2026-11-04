@@ -2,7 +2,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import { SEASONS } from '../../domain/entities/Season';
 import { SAMPLE_GARMENTS } from '../seed/sampleGarments';
 
-export const LATEST_VERSION = 9;
+export const LATEST_VERSION = 10;
 
 /**
  * Lleva la base a la última versión. La versión se guarda en la propia base (PRAGMA user_version),
@@ -84,6 +84,12 @@ export async function runMigrations(db: SQLiteDatabase): Promise<void> {
     if (version < 9) {
       // Prenda clásica o formal (0 o 1). Las prendas que ya existían quedan como no clásicas; se pueden marcar al editarlas.
       await db.execAsync('ALTER TABLE garments ADD COLUMN classic INTEGER NOT NULL DEFAULT 0 CHECK (classic IN (0, 1))');
+    }
+    if (version < 10) {
+      // Tipo de calzado. Las prendas que ya existían quedan sin tipo (NULL): ningún estilo las excluye por eso.
+      await db.execAsync(
+        "ALTER TABLE garments ADD COLUMN calzado_tipo TEXT CHECK (calzado_tipo IS NULL OR calzado_tipo IN ('baja', 'gruesa', 'alta', 'botita'))",
+      );
     }
     await db.execAsync(`PRAGMA user_version = ${LATEST_VERSION}`);
   });

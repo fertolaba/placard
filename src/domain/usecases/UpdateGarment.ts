@@ -1,4 +1,4 @@
-import type { Garment, GarmentCategory } from '../entities/Garment';
+import type { CalzadoTipo, Garment, GarmentCategory } from '../entities/Garment';
 import type { Season } from '../entities/Season';
 import type { GarmentRepository } from '../repositories/GarmentRepository';
 import { normalizeGarmentData } from '../services/garmentRules';
@@ -15,6 +15,7 @@ export interface GarmentEdit {
   seasons: Season[];
   sporty: boolean;
   classic: boolean;
+  calzadoTipo?: CalzadoTipo; // solo calzado
   corte?: string; // sin corte = se borra el que tenía
   newPhotoUri: string | null; // null = dejar la foto que ya tiene
 }

@@ -1,4 +1,4 @@
-import { GARMENT_CATEGORIES, GARMENT_CUTS, MAX_SECONDARY_COLORS, type GarmentCategory } from '../entities/Garment';
+import { GARMENT_CATEGORIES, GARMENT_CUTS, isCalzadoTipo, MAX_SECONDARY_COLORS, type CalzadoTipo, type GarmentCategory } from '../entities/Garment';
 import { normalizeSeasons, type Season } from '../entities/Season';
 import type { GarmentTypeDetection, SleeveLength } from './CategoryDetector';
 import { GARMENT_COLORS, type GarmentColor } from './garmentColors';
@@ -11,6 +11,7 @@ export interface GarmentAnalysis {
   manga: SleeveLength | 'no_aplica';
   temporadas: Season[];
   corte: string; // uno de GARMENT_CUTS[categoria], o "no_aplica" para calzado
+  calzado_tipo: CalzadoTipo | 'no_aplica'; // solo calzado: "no_aplica" para el resto
   es_deportiva: boolean; // camiseta de fútbol con mangas, short de fútbol o botines
   es_clasica: boolean; // camisa, chomba, sweater fino, blazer, pantalón sastrero, mocasines
   color_dominante: string; // uno de los nombres de GARMENT_COLORS
@@ -65,6 +66,7 @@ const isCategory = (value: unknown): value is GarmentCategory =>
  * Si el modelo no dio épocas válidas, se deducen del largo de manga.
  * Un corte que no corresponde a la categoría (por ejemplo "baggy" en una remera) se descarta.
  * Los colores que no están en la lista se descartan; los secundarios no repiten el dominante.
+ * El tipo de calzado solo vale en calzado y si es uno de CALZADO_TIPOS; si falta o no corresponde, queda null.
  */
 export function parseGarmentAnalysis(raw: unknown): GarmentTypeDetection | null {
   if (typeof raw !== 'object' || raw === null) return null;
@@ -80,6 +82,7 @@ export function parseGarmentAnalysis(raw: unknown): GarmentTypeDetection | null 
   const fromModel = normalizeSeasons(Array.isArray(data.temporadas) ? data.temporadas : []);
   const seasons = fromModel.length > 0 ? fromModel : seasonsForSleeve(sleeve);
   const cut = typeof data.corte === 'string' && GARMENT_CUTS[category].includes(data.corte) ? data.corte : null;
+  const calzadoTipo = category === 'calzado' && isCalzadoTipo(data.calzado_tipo) ? data.calzado_tipo : null;
   const sporty = data.es_deportiva === true && !containsAnyWord(type, NEVER_SPORTY_WORDS); // si el modelo no lo dice, se asume que no es deportiva
   // Se mira el corte que dijo el modelo y no `cut`: un "baggy" descartado por no corresponder a la categoría igual delata la prenda.
   const classic =
@@ -94,5 +97,5 @@ export function parseGarmentAnalysis(raw: unknown): GarmentTypeDetection | null 
     secondaryColors.push(color);
     if (secondaryColors.length === MAX_SECONDARY_COLORS) break;
   }
-  return { type, category, sleeve, seasons, cut, sporty, classic, dominantColor, secondaryColors };
+  return { type, category, sleeve, seasons, cut, calzadoTipo, sporty, classic, dominantColor, secondaryColors };
 }

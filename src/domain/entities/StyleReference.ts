@@ -1,4 +1,4 @@
-import type { Garment, GarmentCategory } from './Garment';
+import type { CalzadoTipo, Garment, GarmentCategory } from './Garment';
 
 export type Tone = 'oscuro' | 'claro' | 'neutro' | 'color' | 'cualquiera';
 
@@ -10,6 +10,7 @@ export interface StyleSlot {
   requiresSporty?: boolean; // true = solo la cubre una prenda con `sporty`, es decir, una camiseta de fútbol
   requiresClassic?: boolean; // true = solo la cubre una prenda con `classic`
   cuts?: readonly string[]; // cortes aceptados; una prenda sin corte guardado pasa igual
+  calzadoTipos?: readonly CalzadoTipo[]; // tipos de calzado aceptados; un calzado sin tipo guardado pasa igual
 }
 
 export const STYLE_IDS = ['streetwear', 'old-money', 'y2k', 'techwear', 'blokecore'] as const;

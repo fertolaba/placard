@@ -1,4 +1,4 @@
-import { ALL_GARMENT_CUTS, GARMENT_CATEGORIES, MAX_SECONDARY_COLORS } from '../../domain/entities/Garment';
+import { ALL_GARMENT_CUTS, CALZADO_TIPOS, GARMENT_CATEGORIES, MAX_SECONDARY_COLORS } from '../../domain/entities/Garment';
 import { GARMENT_COLORS } from '../../domain/services/garmentColors';
 import type { GarmentTypeDetection } from '../../domain/services/CategoryDetector';
 import { parseGarmentAnalysis } from '../../domain/services/garmentAnalysis';
@@ -41,6 +41,12 @@ const PROMPT = `Mirá la foto y decí qué prenda es. Usá nombres comunes en Ar
   - Abajo: "skinny" (pegado a toda la pierna), "slim" (angosto pero no pegado), "straight" (recto desde la cadera hasta el tobillo), "baggy" (holgado, con mucha tela, suele angostarse abajo), "wide leg" (ancho desde la cadera y en toda la pierna), "flared" (acampanado, oxford o pata de elefante: ajustado hasta la rodilla y se abre recién de la rodilla para abajo).
   - Pollera: "lápiz" (angosta y pegada, se cierra hacia la rodilla), "recta" (cae derecha desde la cadera, sin abrirse), "acampanada" (se abre desde la cintura en forma de A, sin pliegues marcados), "tableada" (con tablas o pliegues planchados, como la de colegio o una plisada), "cruzada" (envolvente o wrap: una tela se cruza sobre la otra adelante).
   - Calzado: "no_aplica".
+- calzado_tipo: solo para calzado; para "arriba", "top", "abajo" y "pollera" devolvé "no_aplica". Elegí por el perfil de la suela y la altura de la caña; si dudás entre "baja" y "gruesa", mirá el grosor de la suela.
+  - "baja": zapatilla baja deportiva o urbana (Dunk low, Air Force 1 low, Samba, Stan Smith, zapatillas de skate bajas).
+  - "gruesa": suela gruesa o plataforma (zapatillas chunky, suela notoriamente alta).
+  - "alta": zapatilla de caña alta que cubre el tobillo (Jordan 1, botas de básquet, Dunk high).
+  - "botita": bota o botita (Timberland, borcegos, botas tácticas o militares).
+  - Mocasines y zapatos de vestir: "baja" (y es_clasica true).
 - color_dominante: el color que ocupa más superficie de la prenda (no del fondo ni de la piel). Elegí el nombre más parecido de esta lista, escrito exactamente igual: ${COLOR_NAMES}.
 - colores_secundarios: los colores de los detalles que se ven a simple vista (rayas, estampa, logo, escudo, cuello, puños, costuras contrastantes, suela de un calzado), de más a menos visible, como mucho ${MAX_SECONDARY_COLORS}. Mismos nombres exactos de la lista. No repitas el dominante ni pongas sombras o pliegues del mismo color. Si la prenda es lisa, devolvé [].
 - es_deportiva: true SOLO para camisetas de fútbol con mangas (de un club, de una selección o retro: suelen tener escudo, sponsor o número), shorts de fútbol y botines. false para todo lo demás: musculosas y cualquier prenda sin mangas, camisetas de otros deportes (básquet/NBA, NFL, hockey, rugby, béisbol), ropa de entrenamiento o gimnasio y ropa urbana cómoda (una remera lisa, un buzo, un jogger, unas zapatillas urbanas). Ejemplos: musculosa de la NBA → false; camiseta de Boca → true; camiseta de manga corta de River → true.
@@ -57,6 +63,8 @@ const RESPONSE_SCHEMA = {
     temporadas: { type: 'ARRAY', items: { type: 'STRING', enum: ['verano', 'entretiempo', 'invierno'] } },
     // El esquema no puede atar el corte a la categoría: eso lo revisa parseGarmentAnalysis.
     corte: { type: 'STRING', enum: [...ALL_GARMENT_CUTS, 'no_aplica'] },
+    // Tampoco puede atarlo a "calzado": parseGarmentAnalysis lo descarta en las demás categorías.
+    calzado_tipo: { type: 'STRING', enum: [...CALZADO_TIPOS, 'no_aplica'] },
     es_deportiva: { type: 'BOOLEAN' },
     es_clasica: { type: 'BOOLEAN' },
     color_dominante: { type: 'STRING', enum: GARMENT_COLORS.map((color) => color.name) },
@@ -66,7 +74,7 @@ const RESPONSE_SCHEMA = {
       maxItems: MAX_SECONDARY_COLORS,
     },
   },
-  required: ['esPrenda', 'tipo', 'categoria', 'manga', 'temporadas', 'corte', 'es_deportiva', 'es_clasica', 'color_dominante', 'colores_secundarios'],
+  required: ['esPrenda', 'tipo', 'categoria', 'manga', 'temporadas', 'corte', 'calzado_tipo', 'es_deportiva', 'es_clasica', 'color_dominante', 'colores_secundarios'],
   propertyOrdering: [
     'esPrenda',
     'tipo',
@@ -74,6 +82,7 @@ const RESPONSE_SCHEMA = {
     'manga',
     'temporadas',
     'corte',
+    'calzado_tipo',
     'es_deportiva',
     'es_clasica',
     'color_dominante',
@@ -157,7 +166,7 @@ export async function detectGarmentCategory(image: GeminiImage, options: GeminiO
   if (__DEV__) {
     console.log(
       '[detección de prenda] categoría asignada:',
-      detection ? `${detection.type} → ${detection.category} · manga ${detection.sleeve ?? 'no aplica'} · épocas ${detection.seasons?.join(', ') ?? 'sin deducir'} · corte ${detection.cut ?? 'sin deducir'}${detection.sporty ? ' · deportiva' : ''}${detection.classic ? ' · clásica' : ''} · color ${detection.dominantColor?.name ?? 'sin deducir'}${detection.secondaryColors.length > 0 ? ` + ${detection.secondaryColors.map((color) => color.name).join(', ')}` : ''}` : 'ninguna (no es una prenda que la app maneje)',
+      detection ? `${detection.type} → ${detection.category} · manga ${detection.sleeve ?? 'no aplica'} · épocas ${detection.seasons?.join(', ') ?? 'sin deducir'} · corte ${detection.cut ?? 'sin deducir'}${detection.calzadoTipo ? ` · calzado ${detection.calzadoTipo}` : ''}${detection.sporty ? ' · deportiva' : ''}${detection.classic ? ' · clásica' : ''} · color ${detection.dominantColor?.name ?? 'sin deducir'}${detection.secondaryColors.length > 0 ? ` + ${detection.secondaryColors.map((color) => color.name).join(', ')}` : ''}` : 'ninguna (no es una prenda que la app maneje)',
     );
   }
   return detection;

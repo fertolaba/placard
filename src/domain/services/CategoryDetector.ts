@@ -1,4 +1,4 @@
-import type { GarmentCategory } from '../entities/Garment';
+import type { CalzadoTipo, GarmentCategory } from '../entities/Garment';
 import type { Season } from '../entities/Season';
 import type { GarmentColor } from './garmentColors';
 
@@ -12,6 +12,7 @@ export interface GarmentTypeDetection {
   sleeve: SleeveLength | null; // null = no se sabe o no aplica (solo "arriba" y "top" tienen mangas)
   seasons: Season[] | null; // épocas deducidas del largo de manga; null = no se pudo deducir
   cut: string | null; // corte deducido de la silueta (uno de GARMENT_CUTS[category]); null = no se sabe o no aplica (calzado)
+  calzadoTipo: CalzadoTipo | null; // solo calzado (viene de "calzado_tipo", ya filtrado); null = no se sabe o no es calzado
   sporty: boolean; // camiseta de fútbol; la IA también marca shorts de fútbol y botines (viene de "es_deportiva", ya filtrado)
   classic: boolean; // prenda clásica o formal (viene de "es_clasica", ya filtrado)
   dominantColor: GarmentColor | null; // el color que ocupa más superficie de la prenda (de "color_dominante"); null = no lo dijo

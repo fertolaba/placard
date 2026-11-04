@@ -58,3 +58,30 @@ describe('parseGarmentAnalysis: camiseta de fútbol', () => {
     expect(parseGarmentAnalysis(analysis('Camiseta de fútbol', false))?.sporty).toBe(false);
   });
 });
+
+describe('parseGarmentAnalysis: tipo de calzado', () => {
+  const shoe = (extra: Record<string, unknown>) =>
+    analysis('Zapatillas', false, { categoria: 'calzado', manga: 'no_aplica', corte: 'no_aplica', ...extra });
+
+  it('usa los cuatro tipos válidos en calzado', () => {
+    for (const tipo of ['baja', 'gruesa', 'alta', 'botita']) {
+      expect(parseGarmentAnalysis(shoe({ calzado_tipo: tipo }))?.calzadoTipo).toBe(tipo);
+    }
+  });
+
+  it('un valor fuera de la lista queda en null', () => {
+    expect(parseGarmentAnalysis(shoe({ calzado_tipo: 'mocasin' }))?.calzadoTipo).toBeNull();
+    expect(parseGarmentAnalysis(shoe({ calzado_tipo: 'no_aplica' }))?.calzadoTipo).toBeNull();
+    expect(parseGarmentAnalysis(shoe({ calzado_tipo: 3 }))?.calzadoTipo).toBeNull();
+  });
+
+  it('si el modelo no devuelve el campo, la prenda se detecta igual con null', () => {
+    const detection = parseGarmentAnalysis(shoe({}));
+    expect(detection?.category).toBe('calzado');
+    expect(detection?.calzadoTipo).toBeNull();
+  });
+
+  it('en una prenda que no es calzado queda en null aunque el modelo mande un tipo', () => {
+    expect(parseGarmentAnalysis(analysis('Remera', false, { calzado_tipo: 'baja' }))?.calzadoTipo).toBeNull();
+  });
+});

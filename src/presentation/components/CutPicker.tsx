@@ -1,16 +1,17 @@
 import { Pressable, Text, View } from 'react-native';
 import { makeStyles } from '../theme/makeStyles';
 
-interface Props {
-  options: readonly string[];
-  value: string | undefined;
-  onChange: (value: string | undefined) => void;
+interface Props<T extends string> {
+  options: readonly T[];
+  value: T | undefined;
+  onChange: (value: T | undefined) => void;
+  labelFor?: (option: T) => string; // sin esto, el valor con mayúscula inicial
 }
 
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
 /** Elección única y opcional: tocar el corte elegido lo quita. */
-export function CutPicker({ options, value, onChange }: Props) {
+export function CutPicker<T extends string>({ options, value, onChange, labelFor = capitalize }: Props<T>) {
   const styles = useStyles();
   return (
     <View style={styles.row}>
@@ -24,7 +25,7 @@ export function CutPicker({ options, value, onChange }: Props) {
             accessibilityState={{ selected }}
             style={[styles.chip, selected && styles.chipSelected]}
           >
-            <Text style={[styles.label, selected && styles.labelSelected]}>{capitalize(option)}</Text>
+            <Text style={[styles.label, selected && styles.labelSelected]}>{labelFor(option)}</Text>
           </Pressable>
         );
       })}

@@ -15,7 +15,7 @@ export const STYLE_REFERENCES: StyleReference[] = [
     slots: [
       { label: 'buzo, remera o top', categories: ['arriba', 'top'], tone: 'cualquiera' },
       { label: 'pantalón o pollera', categories: ['abajo', 'pollera'], tone: 'cualquiera' },
-      { label: 'zapatillas claras', categories: ['calzado'], tone: 'claro' },
+      { label: 'zapatillas claras', categories: ['calzado'], tone: 'claro', calzadoTipos: ['baja', 'gruesa', 'alta'] },
     ],
   },
   {
@@ -40,7 +40,7 @@ export const STYLE_REFERENCES: StyleReference[] = [
     slots: [
       { label: 'top de color', categories: ['top', 'arriba'], tone: 'color' },
       { label: 'jean, pantalón baggy o pollera', categories: ['pollera', 'abajo'], tone: 'cualquiera' },
-      { label: 'zapatillas claras', categories: ['calzado'], tone: 'claro' },
+      { label: 'zapatillas claras', categories: ['calzado'], tone: 'claro', calzadoTipos: ['baja', 'gruesa', 'botita'] },
     ],
   },
   {
@@ -55,7 +55,7 @@ export const STYLE_REFERENCES: StyleReference[] = [
       { label: 'prenda base ajustada', categories: ['arriba', 'top'], tone: 'cualquiera', cuts: ['ajustado', 'regular'] },
       { label: 'buzo o campera ajustada', categories: ['arriba'], tone: 'cualquiera', cuts: ['ajustado', 'regular'] },
       { label: 'pantalón o jogger ajustado', categories: ['abajo'], tone: 'cualquiera', cuts: ['slim', 'skinny', 'straight'] },
-      { label: 'zapatillas minimalistas', categories: ['calzado'], tone: 'cualquiera' },
+      { label: 'botitas o zapatillas de suela gruesa', categories: ['calzado'], tone: 'cualquiera', calzadoTipos: ['botita', 'gruesa'] },
     ],
   },
   {
@@ -68,7 +68,7 @@ export const STYLE_REFERENCES: StyleReference[] = [
     slots: [
       { label: 'camiseta de fútbol', categories: ['arriba'], tone: 'cualquiera', requiresSporty: true },
       { label: 'jean o pollera', categories: ['abajo', 'pollera'], tone: 'cualquiera' },
-      { label: 'zapatillas', categories: ['calzado'], tone: 'cualquiera' },
+      { label: 'zapatillas', categories: ['calzado'], tone: 'cualquiera', calzadoTipos: ['baja'] },
     ],
   },
 ];
