@@ -2,7 +2,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CALZADO_TIPO_LABELS, CALZADO_TIPOS, MAX_SECONDARY_COLORS, type CalzadoTipo, type GarmentCategory } from '../../domain/entities/Garment';
+import {
+  CALZADO_TIPO_LABELS,
+  CALZADO_TIPOS,
+  ESTAMPADO_LABELS,
+  ESTAMPADOS,
+  MAX_SECONDARY_COLORS,
+  type CalzadoTipo,
+  type Estampado,
+  type GarmentCategory,
+} from '../../domain/entities/Garment';
 import type { Season } from '../../domain/entities/Season';
 import type { GarmentTypeDetection } from '../../domain/services/CategoryDetector';
 import { closestAllowedCategory, cutsFor } from '../../domain/services/garmentCatalog';
@@ -48,6 +57,7 @@ export interface GarmentFormValues {
   seasons: Season[];
   corte?: string;
   calzadoTipo?: CalzadoTipo; // solo calzado
+  estampado?: Estampado;
   sporty: boolean;
   classic: boolean;
   color: GarmentColor;
@@ -64,6 +74,7 @@ export interface GarmentFormInitial {
   seasons: Season[];
   corte?: string;
   calzadoTipo?: CalzadoTipo;
+  estampado?: Estampado;
   sporty: boolean;
   classic: boolean;
   imageUri: string | null;
@@ -115,6 +126,8 @@ export function GarmentForm({
   const [seasons, setSeasons] = useState<Season[]>(initial?.seasons ?? []);
   const [corte, setCorte] = useState<string | undefined>(initial?.corte);
   const [calzadoTipo, setCalzadoTipo] = useState<CalzadoTipo | undefined>(initial?.calzadoTipo);
+  const [estampado, setEstampado] = useState<Estampado | undefined>(initial?.estampado);
+  const [reanalysisNotice, setReanalysisNotice] = useState<string | null>(null);
   const [sporty, setSporty] = useState(initial?.sporty ?? false);
   const [classic, setClassic] = useState(initial?.classic ?? false);
   const [classicFromAi, setClassicFromAi] = useState(false); // el valor actual lo puso la IA y nadie lo tocó
@@ -130,6 +143,7 @@ export function GarmentForm({
   const seasonsTouched = useRef(Boolean(initial)); // lo mismo con las épocas
   const corteTouched = useRef(Boolean(initial)); // y con el corte
   const calzadoTipoTouched = useRef(Boolean(initial)); // y con el tipo de calzado
+  const estampadoTouched = useRef(Boolean(initial)); // y con el estampado
   const sportyTouched = useRef(Boolean(initial)); // y con "deportiva"
   const classicTouched = useRef(Boolean(initial)); // y con "clásica"
   const secondaryTouched = useRef(Boolean(initial)); // y con los colores secundarios
@@ -170,6 +184,7 @@ export function GarmentForm({
   const isCalzado = category === 'calzado';
   const shownCalzadoTipo = isCalzado ? calzadoTipo : undefined;
   const detectedCalzadoTipo = isCalzado && detectedType?.category === 'calzado' ? detectedType.calzadoTipo : null;
+  const detectedEstampado = detectedType?.estampado ?? null;
 
   const showingCutout = removal.review?.selected === 'cutout';
   const shownPhoto = showingCutout ? removal.review!.cutoutUri : (newPhotoUri ?? initial?.imageUri ?? null);
@@ -207,6 +222,11 @@ export function GarmentForm({
     setCalzadoTipo(value);
   };
 
+  const chooseEstampado = (value: Estampado | undefined) => {
+    estampadoTouched.current = true;
+    setEstampado(value);
+  };
+
   const chooseSecondary = (value: GarmentColor[]) => {
     secondaryTouched.current = true;
     setSecondaryColors(value);
@@ -239,6 +259,7 @@ export function GarmentForm({
     setNewPhotoUri(uri);
     setDetected(null);
     setDetectedType(null);
+    setReanalysisNotice(null);
     setClassicFromAi(false);
     void removal.start(uri); // en paralelo: no demora el análisis
 
@@ -265,6 +286,7 @@ export function GarmentForm({
         setCorte(foundType.cut);
       }
       if (foundType.calzadoTipo && !calzadoTipoTouched.current) setCalzadoTipo(foundType.calzadoTipo);
+      if (foundType.estampado && !estampadoTouched.current) setEstampado(foundType.estampado);
       if (!sportyTouched.current) setSporty(foundType.sporty);
       if (!classicTouched.current) {
         setClassic(foundType.classic);
@@ -283,6 +305,47 @@ export function GarmentForm({
         applySeasons ? seasonsLabel(deducedSeasons) : `${seasonsLabel(seasons) || '(ninguna)'} (sin cambios: ${reason})`,
       );
     }
+  };
+
+  /**
+   * Vuelve a mirar la foto guardada con la IA y completa SOLO los campos vacíos (estampado, corte, tipo de calzado y
+   * colores secundarios): lo que la persona ya cargó o editó no se toca. Lo demás queda como sugerencia con "Usar".
+   */
+  const reanalyze = async () => {
+    const photo = initial?.imageUri;
+    if (!photo) return;
+    const requestId = ++latestRequest.current;
+    setReanalysisNotice(null);
+    const found = await detectType(photo);
+    if (requestId !== latestRequest.current) return; // mientras tanto eligió otra foto
+    if (!found) {
+      setReanalysisNotice('No pudimos analizar la foto. Probá de nuevo en unos segundos.');
+      return;
+    }
+    setDetectedType(found);
+    const filled: string[] = [];
+    if (estampado === undefined && found.estampado) {
+      setEstampado(found.estampado);
+      filled.push('estampado');
+    }
+    if (shownCorte === undefined && found.cut && found.category === category && cutOptions.includes(found.cut)) {
+      setCorte(found.cut);
+      filled.push('corte');
+    }
+    if (isCalzado && calzadoTipo === undefined && found.category === 'calzado' && found.calzadoTipo) {
+      setCalzadoTipo(found.calzadoTipo);
+      filled.push('tipo de calzado');
+    }
+    const foundSecondary = found.secondaryColors.filter((item) => item.hex !== color?.hex);
+    if (shownSecondary.length === 0 && foundSecondary.length > 0) {
+      setSecondaryColors(foundSecondary);
+      filled.push('colores secundarios');
+    }
+    setReanalysisNotice(
+      filled.length > 0
+        ? `Se completó: ${filled.join(', ')}. Se guarda al tocar “${submitLabel}”.`
+        : 'No había campos vacíos para completar: lo que ya tenía la prenda no se cambió.',
+    );
   };
 
   const chooseCutout = () => {
@@ -367,6 +430,23 @@ export function GarmentForm({
           <Ionicons name="cut-outline" size={20} color={colors.link} />
           <Text style={styles.photoButtonLabel}>Quitar fondo</Text>
         </Pressable>
+      ) : null}
+      {initial?.imageUri && newPhotoUri === null ? (
+        <Pressable
+          onPress={reanalyze}
+          disabled={analyzing}
+          accessibilityRole="button"
+          accessibilityHint="Completa con la foto actual los datos que la prenda todavía no tiene"
+          style={({ pressed }) => [styles.removeBackground, (pressed || analyzing) && styles.photoButtonPressed]}
+        >
+          <Ionicons name="sparkles-outline" size={20} color={colors.link} />
+          <Text style={styles.photoButtonLabel}>Volver a analizar con IA</Text>
+        </Pressable>
+      ) : null}
+      {reanalysisNotice && !analyzing ? (
+        <Text style={styles.removalNotice} accessibilityLiveRegion="polite">
+          {reanalysisNotice}
+        </Text>
       ) : null}
       {initial && newPhotoUri !== null && !removal.review ? (
         <Text style={styles.removalNotice}>La foto nueva se guarda al tocar “{submitLabel}”.</Text>
@@ -494,6 +574,30 @@ export function GarmentForm({
       ) : null}
 
       <Text style={styles.groupLabel} accessibilityRole="header">
+        Estampado
+      </Text>
+      <View style={styles.section}>
+        <CutPicker
+          options={ESTAMPADOS}
+          value={estampado}
+          onChange={chooseEstampado}
+          labelFor={(option) => ESTAMPADO_LABELS[option]}
+        />
+        {!analyzing && detectedEstampado && detectedEstampado === estampado ? (
+          <Text style={styles.detectHint}>Detectado de la foto</Text>
+        ) : null}
+        {!analyzing && detectedEstampado && detectedEstampado !== estampado ? (
+          <View style={styles.suggestion}>
+            <Text style={styles.suggestionText}>Por la foto: {ESTAMPADO_LABELS[detectedEstampado]}</Text>
+            <Pressable onPress={() => chooseEstampado(detectedEstampado)} accessibilityRole="button" hitSlop={8}>
+              <Text style={styles.suggestionAction}>Usar</Text>
+            </Pressable>
+          </View>
+        ) : null}
+        <Text style={styles.seasonHint}>Opcional. Los referentes de estilo liso no proponen prendas con estampa grande.</Text>
+      </View>
+
+      <Text style={styles.groupLabel} accessibilityRole="header">
         Color
       </Text>
       <View style={styles.colorCard}>
@@ -561,7 +665,7 @@ export function GarmentForm({
         </Text>
       ) : null}
       <Pressable
-        onPress={() => color && onSubmit({ name, category, seasons, corte: shownCorte, calzadoTipo: shownCalzadoTipo, sporty, classic, color, secondaryColors: shownSecondary, newPhotoUri: photoToSave })}
+        onPress={() => color && onSubmit({ name, category, seasons, corte: shownCorte, calzadoTipo: shownCalzadoTipo, estampado, sporty, classic, color, secondaryColors: shownSecondary, newPhotoUri: photoToSave })}
         disabled={!canSave}
         accessibilityRole="button"
         style={[styles.save, !canSave && styles.saveDisabled]}

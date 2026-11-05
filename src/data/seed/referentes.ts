@@ -52,6 +52,9 @@ export const SAMPLE_REFERENTES: Referente[] = [
     ],
     destacado: true,
     gender: 'male',
+    formality: 'casual',
+    formalityRange: ['clasico', 'casual'],
+    graphics: 'logo-ok',
   },
   {
     id: 'tyler-the-creator',
@@ -77,6 +80,9 @@ export const SAMPLE_REFERENTES: Referente[] = [
     ],
     destacado: false,
     gender: 'male',
+    formality: 'casual',
+    formalityRange: ['clasico', 'casual'],
+    graphics: 'grafico-ok',
   },
   // El id es el nombre de su carpeta en assets/referencia/. Textos orientativos, como los de los demás.
   {
@@ -104,6 +110,9 @@ export const SAMPLE_REFERENTES: Referente[] = [
     ],
     destacado: true,
     gender: 'male',
+    formality: 'casual',
+    formalityRange: ['casual', 'casual'],
+    graphics: 'solo-liso',
   },
   // Sin borrador de scripts/analyze-referentes.js: Gemini rechazó sus fotos. Textos escritos mirando assets/referencia/bad-bunny/.
   {
@@ -159,6 +168,9 @@ export const SAMPLE_REFERENTES: Referente[] = [
     ],
     destacado: true,
     gender: 'male',
+    formality: 'casual',
+    formalityRange: ['casual', 'deportivo'],
+    graphics: 'grafico-ok',
   },
   // Gemini no analizó sus fotos: textos escritos mirando assets/referencia/drake/.
   {
@@ -187,5 +199,8 @@ export const SAMPLE_REFERENTES: Referente[] = [
     ],
     destacado: false,
     gender: 'male',
+    formality: 'casual',
+    formalityRange: ['casual', 'casual'],
+    graphics: 'logo-ok',
   },
 ];

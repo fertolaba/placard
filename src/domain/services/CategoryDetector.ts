@@ -1,4 +1,4 @@
-import type { CalzadoTipo, GarmentCategory } from '../entities/Garment';
+import type { CalzadoTipo, Estampado, GarmentCategory } from '../entities/Garment';
 import type { Season } from '../entities/Season';
 import type { GarmentColor } from './garmentColors';
 
@@ -15,6 +15,7 @@ export interface GarmentTypeDetection {
   calzadoTipo: CalzadoTipo | null; // solo calzado (viene de "calzado_tipo", ya filtrado); null = no se sabe o no es calzado
   sporty: boolean; // camiseta de fútbol; la IA también marca shorts de fútbol y botines (viene de "es_deportiva", ya filtrado)
   classic: boolean; // prenda clásica o formal (viene de "es_clasica", ya filtrado)
+  estampado: Estampado | null; // liso, logo chico o estampa grande (de "estampado"); null = no lo dijo o dijo otra cosa
   dominantColor: GarmentColor | null; // el color que ocupa más superficie de la prenda (de "color_dominante"); null = no lo dijo
   secondaryColors: GarmentColor[]; // colores de detalles (de "colores_secundarios"), sin el dominante; vacío si es lisa
 }

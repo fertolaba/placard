@@ -1,0 +1,689 @@
+{
+  "version": 1,
+  "photos": {
+    "asap-rocky": {
+      "avatar.jpg": {
+        "hash": "cf1fecde9cf98bb3",
+        "width": 736,
+        "height": 917,
+        "person": [
+          0.325,
+          0.094,
+          0.691,
+          0.948
+        ],
+        "face": [
+          0.432,
+          0.094,
+          0.542,
+          0.215
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "foto1.jpg": {
+        "hash": "bc3ddcbcce5c86e9",
+        "width": 1200,
+        "height": 2257,
+        "person": [
+          0,
+          0.035,
+          0.96,
+          0.983
+        ],
+        "face": [
+          0.497,
+          0.035,
+          0.831,
+          0.278
+        ],
+        "personas": 3,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "foto2.jpg": {
+        "hash": "6233047be8639b06",
+        "width": 736,
+        "height": 1308,
+        "person": [
+          0.258,
+          0.061,
+          0.789,
+          0.981
+        ],
+        "face": [
+          0.397,
+          0.061,
+          0.556,
+          0.191
+        ],
+        "personas": 4,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "foto3.jpg": {
+        "hash": "7b5cb35dfb7d80a1",
+        "width": 736,
+        "height": 1308,
+        "person": [
+          0.216,
+          0.076,
+          0.704,
+          0.942
+        ],
+        "face": [
+          0.384,
+          0.076,
+          0.538,
+          0.211
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "foto4.jpg": {
+        "hash": "bca70682175c703b",
+        "width": 803,
+        "height": 1200,
+        "person": [
+          0.196,
+          0.134,
+          0.648,
+          0.952
+        ],
+        "face": [
+          0.403,
+          0.134,
+          0.574,
+          0.275
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      }
+    },
+    "bad-bunny": {
+      "avatar.jpg": {
+        "hash": "452a7eae6c635f9f",
+        "width": 736,
+        "height": 1247,
+        "person": [
+          0.257,
+          0.093,
+          0.715,
+          0.966
+        ],
+        "face": [
+          0.444,
+          0.093,
+          0.614,
+          0.219
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "foto1.jpg": {
+        "hash": "d53012f57cd3fb0f",
+        "width": 736,
+        "height": 1308,
+        "person": [
+          0.201,
+          0.048,
+          0.824,
+          0.974
+        ],
+        "face": [
+          0.381,
+          0.048,
+          0.55,
+          0.192
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "foto2.jpg": {
+        "hash": "1db2c71f4d8fdbb8",
+        "width": 1200,
+        "height": 2133,
+        "person": [
+          0.069,
+          0.128,
+          0.877,
+          1
+        ],
+        "face": [
+          0.326,
+          0.128,
+          0.573,
+          0.309
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "foto3.jpg": {
+        "hash": "8194487eb8f203bb",
+        "width": 736,
+        "height": 920,
+        "person": [
+          0.309,
+          0.081,
+          0.685,
+          0.928
+        ],
+        "face": [
+          0.416,
+          0.188,
+          0.526,
+          0.312
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "foto4.jpg": {
+        "hash": "836f5729d350ecb2",
+        "width": 994,
+        "height": 1370,
+        "person": [
+          0.267,
+          0.212,
+          0.703,
+          0.984
+        ],
+        "face": [
+          0.484,
+          0.212,
+          0.601,
+          0.342
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "foto5.jpg": {
+        "hash": "22d595d462e43b3f",
+        "width": 736,
+        "height": 901,
+        "person": [
+          0.342,
+          0.266,
+          0.63,
+          0.942
+        ],
+        "face": [
+          0.456,
+          0.266,
+          0.539,
+          0.391
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      }
+    },
+    "central-cee": {
+      "avatar.jpg": {
+        "hash": "4c7c558f9376445f",
+        "width": 736,
+        "height": 1104,
+        "person": [
+          0.215,
+          0.019,
+          0.694,
+          0.984
+        ],
+        "face": [
+          0.493,
+          0.018,
+          0.652,
+          0.203
+        ],
+        "personas": 2,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "foto1.jpg": {
+        "hash": "00cf729454e41601",
+        "width": 736,
+        "height": 978,
+        "person": [
+          0.341,
+          0.03,
+          0.72,
+          0.98
+        ],
+        "face": [
+          0.493,
+          0.054,
+          0.62,
+          0.166
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "foto2.jpg": {
+        "hash": "2ac924e01bbb061a",
+        "width": 736,
+        "height": 1308,
+        "person": [
+          0.207,
+          0.032,
+          0.724,
+          0.985
+        ],
+        "face": [
+          0.4,
+          0.032,
+          0.565,
+          0.192
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "foto3.jpg": {
+        "hash": "da45766fa04e5da1",
+        "width": 736,
+        "height": 1308,
+        "person": [
+          0.419,
+          0.094,
+          0.869,
+          0.949
+        ],
+        "face": [
+          0.493,
+          0.094,
+          0.734,
+          0.228
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "foto4.jpg": {
+        "hash": "ad0e975f6f2bf6fa",
+        "width": 736,
+        "height": 979,
+        "person": [
+          0.22,
+          0.002,
+          0.616,
+          0.982
+        ],
+        "face": [
+          0.364,
+          0.03,
+          0.493,
+          0.144
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "foto5.jpg": {
+        "hash": "9bd9356190a0f8ff",
+        "width": 828,
+        "height": 1024,
+        "person": [
+          0.243,
+          0,
+          0.685,
+          1
+        ],
+        "face": [
+          0.375,
+          0,
+          0.515,
+          0.148
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      }
+    },
+    "drake": {
+      "a0ec456656f52ccf681747d8f833fdb1.jpg": {
+        "hash": "15e62959268a44e7",
+        "width": 1200,
+        "height": 1500,
+        "person": [
+          0.318,
+          0.04,
+          0.714,
+          0.971
+        ],
+        "face": [
+          0.404,
+          0.039,
+          0.556,
+          0.273
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "caa654af14aee29d85d9526360d0863b.jpg": {
+        "hash": "17efaa9a7ff9527f",
+        "width": 691,
+        "height": 1200,
+        "person": [
+          0.067,
+          0.261,
+          0.616,
+          0.981
+        ],
+        "face": [
+          0.26,
+          0.261,
+          0.391,
+          0.367
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "d018bc3d5c5f84549a79812083bf9f36.jpg": {
+        "hash": "4a202dce0ed96582",
+        "width": 824,
+        "height": 1200,
+        "person": [
+          0.327,
+          0.261,
+          0.734,
+          0.954
+        ],
+        "face": [
+          0.4,
+          0.261,
+          0.523,
+          0.364
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "e079d61d2fb2fa10a70c5e3a3d86173c.jpg": {
+        "hash": "b5b023aabdbb2ff3",
+        "width": 736,
+        "height": 1308,
+        "person": [
+          0.209,
+          0.037,
+          0.804,
+          0.955
+        ],
+        "face": [
+          0.46,
+          0.037,
+          0.625,
+          0.2
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      }
+    },
+    "rauw": {
+      "avatar.jpg": {
+        "hash": "fb9d4c23cfc62259",
+        "width": 736,
+        "height": 981,
+        "person": [
+          0.298,
+          0.339,
+          0.625,
+          0.917
+        ],
+        "face": [
+          0.339,
+          0.339,
+          0.451,
+          0.428
+        ],
+        "personas": 15,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "look-01.jpg": {
+        "hash": "22fe4b98d9841680",
+        "width": 736,
+        "height": 994,
+        "person": [
+          0.215,
+          0.012,
+          0.754,
+          0.984
+        ],
+        "face": [
+          0.41,
+          0.012,
+          0.574,
+          0.167
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "look-02.jpg": {
+        "hash": "100b54504a52d6ee",
+        "width": 736,
+        "height": 1104,
+        "person": [
+          0.206,
+          0.039,
+          0.769,
+          0.989
+        ],
+        "face": [
+          0.375,
+          0.039,
+          0.55,
+          0.201
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "look-03.jpg": {
+        "hash": "6b5bbcf287cd7b3d",
+        "width": 736,
+        "height": 929,
+        "person": [
+          0,
+          0.033,
+          0.9,
+          1
+        ],
+        "face": [
+          0.33,
+          0.033,
+          0.625,
+          0.364
+        ],
+        "personas": 5,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "look-04.jpg": {
+        "hash": "877e39c006bb7c64",
+        "width": 736,
+        "height": 981,
+        "person": [
+          0.16,
+          0.003,
+          0.59,
+          0.959
+        ],
+        "face": [
+          0.257,
+          0.003,
+          0.41,
+          0.191
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "look-05.jpg": {
+        "hash": "662b1b7d5228b6ac",
+        "width": 634,
+        "height": 954,
+        "person": [
+          0.294,
+          0.11,
+          0.754,
+          0.917
+        ],
+        "face": [
+          0.37,
+          0.11,
+          0.57,
+          0.215
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      }
+    },
+    "tyler-the-creator": {
+      "avatar.jpg": {
+        "hash": "18fd5dc336086e10",
+        "width": 675,
+        "height": 1200,
+        "person": [
+          0.29,
+          0.211,
+          0.69,
+          0.977
+        ],
+        "face": [
+          0.404,
+          0.211,
+          0.545,
+          0.35
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "look-01.jpg": {
+        "hash": "5c0f3623409cbc27",
+        "width": 736,
+        "height": 920,
+        "person": [
+          0.314,
+          0.116,
+          0.987,
+          0.977
+        ],
+        "face": [
+          0.401,
+          0.116,
+          0.547,
+          0.245
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "look-02.jpg": {
+        "hash": "7c19051b4f0aa5e4",
+        "width": 420,
+        "height": 670,
+        "person": [
+          0.098,
+          0.076,
+          0.91,
+          0.964
+        ],
+        "face": [
+          0.364,
+          0.076,
+          0.56,
+          0.163
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "look-03.jpg": {
+        "hash": "decbb622d78f6365",
+        "width": 555,
+        "height": 1200,
+        "person": [
+          0.027,
+          0.163,
+          0.995,
+          0.929
+        ],
+        "face": [
+          0.329,
+          0.163,
+          0.521,
+          0.29
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      },
+      "look-04.jpg": {
+        "hash": "22a82ecd43c9a319",
+        "width": 736,
+        "height": 917,
+        "person": [
+          0.362,
+          0.093,
+          0.786,
+          0.987
+        ],
+        "face": [
+          0.502,
+          0.093,
+          0.634,
+          0.246
+        ],
+        "personas": 1,
+        "caraVisible": true,
+        "dudas": "",
+        "model": "gemini-3.5-flash-lite"
+      }
+    }
+  }
+}

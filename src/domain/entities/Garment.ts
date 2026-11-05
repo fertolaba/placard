@@ -37,6 +37,21 @@ export const CALZADO_TIPO_LABELS: Record<CalzadoTipo, string> = {
 export const isCalzadoTipo = (value: unknown): value is CalzadoTipo =>
   typeof value === 'string' && (CALZADO_TIPOS as readonly string[]).includes(value);
 
+/**
+ * Estampado de la prenda: 'liso' (sin logos ni textos), 'logo' (logo o texto chico, como un swoosh en el pecho) o
+ * 'grafico' (estampa, letras o dibujo grande y protagonista).
+ */
+export const ESTAMPADOS = ['liso', 'logo', 'grafico'] as const;
+export type Estampado = (typeof ESTAMPADOS)[number];
+export const ESTAMPADO_LABELS: Record<Estampado, string> = {
+  liso: 'Liso',
+  logo: 'Logo chico',
+  grafico: 'Estampa grande',
+};
+
+export const isEstampado = (value: unknown): value is Estampado =>
+  typeof value === 'string' && (ESTAMPADOS as readonly string[]).includes(value);
+
 /** Cuántos colores secundarios se guardan como máximo por prenda. */
 export const MAX_SECONDARY_COLORS = 3;
 
@@ -53,6 +68,7 @@ export interface Garment {
   seasons: Season[]; // épocas del año en las que se usa (al menos una)
   corte?: string; // uno de GARMENT_CUTS[category]; opcional
   calzadoTipo?: CalzadoTipo; // solo calzado; sin valor = prenda vieja o no se sabe (no la excluye de ningún estilo)
+  estampado?: Estampado; // sin valor = prenda vieja o no se sabe (neutra: no la excluye de ningún referente)
   sporty: boolean; // camiseta de fútbol (la IA también marca shorts de fútbol y botines): en los estilos solo se usa en Blokecore
   classic: boolean; // prenda clásica o formal: camisa, chomba, sweater fino, pantalón de vestir o sastrero, mocasines
   photoRef: string | null; // referencia de la foto en PhotoStorage (es lo que se guarda)

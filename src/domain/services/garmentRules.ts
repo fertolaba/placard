@@ -1,5 +1,5 @@
 import { normalizeSeasons } from '../entities/Season';
-import { GARMENT_CUTS, isCalzadoTipo, MAX_SECONDARY_COLORS, type NewGarment } from '../entities/Garment';
+import { GARMENT_CUTS, isCalzadoTipo, isEstampado, MAX_SECONDARY_COLORS, type NewGarment } from '../entities/Garment';
 import type { GarmentColor } from './garmentColors';
 
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
@@ -31,5 +31,6 @@ export function normalizeGarmentData(input: NewGarment): NewGarment {
   const secondaryColors = normalizeSecondaryColors(input.secondaryColors ?? [], input.colorHex);
   // El tipo de calzado solo se guarda en calzado; si la prenda cambió de categoría, se descarta.
   const calzadoTipo = input.category === 'calzado' && isCalzadoTipo(input.calzadoTipo) ? input.calzadoTipo : undefined;
-  return { ...input, name, seasons, corte, calzadoTipo, secondaryColors };
+  const estampado = isEstampado(input.estampado) ? input.estampado : undefined; // un valor fuera de la lista no se guarda
+  return { ...input, name, seasons, corte, calzadoTipo, estampado, secondaryColors };
 }

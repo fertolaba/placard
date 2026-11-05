@@ -8,6 +8,9 @@
  *   node scripts/analyze-referentes.js otro-id --nombre "Otro Nombre"    un referente que todavía no está en el seed
  *   --force                                                              vuelve a pedir un borrador que ya existe
  *
+ * El borrador también trae formality, formalityRange y graphics (formalidad y tolerancia a estampas), que usa el
+ * matching de "Tus prendas" del referente: pegalos en su entrada del seed como el resto.
+ *
  * La clave sale de EXPO_PUBLIC_GEMINI_API_KEY (.env.local o variable de entorno).
  * Para más precisión, elegí otro modelo con la variable GEMINI_MODEL.
  */
@@ -27,6 +30,10 @@ const TIMEOUT_MS = 60_000;
 const RETRY_DELAYS_MS = [2_000, 5_000];
 const MAX_LOOKS = 8;
 const WARN_FILE_BYTES = 1024 * 1024;
+
+// Copiado de FORMALIDADES (src/domain/entities/Formality.ts) y TOLERANCIAS_GRAFICAS (src/domain/entities/Referente.ts).
+const FORMALIDADES = ['clasico', 'casual', 'deportivo'];
+const TOLERANCIAS_GRAFICAS = ['solo-liso', 'logo-ok', 'grafico-ok'];
 
 const MIME_TYPES = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp' };
 
@@ -158,6 +165,9 @@ Devolvé este JSON:
 - paleta: 3 o 4 nombres de color de la lista, los que más aparecen en la ropa (no en el fondo ni en la piel).
 - prendasClave: entre 5 y 8 prendas que se repitan o se destaquen, cada una con { nombre (por ejemplo "Chaqueta negra"), categoria, color (nombre de la lista), corte }. Los accesorios pueden aparecer en las claves, pero no en prendasClave.
 - etiquetas: 3 palabras clave de estilo.
+- formalidad: el nivel que predomina en la ropa de las fotos. "clasico": camisas, chombas, sacos, pilotos, sastrería, mocasines. "casual": jeans, remeras, buzos y camperas urbanas, zapatillas urbanas. "deportivo": ropa deportiva o técnica (camperas tipo Nike Tech o de nylon, conjuntos deportivos, joggers técnicos, camisetas de fútbol, botines).
+- formalidadMin y formalidadMax: el rango que se ve en las fotos, de lo más formal a lo más deportivo, con los mismos valores. Si nunca aparece ropa deportiva o técnica, formalidadMax NO puede ser "deportivo". Si nunca aparece nada clásico, formalidadMin NO puede ser "clasico".
+- graficos: cuánta estampa usa. "solo-liso": casi todo liso, sin logos ni letras a la vista. "logo-ok": logos o textos chicos sí, estampas grandes no. "grafico-ok": usa estampas, letras grandes o dibujos protagonistas.
 - confianza: "alta", "media" o "baja" según cuánto se ve la ropa en las fotos (por ejemplo "baja" si la mayoría son retratos de la cara).
 - notas: cualquier duda en una frase corta.
 
@@ -213,11 +223,15 @@ function buildSchema(colors) {
         },
       },
       etiquetas: { type: 'ARRAY', minItems: 3, maxItems: 3, items: { type: 'STRING' } },
+      formalidad: { type: 'STRING', enum: FORMALIDADES },
+      formalidadMin: { type: 'STRING', enum: FORMALIDADES },
+      formalidadMax: { type: 'STRING', enum: FORMALIDADES },
+      graficos: { type: 'STRING', enum: TOLERANCIAS_GRAFICAS },
       confianza: { type: 'STRING', enum: ['alta', 'media', 'baja'] },
       notas: { type: 'STRING' },
     },
-    required: ['resumen', 'claves', 'paleta', 'prendasClave', 'etiquetas', 'confianza', 'notas'],
-    propertyOrdering: ['resumen', 'claves', 'paleta', 'prendasClave', 'etiquetas', 'confianza', 'notas'],
+    required: ['resumen', 'claves', 'paleta', 'prendasClave', 'etiquetas', 'formalidad', 'formalidadMin', 'formalidadMax', 'graficos', 'confianza', 'notas'],
+    propertyOrdering: ['resumen', 'claves', 'paleta', 'prendasClave', 'etiquetas', 'formalidad', 'formalidadMin', 'formalidadMax', 'graficos', 'confianza', 'notas'],
   };
 }
 
@@ -344,8 +358,40 @@ function normalize(raw, colors) {
   if (prendasClave.length < 5 || prendasClave.length > 8) avisos.push(`Hay ${prendasClave.length} prendas (se pidieron entre 5 y 8).`);
   if (etiquetas.length !== 3) avisos.push(`Hay ${etiquetas.length} etiquetas (se pidieron 3).`);
 
+  // Formalidad: un valor fuera de la lista se descarta (el referente queda sin filtro de formalidad).
+  const formality = FORMALIDADES.includes(raw.formalidad) ? raw.formalidad : null;
+  if (!formality) avisos.push(`Formalidad descartada: "${oneLine(raw.formalidad)}".`);
+  let formalityRange = null;
+  if (FORMALIDADES.includes(raw.formalidadMin) && FORMALIDADES.includes(raw.formalidadMax)) {
+    const rank = (level) => FORMALIDADES.indexOf(level);
+    let [min, max] = [raw.formalidadMin, raw.formalidadMax];
+    if (rank(min) > rank(max)) [min, max] = [max, min];
+    if (formality && (rank(formality) < rank(min) || rank(formality) > rank(max))) {
+      avisos.push(`La formalidad predominante (${formality}) quedaba fuera del rango ${min}-${max}: se amplió el rango.`);
+      if (rank(formality) < rank(min)) min = formality;
+      else max = formality;
+    }
+    formalityRange = [min, max];
+  } else {
+    avisos.push('Rango de formalidad descartado: sin rango, se usa un nivel para cada lado del predominante.');
+  }
+  const graphics = TOLERANCIAS_GRAFICAS.includes(raw.graficos) ? raw.graficos : null;
+  if (!graphics) avisos.push(`Tolerancia a estampas descartada: "${oneLine(raw.graficos)}".`);
+
   const confianza = ['alta', 'media', 'baja'].includes(raw.confianza) ? raw.confianza : 'desconocida';
-  return { resumen, claves, paleta, prendasClave, etiquetas, confianza, notas: oneLine(raw.notas), avisos };
+  return {
+    resumen,
+    claves,
+    paleta,
+    prendasClave,
+    etiquetas,
+    formality,
+    formalityRange,
+    graphics,
+    confianza,
+    notas: oneLine(raw.notas),
+    avisos,
+  };
 }
 
 const quote = (text) => `'${text.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
@@ -379,6 +425,9 @@ function buildSeedText(id, nombre, seedEntry, draft, constants) {
     ),
     '  ],',
     `  destacado: ${kept('destacado', 'false')}`,
+    ...(draft.formality ? [`  formality: ${quote(draft.formality)},`] : []),
+    ...(draft.formalityRange ? [`  formalityRange: [${draft.formalityRange.map(quote).join(', ')}],`] : []),
+    ...(draft.graphics ? [`  graphics: ${quote(draft.graphics)},`] : []),
     '},',
   ];
   return `${lines.join('\n')}\n`;
@@ -410,6 +459,8 @@ async function analyze(id, { force, nombreArg, seedSource, constants, colors, ap
   fs.writeFileSync(seedPath, buildSeedText(id, nombre, seedEntry, draft, constants));
 
   console.log(`${id}: ${looks.length} foto(s), confianza ${draft.confianza}`);
+  const range = draft.formalityRange ? ` (rango ${draft.formalityRange.join('-')})` : '';
+  console.log(`  formalidad ${draft.formality ?? 'sin dato'}${range} · estampas ${draft.graphics ?? 'sin dato'}`);
   console.log(`  ${relative(jsonPath)}`);
   console.log(`  ${relative(seedPath)}`);
   if (draft.avisos.length > 0) console.warn(`  ${draft.avisos.length} aviso(s) para revisar: están en el borrador.`);

@@ -7,7 +7,7 @@ import { LookIllustration } from './LookIllustration';
 import { MatchRing } from './MatchRing';
 import { PaletteDots } from './PaletteDots';
 import { PressableScale } from './PressableScale';
-import { getReferenteImages } from './referenteImages';
+import { contentPositionOf, getReferenteImages } from './referenteImages';
 import { SaveButton } from './SaveButton';
 import { makeStyles } from '../theme/makeStyles';
 import { useTheme } from '../theme/ThemeProvider';
@@ -28,7 +28,7 @@ export const DestacadoCard = memo(function DestacadoCard({ item, etiqueta, saved
   const styles = useStyles();
   const { colors } = useTheme();
   const foreground = colors.text;
-  const { avatar } = getReferenteImages(referente.id);
+  const { card } = getReferenteImages(referente.id);
   const tag = (
     <View style={styles.tag}>
       <Text style={styles.tagLabel} numberOfLines={1}>
@@ -49,12 +49,13 @@ export const DestacadoCard = memo(function DestacadoCard({ item, etiqueta, saved
       }}
       style={styles.card}
     >
-      {avatar !== undefined ? (
+      {card !== undefined ? (
         <View style={styles.photoWrap}>
           <Image
-            source={avatar}
+            source={card.source}
             contentFit="cover"
-            contentPosition="top"
+            // El recorte ya viene encuadrado; 'top' queda solo para una portada nueva que todavía no se analizó.
+            contentPosition={contentPositionOf(card, 'top')}
             cachePolicy="memory-disk"
             recyclingKey={referente.id}
             style={StyleSheet.absoluteFill}

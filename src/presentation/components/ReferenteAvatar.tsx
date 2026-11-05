@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { Text, View } from 'react-native';
 import { readableOn } from '../../core/utils/color';
-import { getReferenteImages } from './referenteImages';
+import { contentPositionOf, getReferenteImages } from './referenteImages';
 
 interface Props {
   referenteId: string;
@@ -29,8 +29,9 @@ export function ReferenteAvatar({ referenteId, iniciales, color, size }: Props) 
     >
       {avatar !== undefined ? (
         <Image
-          source={avatar}
+          source={avatar.source}
           contentFit="cover"
+          contentPosition={contentPositionOf(avatar)}
           cachePolicy="memory-disk"
           recyclingKey={referenteId}
           style={{ width: size, height: size }}

@@ -5,7 +5,8 @@ import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PHOTO_VIEWER_BACKGROUND } from '../../core/theme/palettes';
 import { makeStyles } from '../theme/makeStyles';
-import { getReferenteImages } from './referenteImages';
+import type { FotoEncuadrada } from '../../data/seed/referenteImages';
+import { contentPositionOf, getReferenteImages } from './referenteImages';
 
 const LOOK_WIDTH = 220;
 const LOOK_HEIGHT = 290;
@@ -22,20 +23,22 @@ interface Props {
 export function ReferenteLooks({ referenteId, nombre, sidePadding }: Props) {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
-  const { looks } = getReferenteImages(referenteId);
+  const { looks, lookThumbs } = getReferenteImages(referenteId);
   const [openLook, setOpenLook] = useState<number | null>(null);
 
   const renderLook = useCallback(
-    ({ item, index }: { item: number; index: number }) => (
+    ({ item, index }: { item: FotoEncuadrada; index: number }) => (
       <Pressable
-        onPress={() => setOpenLook(item)}
+        // El visor a pantalla completa muestra la foto original, sin recortar.
+        onPress={() => setOpenLook(looks[index] ?? item.source)}
         accessibilityRole="imagebutton"
         accessibilityLabel={`Ver el look ${index + 1} de ${nombre} a pantalla completa`}
         style={({ pressed }) => pressed && styles.pressed}
       >
         <Image
-          source={item}
+          source={item.source}
           contentFit="cover"
+          contentPosition={contentPositionOf(item)}
           cachePolicy="memory-disk"
           recyclingKey={`${referenteId}-${index}`}
           transition={150}
@@ -43,10 +46,10 @@ export function ReferenteLooks({ referenteId, nombre, sidePadding }: Props) {
         />
       </Pressable>
     ),
-    [referenteId, nombre, styles],
+    [referenteId, nombre, styles, looks],
   );
 
-  if (looks.length === 0) return null;
+  if (lookThumbs.length === 0) return null;
 
   return (
     <>
@@ -55,7 +58,7 @@ export function ReferenteLooks({ referenteId, nombre, sidePadding }: Props) {
       </Text>
       <FlatList
         horizontal
-        data={looks}
+        data={lookThumbs}
         keyExtractor={(_, index) => `${referenteId}-${index}`}
         renderItem={renderLook}
         ItemSeparatorComponent={LookGap}

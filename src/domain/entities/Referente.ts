@@ -1,3 +1,4 @@
+import type { Formalidad } from './Formality';
 import type { Garment, GarmentCategory } from './Garment';
 import type { StyleId } from './StyleReference';
 
@@ -14,6 +15,13 @@ export const ESTILO_OUTFIT: Partial<Record<EstiloReferente, StyleId>> = {
 /** A qué perfil se muestra un referente: 'unisex' (o sin dato) se muestra a todos. Ver referentesParaPerfil. */
 export const GENEROS_REFERENTE = ['male', 'female', 'unisex'] as const;
 export type GeneroReferente = (typeof GENEROS_REFERENTE)[number];
+
+/**
+ * Cuánta estampa admite el estilo del referente: 'solo-liso' (descarta estampas grandes y relega los logos),
+ * 'logo-ok' (descarta estampas grandes) o 'grafico-ok' (todo vale). Ver referenteFit.
+ */
+export const TOLERANCIAS_GRAFICAS = ['solo-liso', 'logo-ok', 'grafico-ok'] as const;
+export type ToleranciaGrafica = (typeof TOLERANCIAS_GRAFICAS)[number];
 
 export interface ClaveDeEstilo {
   titulo: string;
@@ -42,6 +50,12 @@ export interface Referente {
   prendasClave: PrendaClave[];
   destacado: boolean;
   gender?: GeneroReferente;
+  /** Formalidad que predomina en sus fotos. Sin dato = no filtra por formalidad. */
+  formality?: Formalidad;
+  /** Rango admitido, de lo más formal a lo más deportivo. Sin rango: un nivel para cada lado del predominante. */
+  formalityRange?: readonly [Formalidad, Formalidad];
+  /** Tolerancia a estampas. Sin dato = no filtra por estampado. */
+  graphics?: ToleranciaGrafica;
 }
 
 /** Cuánto del look del referente se puede armar con el placard. */

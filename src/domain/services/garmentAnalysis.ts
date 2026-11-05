@@ -1,4 +1,13 @@
-import { GARMENT_CATEGORIES, GARMENT_CUTS, isCalzadoTipo, MAX_SECONDARY_COLORS, type CalzadoTipo, type GarmentCategory } from '../entities/Garment';
+import {
+  GARMENT_CATEGORIES,
+  GARMENT_CUTS,
+  isCalzadoTipo,
+  isEstampado,
+  MAX_SECONDARY_COLORS,
+  type CalzadoTipo,
+  type Estampado,
+  type GarmentCategory,
+} from '../entities/Garment';
 import { normalizeSeasons, type Season } from '../entities/Season';
 import type { GarmentTypeDetection, SleeveLength } from './CategoryDetector';
 import { GARMENT_COLORS, type GarmentColor } from './garmentColors';
@@ -14,6 +23,7 @@ export interface GarmentAnalysis {
   calzado_tipo: CalzadoTipo | 'no_aplica'; // solo calzado: "no_aplica" para el resto
   es_deportiva: boolean; // camiseta de fútbol con mangas, short de fútbol o botines
   es_clasica: boolean; // camisa, chomba, sweater fino, blazer, pantalón sastrero, mocasines
+  estampado: Estampado; // liso, logo chico o estampa grande
   color_dominante: string; // uno de los nombres de GARMENT_COLORS
   colores_secundarios: string[]; // nombres de GARMENT_COLORS; vacío si la prenda es lisa
 }
@@ -97,5 +107,7 @@ export function parseGarmentAnalysis(raw: unknown): GarmentTypeDetection | null 
     secondaryColors.push(color);
     if (secondaryColors.length === MAX_SECONDARY_COLORS) break;
   }
-  return { type, category, sleeve, seasons, cut, calzadoTipo, sporty, classic, dominantColor, secondaryColors };
+  // Un estampado fuera de la lista (o que no vino) queda en null: la prenda es neutra para los referentes.
+  const estampado = isEstampado(data.estampado) ? data.estampado : null;
+  return { type, category, sleeve, seasons, cut, calzadoTipo, sporty, classic, estampado, dominantColor, secondaryColors };
 }

@@ -125,7 +125,7 @@ const CardFace = memo(function CardFace({ outfit }: { outfit: Outfit }) {
             <View key={garment.id} style={[styles.paletteDot, { backgroundColor: garment.colorHex }]} />
           ))}
           <Text style={styles.paletteLabel} numberOfLines={1} maxFontSizeMultiplier={1.2}>
-            {paletteLabel(outfit)}
+            {outfit.sharedStyle ? `${paletteLabel(outfit)} · ${outfit.sharedStyle}` : paletteLabel(outfit)}
           </Text>
         </View>
       </View>

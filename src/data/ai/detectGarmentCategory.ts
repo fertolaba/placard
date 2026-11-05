@@ -1,4 +1,4 @@
-import { ALL_GARMENT_CUTS, CALZADO_TIPOS, GARMENT_CATEGORIES, MAX_SECONDARY_COLORS } from '../../domain/entities/Garment';
+import { ALL_GARMENT_CUTS, CALZADO_TIPOS, ESTAMPADOS, GARMENT_CATEGORIES, MAX_SECONDARY_COLORS } from '../../domain/entities/Garment';
 import { GARMENT_COLORS } from '../../domain/services/garmentColors';
 import type { GarmentTypeDetection } from '../../domain/services/CategoryDetector';
 import { parseGarmentAnalysis } from '../../domain/services/garmentAnalysis';
@@ -23,7 +23,7 @@ const DEFAULT_TIMEOUT_MS = 15_000;
 
 const COLOR_NAMES = GARMENT_COLORS.map((color) => `"${color.name}"`).join(', ');
 
-const PROMPT = `Mirá la foto y decí qué prenda es. Usá nombres comunes en Argentina (Remera, Musculosa, Camisa, Chomba, Buzo, Sweater, Campera, Abrigo, Top, Crop top, Corset, Body, Jean, Pantalón, Jogger, Short, Bermuda, Pollera, Minifalda, Calza, Zapatillas, Botas, Sandalias, Ojotas, Zapatos).
+const PROMPT = `Mirá la foto y decí qué prenda es. Usá nombres comunes en Argentina (Remera, Musculosa, Camisa, Chomba, Buzo, Sweater, Campera, Abrigo, Top, Crop top, Corset, Body, Jean, Pantalón, Jogger, Short, Bermuda, Pollera, Minifalda, Calza, Zapatillas, Botas, Sandalias, Ojotas, Zapatos). Si es ropa deportiva o técnica (una campera tipo Nike Tech o de nylon deportivo, un buzo de entrenamiento, un conjunto deportivo), decilo en el tipo: "Campera deportiva", "Buzo deportivo".
 - categoria: elegí uno de estos valores exactos.
   - "top": prenda de arriba femenina, corta o de tiras, que suele dejar ver hombros, escote o cintura: top de tiras, crop top, top strapless o bandeau, corset, corpiño deportivo usado como prenda, body, top halter.
   - "arriba": el resto de las prendas de arriba: remeras, musculosas comunes, camisas, chombas, buzos, sweaters, camperas, abrigos.
@@ -50,7 +50,11 @@ const PROMPT = `Mirá la foto y decí qué prenda es. Usá nombres comunes en Ar
 - color_dominante: el color que ocupa más superficie de la prenda (no del fondo ni de la piel). Elegí el nombre más parecido de esta lista, escrito exactamente igual: ${COLOR_NAMES}.
 - colores_secundarios: los colores de los detalles que se ven a simple vista (rayas, estampa, logo, escudo, cuello, puños, costuras contrastantes, suela de un calzado), de más a menos visible, como mucho ${MAX_SECONDARY_COLORS}. Mismos nombres exactos de la lista. No repitas el dominante ni pongas sombras o pliegues del mismo color. Si la prenda es lisa, devolvé [].
 - es_deportiva: true SOLO para camisetas de fútbol con mangas (de un club, de una selección o retro: suelen tener escudo, sponsor o número), shorts de fútbol y botines. false para todo lo demás: musculosas y cualquier prenda sin mangas, camisetas de otros deportes (básquet/NBA, NFL, hockey, rugby, béisbol), ropa de entrenamiento o gimnasio y ropa urbana cómoda (una remera lisa, un buzo, un jogger, unas zapatillas urbanas). Ejemplos: musculosa de la NBA → false; camiseta de Boca → true; camiseta de manga corta de River → true.
-- es_clasica: true para camisas, chombas o polos, sweaters o cardigans finos y lisos, blazers, pantalones de vestir o sastreros (incluidos los de pinzas y los chinos), polleras lápiz o tableadas de tela fina, mocasines y zapatos de vestir. false para remeras (lisas o estampadas), buzos y hoodies, camperas deportivas o técnicas, joggers, jeans, shorts, cualquier prenda oversize o baggy, zapatillas, botas urbanas y ropa deportiva. Si no es claramente clásica, false.`;
+- es_clasica: true para camisas, chombas o polos, sweaters o cardigans finos y lisos, blazers, pantalones de vestir o sastreros (incluidos los de pinzas y los chinos), polleras lápiz o tableadas de tela fina, mocasines y zapatos de vestir. false para remeras (lisas o estampadas), buzos y hoodies, camperas deportivas o técnicas, joggers, jeans, shorts, cualquier prenda oversize o baggy, zapatillas, botas urbanas y ropa deportiva. Si no es claramente clásica, false.
+- estampado: cuánto texto, logo o dibujo tiene la prenda a la vista.
+  - "liso": sin logos ni textos visibles (rayas, cuadros o costuras contrastantes cuentan como liso).
+  - "logo": un logo o texto chico (por ejemplo, el swoosh de Nike o un escudo chico en el pecho).
+  - "grafico": una estampa, letras o un dibujo grande y protagonista (letras grandes en el pecho o la espalda, un estampado de banda, un personaje).`;
 
 /** Esquema de la respuesta: Gemini devuelve un JSON que lo cumple. */
 const RESPONSE_SCHEMA = {
@@ -67,6 +71,7 @@ const RESPONSE_SCHEMA = {
     calzado_tipo: { type: 'STRING', enum: [...CALZADO_TIPOS, 'no_aplica'] },
     es_deportiva: { type: 'BOOLEAN' },
     es_clasica: { type: 'BOOLEAN' },
+    estampado: { type: 'STRING', enum: [...ESTAMPADOS] },
     color_dominante: { type: 'STRING', enum: GARMENT_COLORS.map((color) => color.name) },
     colores_secundarios: {
       type: 'ARRAY',
@@ -74,7 +79,7 @@ const RESPONSE_SCHEMA = {
       maxItems: MAX_SECONDARY_COLORS,
     },
   },
-  required: ['esPrenda', 'tipo', 'categoria', 'manga', 'temporadas', 'corte', 'calzado_tipo', 'es_deportiva', 'es_clasica', 'color_dominante', 'colores_secundarios'],
+  required: ['esPrenda', 'tipo', 'categoria', 'manga', 'temporadas', 'corte', 'calzado_tipo', 'es_deportiva', 'es_clasica', 'estampado', 'color_dominante', 'colores_secundarios'],
   propertyOrdering: [
     'esPrenda',
     'tipo',
@@ -85,6 +90,7 @@ const RESPONSE_SCHEMA = {
     'calzado_tipo',
     'es_deportiva',
     'es_clasica',
+    'estampado',
     'color_dominante',
     'colores_secundarios',
   ],
@@ -166,7 +172,7 @@ export async function detectGarmentCategory(image: GeminiImage, options: GeminiO
   if (__DEV__) {
     console.log(
       '[detección de prenda] categoría asignada:',
-      detection ? `${detection.type} → ${detection.category} · manga ${detection.sleeve ?? 'no aplica'} · épocas ${detection.seasons?.join(', ') ?? 'sin deducir'} · corte ${detection.cut ?? 'sin deducir'}${detection.calzadoTipo ? ` · calzado ${detection.calzadoTipo}` : ''}${detection.sporty ? ' · deportiva' : ''}${detection.classic ? ' · clásica' : ''} · color ${detection.dominantColor?.name ?? 'sin deducir'}${detection.secondaryColors.length > 0 ? ` + ${detection.secondaryColors.map((color) => color.name).join(', ')}` : ''}` : 'ninguna (no es una prenda que la app maneje)',
+      detection ? `${detection.type} → ${detection.category} · manga ${detection.sleeve ?? 'no aplica'} · épocas ${detection.seasons?.join(', ') ?? 'sin deducir'} · corte ${detection.cut ?? 'sin deducir'}${detection.calzadoTipo ? ` · calzado ${detection.calzadoTipo}` : ''}${detection.sporty ? ' · deportiva' : ''}${detection.classic ? ' · clásica' : ''}${detection.estampado ? ` · estampado ${detection.estampado}` : ''} · color ${detection.dominantColor?.name ?? 'sin deducir'}${detection.secondaryColors.length > 0 ? ` + ${detection.secondaryColors.map((color) => color.name).join(', ')}` : ''}` : 'ninguna (no es una prenda que la app maneje)',
     );
   }
   return detection;

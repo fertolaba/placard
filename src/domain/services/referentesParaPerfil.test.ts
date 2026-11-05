@@ -49,7 +49,7 @@ describe('referentesParaPerfil', () => {
   it('cada referente del catálogo tiene fotos cargadas en referenteImages.ts', () => {
     const sinFotos = SAMPLE_REFERENTES.filter((referente) => {
       const images = REFERENTE_IMAGES[referente.id];
-      return images === undefined || (images.avatar === undefined && images.looks.length === 0);
+      return images === undefined || (images.portada === undefined && images.looks.length === 0);
     }).map((referente) => referente.id);
     expect(sinFotos).toEqual([]);
   });

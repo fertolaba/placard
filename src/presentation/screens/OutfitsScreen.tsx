@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Outfit } from '../../domain/entities/Outfit';
 import type { SavedOutfit } from '../../domain/entities/SavedOutfit';
 import { STYLE_IDS, type StyleId } from '../../domain/entities/StyleReference';
+import { garmentsForReferente } from '../../domain/services/referenteFit';
 import { OutfitExplanationModal } from '../components/OutfitExplanationModal';
 import { OutfitDeck, type DeckDecision } from '../components/outfits/OutfitDeck';
 import { StyleCarousel } from '../components/outfits/StyleCarousel';
@@ -17,6 +18,7 @@ import { StyleVariantsSection } from '../components/outfits/StyleVariantsSection
 import { StateMessage } from '../components/StateMessage';
 import { HeaderActions } from '../components/HeaderActions';
 import { useGarments } from '../hooks/useGarments';
+import { useReferente } from '../hooks/useReferente';
 import { useOutfitSuggestions } from '../hooks/useOutfitSuggestions';
 import { useStyleMatches } from '../hooks/useStyleMatches';
 import { useOutfitsTheme } from '../outfits/outfitsTheme';
@@ -52,25 +54,50 @@ export function OutfitsScreen() {
   // GetStyleMatches asigna una sola prenda por pieza; las variantes necesitan todas las del placard.
   const { garments, status: garmentsStatus, reload: reloadGarments } = useGarments('todo');
   const [selectedStyleId, setSelectedStyleId] = useState<StyleId | null>(null);
-  const coverages = useMemo(() => matches.map((match) => styleCoverage(match.reference, garments)), [matches, garments]);
-  const currentStyle = coverages.find((coverage) => coverage.reference.id === selectedStyleId) ?? coverages[0];
-  const sectionStatus = stylesStatus === 'error' || garmentsStatus === 'error' ? 'error' : stylesStatus === 'ready' && garmentsStatus === 'ready' ? 'ready' : 'loading';
 
-  // Inspiración puede abrir esta pestaña con un estilo: se selecciona y se baja hasta esa sección.
+  // Inspiración puede abrir esta pestaña con un estilo (y el referente que lo inspira): se selecciona y se baja hasta esa sección.
   const router = useRouter();
-  const { estilo } = useLocalSearchParams<{ estilo?: string }>();
+  const { estilo, referente: referenteParam } = useLocalSearchParams<{ estilo?: string; referente?: string }>();
   const scrollRef = useRef<ScrollViewInstance>(null);
   const stylesY = useRef<number | null>(null);
   const pendingScroll = useRef(false);
 
+  // "Armar un look inspirado": mientras siga elegido ese estilo, sus variantes usan solo prendas que van con el
+  // referente (formalidad y estampado, ver referenteFit). Elegir otro estilo vuelve a usar todo el placard.
+  const [inspiredBy, setInspiredBy] = useState<{ styleId: StyleId; referenteId: string } | null>(null);
   const requestedStyleId = STYLE_IDS.find((styleId) => styleId === estilo);
-  if (requestedStyleId && requestedStyleId !== selectedStyleId) setSelectedStyleId(requestedStyleId);
+  if (requestedStyleId) {
+    if (requestedStyleId !== selectedStyleId) setSelectedStyleId(requestedStyleId);
+    const requested = referenteParam ? { styleId: requestedStyleId, referenteId: referenteParam } : null;
+    if (requested?.styleId !== inspiredBy?.styleId || requested?.referenteId !== inspiredBy?.referenteId) setInspiredBy(requested);
+  }
+  const inspiredReferente = useReferente(inspiredBy?.referenteId ?? null);
+  const selectStyle = useCallback(
+    (styleId: StyleId) => {
+      setSelectedStyleId(styleId);
+      if (styleId !== inspiredBy?.styleId) setInspiredBy(null);
+    },
+    [inspiredBy],
+  );
+
+  const coverages = useMemo(
+    () =>
+      matches.map((match) =>
+        styleCoverage(
+          match.reference,
+          inspiredReferente && match.reference.id === inspiredBy?.styleId ? garmentsForReferente(inspiredReferente, garments) : garments,
+        ),
+      ),
+    [matches, garments, inspiredReferente, inspiredBy],
+  );
+  const currentStyle = coverages.find((coverage) => coverage.reference.id === selectedStyleId) ?? coverages[0];
+  const sectionStatus = stylesStatus === 'error' || garmentsStatus === 'error' ? 'error' : stylesStatus === 'ready' && garmentsStatus === 'ready' ? 'ready' : 'loading';
 
   useEffect(() => {
     if (!requestedStyleId) return;
     if (stylesY.current === null) pendingScroll.current = true;
     else scrollRef.current?.scrollTo({ y: stylesY.current, animated: true });
-    router.setParams({ estilo: undefined }); // así el mismo estilo se puede volver a pedir más tarde
+    router.setParams({ estilo: undefined, referente: undefined }); // así el mismo estilo se puede volver a pedir más tarde
   }, [requestedStyleId, router]);
 
 
@@ -125,7 +152,7 @@ export function OutfitsScreen() {
           {status === 'ready' && outfits.length === 0 && (
             <StateMessage
               title="Todavía no hay combinaciones"
-              detail="Para armar un look necesitás al menos una prenda de arriba (o un top) y una de abajo (o una pollera)."
+              detail="Cargá más prendas para ver combinaciones: necesitás al menos una de arriba (o un top) y una de abajo (o una pollera) que combinen entre sí."
             />
           )}
           {status === 'ready' && outfits.length > 0 && (
@@ -191,7 +218,7 @@ export function OutfitsScreen() {
                   Elegí un estilo y mirá qué piezas ya tenés.
                 </Animated.Text>
               </View>
-              <StyleCarousel coverages={coverages} selectedId={currentStyle.reference.id} onSelect={setSelectedStyleId} />
+              <StyleCarousel coverages={coverages} selectedId={currentStyle.reference.id} onSelect={selectStyle} />
               <StyleDetailCard coverage={currentStyle} />
               <StyleVariantsSection
                 key={currentStyle.reference.id}

@@ -1,6 +1,7 @@
 import type { Garment } from '../entities/Garment';
 import type { MatchReferente, PrendaClave, Referente } from '../entities/Referente';
 import { hexToHsl, type Hsl } from './colorHarmony';
+import { referenteFit } from './referenteFit';
 
 const TOLERANCIA_TONO = 25; // grados del círculo cromático
 const TOLERANCIA_LUZ_NEUTRO = 0.2;
@@ -33,13 +34,23 @@ function sirve(garment: Garment, prenda: PrendaClave): boolean {
   return !garment.sporty && garment.category === prenda.categoria && esMismoColor(garment.colorHex, prenda.colorHex);
 }
 
-/** Cada prenda del placard cubre una sola prenda clave. */
+/**
+ * Cada prenda del placard cubre una sola prenda clave. Antes del color y la categoría, la prenda tiene que ir con el
+ * perfil del referente (formalidad y estampado, ver referenteFit): las descartadas no cuentan para el "N de M".
+ */
 export function calcularMatch(referente: Referente, prendasDelUsuario: readonly Garment[]): MatchReferente {
   const { prendasClave } = referente;
 
+  // Entre las que pasan el filtro, las penalizadas (un logo con un referente liso) van después; a igualdad, el orden del placard.
+  const aptas = prendasDelUsuario
+    .map((garment) => ({ garment, fit: referenteFit(referente, garment) }))
+    .filter(({ fit }) => fit.allowed)
+    .sort((a, b) => a.fit.penalty - b.fit.penalty)
+    .map(({ garment }) => garment);
+
   // Se asignan primero las prendas con menos candidatas, así una prenda versátil no le "roba" el lugar a otra.
   const orden = prendasClave
-    .map((prenda, index) => ({ index, candidatas: prendasDelUsuario.filter((garment) => sirve(garment, prenda)) }))
+    .map((prenda, index) => ({ index, candidatas: aptas.filter((garment) => sirve(garment, prenda)) }))
     .sort((a, b) => a.candidatas.length - b.candidatas.length);
 
   const usadas = new Set<string>();

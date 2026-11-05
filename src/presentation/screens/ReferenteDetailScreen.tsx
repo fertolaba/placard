@@ -34,7 +34,8 @@ export function ReferenteDetailScreen() {
   const armarLook = () => {
     if (!item) return;
     const estilo = ESTILO_OUTFIT[item.referente.estilo];
-    router.navigate({ pathname: '/outfits', params: estilo ? { estilo } : {} });
+    // Con el referente, Outfits arma las variantes solo con prendas que van con su formalidad y su estampado.
+    router.navigate({ pathname: '/outfits', params: estilo ? { estilo, referente: item.referente.id } : {} });
   };
 
   return (

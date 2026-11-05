@@ -85,3 +85,16 @@ describe('parseGarmentAnalysis: tipo de calzado', () => {
     expect(parseGarmentAnalysis(analysis('Remera', false, { calzado_tipo: 'baja' }))?.calzadoTipo).toBeNull();
   });
 });
+
+describe('parseGarmentAnalysis: estampado', () => {
+  it('acepta liso, logo y grafico', () => {
+    for (const estampado of ['liso', 'logo', 'grafico']) {
+      expect(parseGarmentAnalysis(analysis('Campera', false, { estampado }))?.estampado).toBe(estampado);
+    }
+  });
+
+  it('un valor fuera de la lista, o que no vino, queda en null', () => {
+    expect(parseGarmentAnalysis(analysis('Campera', false, { estampado: 'rayado' }))?.estampado).toBeNull();
+    expect(parseGarmentAnalysis(analysis('Campera', false))?.estampado).toBeNull();
+  });
+});
