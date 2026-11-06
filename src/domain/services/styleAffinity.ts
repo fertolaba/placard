@@ -18,21 +18,61 @@ function slotScore(garment: Garment, slot: StyleSlot): number {
 /**
  * Puntaje de la prenda en un estilo, tomando la mejor pieza que la acepta.
  * Devuelve null si no encaja en ninguna. Los cortes preferidos son del estilo: suman una sola vez.
+ * Es la base común a todos los estilos: con ella se elige el estilo de casa de la prenda.
  */
-export function affinity(garment: Garment, reference: StyleReference): number | null {
+function baseAffinity(garment: Garment, reference: StyleReference): number | null {
   const scores = reference.slots.filter((slot) => garmentFitsSlot(reference, slot, garment)).map((slot) => slotScore(garment, slot));
   if (scores.length === 0) return null;
   const preferred = garment.corte !== undefined && reference.preferredCuts?.includes(garment.corte) ? 2 : 0;
   return Math.max(...scores) + preferred;
 }
 
-/** El estilo donde mejor encaja la prenda. null si no entra en ninguno o si hay empate en el primer lugar. */
+/** Lo que resta un estampado que el estilo tolera pero no le queda (un logo en Old Money). */
+export const ESTAMPADO_PENALTY = 2;
+
+/** "Campera Nike Tech" → "campera nike tech"; "Técnico" → "tecnico". */
+function normalize(text: string): string {
+  return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
+/** Ajuste propio del estilo: penaliza un estampado tolerado y suma lo técnico, lo liso y los colores sobrios. */
+function styleAdjustment(garment: Garment, reference: StyleReference): number {
+  let adjustment = garment.estampado !== undefined && reference.estampados?.[garment.estampado] === 'penaliza' ? -ESTAMPADO_PENALTY : 0;
+  const boost = reference.affinityBoost;
+  if (!boost) return adjustment;
+  if (boost.technical) {
+    const { keywords, formalidades, uncleanCuts, bonus } = boost.technical;
+    const name = normalize(garment.name);
+    const byName = keywords.some((keyword) => new RegExp(`\\b${keyword}`).test(name));
+    const byFormality = garment.formalidad !== undefined && formalidades.includes(garment.formalidad);
+    const cleanCut = garment.corte === undefined || !uncleanCuts.includes(garment.corte);
+    if ((byName || byFormality) && cleanCut) adjustment += bonus;
+  }
+  if (garment.estampado !== undefined) adjustment += boost.estampado?.[garment.estampado] ?? 0;
+  if (boost.colors?.names.includes(garment.colorName)) adjustment += boost.colors.bonus;
+  return adjustment;
+}
+
+/**
+ * Qué tanto le queda la prenda al estilo: la base más el ajuste propio del estilo (Techwear premia lo técnico y liso).
+ * Devuelve null si no encaja en ninguna pieza.
+ */
+export function affinity(garment: Garment, reference: StyleReference): number | null {
+  const base = baseAffinity(garment, reference);
+  return base === null ? null : base + styleAdjustment(garment, reference);
+}
+
+/**
+ * El estilo donde mejor encaja la prenda. null si no entra en ninguno o si hay empate en el primer lugar.
+ * Usa la base sin los ajustes propios de cada estilo: así sumar afinidad en Techwear no le cambia el estilo de casa
+ * a una prenda ni, por la penalización de "otro estilo de casa", el orden de los demás estilos.
+ */
 export function homeStyle(garment: Garment, references: readonly StyleReference[]): StyleReference | null {
   let best: StyleReference | null = null;
   let bestScore = -Infinity;
   let tied = false;
   for (const reference of references) {
-    const score = affinity(garment, reference);
+    const score = baseAffinity(garment, reference);
     if (score === null) continue;
     if (score > bestScore) {
       best = reference;

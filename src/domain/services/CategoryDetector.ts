@@ -1,3 +1,4 @@
+import type { Formalidad } from '../entities/Formality';
 import type { CalzadoTipo, Estampado, GarmentCategory } from '../entities/Garment';
 import type { Season } from '../entities/Season';
 import type { GarmentColor } from './garmentColors';
@@ -16,11 +17,35 @@ export interface GarmentTypeDetection {
   sporty: boolean; // camiseta de fútbol; la IA también marca shorts de fútbol y botines (viene de "es_deportiva", ya filtrado)
   classic: boolean; // prenda clásica o formal (viene de "es_clasica", ya filtrado)
   estampado: Estampado | null; // liso, logo chico o estampa grande (de "estampado"); null = no lo dijo o dijo otra cosa
+  formalidad: Formalidad | null; // clásico, casual o deportivo (de "formalidad"); null = no lo dijo o dijo otra cosa
   dominantColor: GarmentColor | null; // el color que ocupa más superficie de la prenda (de "color_dominante"); null = no lo dijo
   secondaryColors: GarmentColor[]; // colores de detalles (de "colores_secundarios"), sin el dominante; vacío si es lisa
 }
 
-/** Mira una foto y dice qué prenda es (null si no pudo saberlo). */
+/** Avisos mientras se analiza: la IA está con mucha demanda y se vuelve a intentar. */
+export interface DetectionHooks {
+  onRetry?: () => void;
+}
+
+/** Por qué no hubo análisis: la IA siguió saturada después de los reintentos, o falló otra cosa (red, clave, foto). */
+export type DetectionFailure = 'saturated' | 'failed';
+
+/** El detector la lanza cuando no pudo mirar la foto (distinto de null, que es "no es una prenda que la app maneje"). */
+export class DetectionUnavailableError extends Error {
+  constructor(
+    public readonly reason: DetectionFailure,
+    message: string,
+  ) {
+    super(message);
+    Object.setPrototypeOf(this, DetectionUnavailableError.prototype);
+    this.name = 'DetectionUnavailableError';
+  }
+}
+
+/** Lo que devuelve el caso de uso: la detección (null = no es una prenda que la app maneje) o por qué no la hubo. */
+export type DetectionResult = { status: 'ok'; detection: GarmentTypeDetection | null } | { status: DetectionFailure };
+
+/** Mira una foto y dice qué prenda es (null si no es una prenda que la app maneje). Lanza DetectionUnavailableError si no pudo mirarla. */
 export interface CategoryDetector {
-  detect(photoUri: string): Promise<GarmentTypeDetection | null>;
+  detect(photoUri: string, hooks?: DetectionHooks): Promise<GarmentTypeDetection | null>;
 }

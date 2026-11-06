@@ -57,6 +57,24 @@ export function OutfitExplanationModal({ outfit, onClose }: Props) {
               </View>
               <Text style={styles.text}>{explanation.ruleText}</Text>
 
+              {outfit.conflict ? (
+                <View style={styles.warning} accessibilityRole="alert">
+                  <Ionicons name="alert-circle-outline" size={18} color={colors.danger} />
+                  <Text style={styles.warningText}>Ya no combina: {outfit.conflict}.</Text>
+                </View>
+              ) : outfit.sharedStyle || outfit.lookFormality ? (
+                <>
+                  <Text style={styles.sectionTitle} accessibilityRole="header">
+                    Estilo
+                  </Text>
+                  <Text style={styles.text}>
+                    {[outfit.sharedStyle ? `Estilo en común: ${outfit.sharedStyle}.` : null, outfit.lookFormality ? `${outfit.lookFormality}.` : null]
+                      .filter(Boolean)
+                      .join(' ')}
+                  </Text>
+                </>
+              ) : null}
+
               {explanation.echoes.length > 0 ? (
                 <>
                   <Text style={styles.sectionTitle} accessibilityRole="header">
@@ -143,6 +161,16 @@ const useStyles = makeStyles((colors) => ({
     borderColor: colors.swatchBorder,
   },
   echoText: { flex: 1 },
+  warning: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginTop: 18,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: colors.fillMuted,
+  },
+  warningText: { flex: 1, fontSize: 15, lineHeight: 21, color: colors.danger },
   done: { height: 50, borderRadius: 14, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
   doneLabel: { fontSize: 17, fontWeight: '600', color: colors.onPrimary },
 }));

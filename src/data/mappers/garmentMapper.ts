@@ -1,3 +1,4 @@
+import { isFormalidad } from '../../domain/entities/Formality';
 import { isCalzadoTipo, isEstampado, type Garment, type GarmentCategory } from '../../domain/entities/Garment';
 import { SEASONS } from '../../domain/entities/Season';
 import { parseSecondaryColors } from './secondaryColors';
@@ -13,6 +14,7 @@ export interface GarmentDto {
   corte?: string; // el servidor de ejemplo todavía no lo manda; si llega, se usa
   calzadoTipo?: unknown; // lo mismo: si llega un tipo válido, se usa
   estampado?: unknown; // lo mismo: si llega un estampado válido, se usa
+  formalidad?: unknown; // lo mismo: si llega una formalidad válida, se usa
   imageUri: string | null;
   createdAt: string;
 }
@@ -24,6 +26,7 @@ export function toGarment(dto: GarmentDto): Garment {
     secondaryColors: parseSecondaryColors(dto.secondaryColors),
     calzadoTipo: dto.category === 'calzado' && isCalzadoTipo(dto.calzadoTipo) ? dto.calzadoTipo : undefined,
     estampado: isEstampado(dto.estampado) ? dto.estampado : undefined,
+    formalidad: isFormalidad(dto.formalidad) ? dto.formalidad : undefined,
     photoRef: null,
     seasons: [...SEASONS],
     sporty: false,

@@ -13,7 +13,7 @@ import {
   type GarmentCategory,
 } from '../../domain/entities/Garment';
 import type { Season } from '../../domain/entities/Season';
-import type { GarmentTypeDetection } from '../../domain/services/CategoryDetector';
+import type { DetectionResult, GarmentTypeDetection } from '../../domain/services/CategoryDetector';
 import { closestAllowedCategory, cutsFor } from '../../domain/services/garmentCatalog';
 import { GARMENT_COLORS, type GarmentColor } from '../../domain/services/garmentColors';
 import { useAuth } from '../auth/AuthProvider';
@@ -25,9 +25,11 @@ import { usePhotoPicker, type PhotoSource } from '../hooks/usePhotoPicker';
 import { SEASON_UI } from '../seasonUi';
 import { makeStyles } from '../theme/makeStyles';
 import { useTheme } from '../theme/ThemeProvider';
+import { FORMALIDAD_LABELS, FORMALIDADES, type Formalidad } from '../../domain/entities/Formality';
 import { CheckerboardBackground } from './CheckerboardBackground';
 import { ColorPicker } from './ColorPicker';
 import { CutPicker } from './CutPicker';
+import { analysisProblemOf, analyzingLabel, type AnalysisProblem } from './garmentAnalysisStatus';
 import { FormGroup, SwitchRow, TextRow } from './FormGroup';
 import { SeasonPicker } from './SeasonPicker';
 import { SegmentedControl } from './SegmentedControl';
@@ -58,6 +60,7 @@ export interface GarmentFormValues {
   corte?: string;
   calzadoTipo?: CalzadoTipo; // solo calzado
   estampado?: Estampado;
+  formalidad?: Formalidad;
   sporty: boolean;
   classic: boolean;
   color: GarmentColor;
@@ -75,6 +78,7 @@ export interface GarmentFormInitial {
   corte?: string;
   calzadoTipo?: CalzadoTipo;
   estampado?: Estampado;
+  formalidad?: Formalidad;
   sporty: boolean;
   classic: boolean;
   imageUri: string | null;
@@ -109,7 +113,7 @@ export function GarmentForm({
   const insets = useSafeAreaInsets();
   const { pick, error: pickerError } = usePhotoPicker();
   const { detect, detecting } = useColorDetection();
-  const { detect: detectType, analyzing: analyzingType } = useCategoryDetection();
+  const { detect: detectType, analyzing: analyzingType, retrying } = useCategoryDetection();
   const removal = useBackgroundRemoval(Boolean(initial?.imageUri));
   const sex = useAuth().user?.sex ?? null;
 
@@ -127,7 +131,11 @@ export function GarmentForm({
   const [corte, setCorte] = useState<string | undefined>(initial?.corte);
   const [calzadoTipo, setCalzadoTipo] = useState<CalzadoTipo | undefined>(initial?.calzadoTipo);
   const [estampado, setEstampado] = useState<Estampado | undefined>(initial?.estampado);
+  const [formalidad, setFormalidad] = useState<Formalidad | undefined>(initial?.formalidad);
   const [reanalysisNotice, setReanalysisNotice] = useState<string | null>(null);
+  // La IA no pudo analizar la foto (saturada o sin conexión): se explica y se ofrece reintentar, sin perder lo cargado.
+  // "photo" vuelve a analizar la foto nueva; "reanalyze" repite "Volver a analizar con IA" sobre la guardada.
+  const [analysisProblem, setAnalysisProblem] = useState<(AnalysisProblem & { retry: 'photo' | 'reanalyze' }) | null>(null);
   const [sporty, setSporty] = useState(initial?.sporty ?? false);
   const [classic, setClassic] = useState(initial?.classic ?? false);
   const [classicFromAi, setClassicFromAi] = useState(false); // el valor actual lo puso la IA y nadie lo tocó
@@ -144,6 +152,7 @@ export function GarmentForm({
   const corteTouched = useRef(Boolean(initial)); // y con el corte
   const calzadoTipoTouched = useRef(Boolean(initial)); // y con el tipo de calzado
   const estampadoTouched = useRef(Boolean(initial)); // y con el estampado
+  const formalidadTouched = useRef(Boolean(initial)); // y con la formalidad
   const sportyTouched = useRef(Boolean(initial)); // y con "deportiva"
   const classicTouched = useRef(Boolean(initial)); // y con "clásica"
   const secondaryTouched = useRef(Boolean(initial)); // y con los colores secundarios
@@ -185,6 +194,7 @@ export function GarmentForm({
   const shownCalzadoTipo = isCalzado ? calzadoTipo : undefined;
   const detectedCalzadoTipo = isCalzado && detectedType?.category === 'calzado' ? detectedType.calzadoTipo : null;
   const detectedEstampado = detectedType?.estampado ?? null;
+  const detectedFormalidad = detectedType?.formalidad ?? null;
 
   const showingCutout = removal.review?.selected === 'cutout';
   const shownPhoto = showingCutout ? removal.review!.cutoutUri : (newPhotoUri ?? initial?.imageUri ?? null);
@@ -227,6 +237,11 @@ export function GarmentForm({
     setEstampado(value);
   };
 
+  const chooseFormalidad = (value: Formalidad | undefined) => {
+    formalidadTouched.current = true;
+    setFormalidad(value);
+  };
+
   const chooseSecondary = (value: GarmentColor[]) => {
     secondaryTouched.current = true;
     setSecondaryColors(value);
@@ -260,13 +275,33 @@ export function GarmentForm({
     setDetected(null);
     setDetectedType(null);
     setReanalysisNotice(null);
+    setAnalysisProblem(null);
     setClassicFromAi(false);
     void removal.start(uri); // en paralelo: no demora el análisis
 
     // El color y el tipo de prenda se analizan a la vez, siempre sobre la foto ORIGINAL y no sobre el recorte:
     // el recorte puede comerse partes de la prenda y su fondo transparente alteraría la lectura de los colores.
-    const [foundColor, foundType] = await Promise.all([detect(uri), detectType(uri)]);
+    const [foundColor, result] = await Promise.all([detect(uri), detectType(uri)]);
     if (requestId !== latestRequest.current) return; // mientras tanto eligió otra foto
+    applyPhotoAnalysis(foundColor, result);
+  };
+
+  /** Vuelve a pedirle a la IA el análisis de la foto nueva. La foto y lo que ya se cargó se mantienen. */
+  const retryPhotoAnalysis = async () => {
+    const uri = newPhotoUri;
+    if (!uri) return;
+    const requestId = ++latestRequest.current;
+    setAnalysisProblem(null);
+    const result = await detectType(uri);
+    if (requestId !== latestRequest.current) return; // mientras tanto eligió otra foto
+    applyPhotoAnalysis(detected, result); // el color de los píxeles ya está: se reusa
+  };
+
+  /** Completa el formulario con lo que vio la IA, sin pisar lo que la persona eligió a mano. */
+  const applyPhotoAnalysis = (foundColor: GarmentColor | null, result: DetectionResult) => {
+    const problem = analysisProblemOf(result);
+    setAnalysisProblem(problem ? { ...problem, retry: 'photo' } : null);
+    const foundType = result.status === 'ok' ? result.detection : null;
 
     // El dominante de la IA mira solo la prenda (no el fondo); si coincide con el de los píxeles, se usa el tono exacto de la foto.
     const fromAi = foundType?.dominantColor ?? null;
@@ -287,6 +322,7 @@ export function GarmentForm({
       }
       if (foundType.calzadoTipo && !calzadoTipoTouched.current) setCalzadoTipo(foundType.calzadoTipo);
       if (foundType.estampado && !estampadoTouched.current) setEstampado(foundType.estampado);
+      if (foundType.formalidad && !formalidadTouched.current) setFormalidad(foundType.formalidad);
       if (!sportyTouched.current) setSporty(foundType.sporty);
       if (!classicTouched.current) {
         setClassic(foundType.classic);
@@ -308,18 +344,25 @@ export function GarmentForm({
   };
 
   /**
-   * Vuelve a mirar la foto guardada con la IA y completa SOLO los campos vacíos (estampado, corte, tipo de calzado y
-   * colores secundarios): lo que la persona ya cargó o editó no se toca. Lo demás queda como sugerencia con "Usar".
+   * Vuelve a mirar la foto guardada con la IA y completa SOLO los campos vacíos (estampado, formalidad, corte, tipo de
+   * calzado y colores secundarios): lo que la persona ya cargó o editó no se toca. Lo demás queda como sugerencia con "Usar".
    */
   const reanalyze = async () => {
     const photo = initial?.imageUri;
     if (!photo) return;
     const requestId = ++latestRequest.current;
     setReanalysisNotice(null);
-    const found = await detectType(photo);
+    setAnalysisProblem(null);
+    const result = await detectType(photo);
     if (requestId !== latestRequest.current) return; // mientras tanto eligió otra foto
+    if (result.status !== 'ok') {
+      const problem = analysisProblemOf(result);
+      if (problem) setAnalysisProblem({ ...problem, retry: 'reanalyze' });
+      return;
+    }
+    const found = result.detection;
     if (!found) {
-      setReanalysisNotice('No pudimos analizar la foto. Probá de nuevo en unos segundos.');
+      setReanalysisNotice('La IA no reconoció una prenda en la foto. Podés completar los datos a mano.');
       return;
     }
     setDetectedType(found);
@@ -327,6 +370,10 @@ export function GarmentForm({
     if (estampado === undefined && found.estampado) {
       setEstampado(found.estampado);
       filled.push('estampado');
+    }
+    if (formalidad === undefined && found.formalidad) {
+      setFormalidad(found.formalidad);
+      filled.push('formalidad');
     }
     if (shownCorte === undefined && found.cut && found.category === category && cutOptions.includes(found.cut)) {
       setCorte(found.cut);
@@ -346,6 +393,11 @@ export function GarmentForm({
         ? `Se completó: ${filled.join(', ')}. Se guarda al tocar “${submitLabel}”.`
         : 'No había campos vacíos para completar: lo que ya tenía la prenda no se cambió.',
     );
+  };
+
+  const retryAnalysis = () => {
+    if (analysisProblem?.retry === 'reanalyze') void reanalyze();
+    else void retryPhotoAnalysis();
   };
 
   const chooseCutout = () => {
@@ -473,7 +525,21 @@ export function GarmentForm({
       {analyzing ? (
         <View style={styles.analyzing} accessibilityLiveRegion="polite">
           <ActivityIndicator size="small" color={colors.link} />
-          <Text style={styles.analyzingText}>Analizando prenda…</Text>
+          <Text style={styles.analyzingText}>{analyzingLabel(retrying)}</Text>
+        </View>
+      ) : null}
+      {analysisProblem && !analyzing ? (
+        <View style={styles.analysisProblem} accessibilityLiveRegion="polite">
+          <Text style={styles.analysisProblemText}>{analysisProblem.message}</Text>
+          <Pressable
+            onPress={retryAnalysis}
+            accessibilityRole="button"
+            accessibilityHint="Vuelve a mandar la foto a la IA; lo que ya cargaste se mantiene"
+            style={({ pressed }) => [styles.removeBackground, pressed && styles.photoButtonPressed]}
+          >
+            <Ionicons name="refresh-outline" size={20} color={colors.link} />
+            <Text style={styles.photoButtonLabel}>{analysisProblem.actionLabel}</Text>
+          </Pressable>
         </View>
       ) : null}
 
@@ -598,6 +664,30 @@ export function GarmentForm({
       </View>
 
       <Text style={styles.groupLabel} accessibilityRole="header">
+        Formalidad
+      </Text>
+      <View style={styles.section}>
+        <CutPicker
+          options={FORMALIDADES}
+          value={formalidad}
+          onChange={chooseFormalidad}
+          labelFor={(option) => FORMALIDAD_LABELS[option]}
+        />
+        {!analyzing && detectedFormalidad && detectedFormalidad === formalidad ? (
+          <Text style={styles.detectHint}>Detectada de la foto</Text>
+        ) : null}
+        {!analyzing && detectedFormalidad && detectedFormalidad !== formalidad ? (
+          <View style={styles.suggestion}>
+            <Text style={styles.suggestionText}>Por la foto: {FORMALIDAD_LABELS[detectedFormalidad]}</Text>
+            <Pressable onPress={() => chooseFormalidad(detectedFormalidad)} accessibilityRole="button" hitSlop={8}>
+              <Text style={styles.suggestionAction}>Usar</Text>
+            </Pressable>
+          </View>
+        ) : null}
+        <Text style={styles.seasonHint}>Opcional. Una prenda clásica y una deportiva nunca se proponen juntas.</Text>
+      </View>
+
+      <Text style={styles.groupLabel} accessibilityRole="header">
         Color
       </Text>
       <View style={styles.colorCard}>
@@ -665,7 +755,7 @@ export function GarmentForm({
         </Text>
       ) : null}
       <Pressable
-        onPress={() => color && onSubmit({ name, category, seasons, corte: shownCorte, calzadoTipo: shownCalzadoTipo, estampado, sporty, classic, color, secondaryColors: shownSecondary, newPhotoUri: photoToSave })}
+        onPress={() => color && onSubmit({ name, category, seasons, corte: shownCorte, calzadoTipo: shownCalzadoTipo, estampado, formalidad, sporty, classic, color, secondaryColors: shownSecondary, newPhotoUri: photoToSave })}
         disabled={!canSave}
         accessibilityRole="button"
         style={[styles.save, !canSave && styles.saveDisabled]}
@@ -734,6 +824,8 @@ const useStyles = makeStyles((colors) => ({
   colorName: { fontSize: 14, color: colors.textMuted, marginTop: 10, paddingHorizontal: 4 },
   analyzing: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14, paddingHorizontal: 4 },
   analyzingText: { fontSize: 14, color: colors.textMuted },
+  analysisProblem: { marginBottom: 14, gap: 4 },
+  analysisProblemText: { fontSize: 14, color: colors.textMuted, paddingHorizontal: 4, textAlign: 'center' },
   detectHint: { fontSize: 13, color: colors.textMuted, marginTop: 6, paddingHorizontal: 4 },
   suggestion: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, paddingHorizontal: 4 },
   suggestionDot: { width: 16, height: 16, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.swatchBorder },

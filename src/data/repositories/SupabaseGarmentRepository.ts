@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { isFormalidad } from '../../domain/entities/Formality';
 import { isCalzadoTipo, isEstampado, type Garment, type GarmentCategory, type NewGarment } from '../../domain/entities/Garment';
 import { SEASONS, normalizeSeasons } from '../../domain/entities/Season';
 import type { CurrentUserId } from '../../domain/repositories/AuthRepository';
@@ -21,11 +22,12 @@ interface GarmentRow {
   corte: string | null;
   calzado_tipo: string | null; // null = no es calzado o es una prenda vieja
   estampado: string | null; // null = prenda vieja o no se sabe
+  formalidad: string | null; // null = prenda vieja o no se sabe
   photo_path: string | null;
   created_at: string;
 }
 
-const COLUMNS = 'id, name, category, color_hex, color_name, secondary_colors, seasons, sporty, classic, corte, calzado_tipo, estampado, photo_path, created_at';
+const COLUMNS = 'id, name, category, color_hex, color_name, secondary_colors, seasons, sporty, classic, corte, calzado_tipo, estampado, formalidad, photo_path, created_at';
 const SIGNED_URL_SECONDS = 60 * 60 * 24; // las direcciones de las fotos vencen en un día
 const SIGNED_URL_MARGIN_MS = 60 * 60 * 1000; // se renuevan si les queda menos de una hora
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -53,6 +55,7 @@ function toRow(data: NewGarment) {
     corte: data.corte ?? null, // sin corte = se borra el que tenía
     calzado_tipo: data.calzadoTipo ?? null,
     estampado: data.estampado ?? null,
+    formalidad: data.formalidad ?? null,
     photo_path: data.photoRef,
   };
 }
@@ -115,6 +118,7 @@ export class SupabaseGarmentRepository implements GarmentRepository, SessionCach
         corte: row.corte ?? undefined,
         calzadoTipo: isCalzadoTipo(row.calzado_tipo) ? row.calzado_tipo : undefined,
         estampado: isEstampado(row.estampado) ? row.estampado : undefined,
+        formalidad: isFormalidad(row.formalidad) ? row.formalidad : undefined,
         photoRef: row.photo_path,
         imageUri: row.photo_path ? (urls.get(row.photo_path) ?? null) : null,
         createdAt: new Date(row.created_at),

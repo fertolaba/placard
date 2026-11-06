@@ -1,5 +1,6 @@
 import type { Outfit } from '../../domain/entities/Outfit';
 import { hexToHsl, isNeutral } from '../../domain/services/colorHarmony';
+import { accentGroups, isFashionNeutral } from '../../domain/services/outfitPalette';
 
 const NEUTRAL_GRADIENT = { bg1: '#8B7B6B', bg2: '#D9C8B2' };
 
@@ -35,10 +36,10 @@ export function deckGradient(outfit: Pick<Outfit, 'garments'>): { bg1: string; b
   };
 }
 
-/** "Rojo + neutros", "Rojo + Azul" o "Neutros". */
+/** "Rojo + neutros", "Rojo + Azul" o "Neutros". Cuenta los acentos de los colores secundarios (el rojo de unas zapatillas). */
 export function paletteLabel(outfit: Outfit): string {
-  const colorful = outfit.garments.filter((garment) => !isNeutral(hexToHsl(garment.colorHex)));
-  const names = [...new Set(colorful.map((garment) => garment.colorName))];
+  const names = [...new Set(accentGroups(outfit.garments).map((group) => group.color.name))];
   if (names.length === 0) return 'Neutros';
-  return colorful.length < outfit.garments.length ? [...names, 'neutros'].join(' + ') : names.join(' + ');
+  const hasNeutrals = outfit.garments.some((garment) => isFashionNeutral(hexToHsl(garment.colorHex)));
+  return hasNeutrals ? [...names, 'neutros'].join(' + ') : names.join(' + ');
 }

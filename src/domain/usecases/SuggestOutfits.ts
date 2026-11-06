@@ -1,9 +1,10 @@
 import { CATEGORY_ZONE, type Garment } from '../entities/Garment';
 import type { Outfit } from '../entities/Outfit';
 import type { GarmentRepository } from '../repositories/GarmentRepository';
-import { hexToHsl, isNeutral, scoreOutfit } from '../services/colorHarmony';
-import { evaluateOutfitCoherence } from '../services/outfitCoherence';
+import { scoreOutfit } from '../services/colorHarmony';
+import { evaluateOutfitCoherence, lookFormalityLabel, type OutfitCoherence } from '../services/outfitCoherence';
 import { echoBonus, explainOutfit } from '../services/outfitExplanation';
+import { evaluatePalette, OFF_RULE_MAX_MATCH, paletteHexes, type AccentGroup, type PaletteEvaluation } from '../services/outfitPalette';
 import { STYLE_REFERENCES } from '../services/styleCatalog';
 
 /** Peso del color y de la coherencia de las prendas en el match final (suman 1). */
@@ -18,29 +19,58 @@ export function finalMatch(colorPercent: number, coherence: number): number {
   return Math.floor(value + 1e-9); // el margen evita que 100 quede en 99 por el redondeo de los decimales
 }
 
-function describe(garments: Garment[]): Pick<Outfit, 'title' | 'summary'> {
-  const colorful = garments.filter((garment) => !isNeutral(hexToHsl(garment.colorHex)));
+/** El título sale de los acentos del look, contando los secundarios vivos: "Rojo con neutros" incluye el rojo de unas zapatillas. */
+function describe(garments: Garment[], groups: readonly AccentGroup[]): Pick<Outfit, 'title' | 'summary'> {
   const summary = garments.map((garment) => garment.colorName).join(' + ');
-  if (colorful.length === 0) return { title: 'Base neutra', summary };
-  if (colorful.length === 1) return { title: `${colorful[0].colorName} con neutros`, summary };
+  if (groups.length === 0) return { title: 'Base neutra', summary };
+  if (groups.length === 1) return { title: `${groups[0].color.name} con neutros`, summary };
   return { title: 'Combinación de colores', summary };
 }
 
-/** La idea con estas prendas, o null si no combinan (conflicto duro o coherencia por debajo del mínimo). */
-function buildOutfit(top: Garment, bottom: Garment, shoe: Garment | null): Outfit | null {
+/** Cómo califican las reglas actuales un look, se proponga o no. Lo usan el mazo y Guardados. */
+export interface OutfitRating {
+  garments: Garment[];
+  coherence: OutfitCoherence;
+  palette: PaletteEvaluation;
+  matchPercent: number;
+  /** El motivo por el que no combina (formalidad, bocamanga, paleta…); null si no hay conflicto duro. */
+  conflict: string | null;
+  sharedStyle?: string; // el nombre del estilo en común ("Streetwear")
+  lookFormality: string | null; // "Look casual", "Look clásico con toques casuales"
+}
+
+export function rateOutfit(top: Garment, bottom: Garment, shoe: Garment | null): OutfitRating {
   const coherence = evaluateOutfitCoherence(top, bottom, shoe);
-  if (coherence.hardConflict || coherence.score < MIN_COHERENCE) return null;
-  const items = shoe ? [top, bottom, shoe] : [top, bottom];
-  const explanation = explainOutfit(items);
-  // El color sale de los colores dominantes; los detalles que se repiten entre prendas suman un poco.
-  const colorPercent = scoreOutfit(items.map((item) => item.colorHex)) + echoBonus(items);
+  const garments = shoe ? [top, bottom, shoe] : [top, bottom];
+  const palette = evaluatePalette(garments);
+  // El color sale de los principales y de los secundarios vivos; los detalles que se repiten entre prendas suman un poco.
+  const colorPercent = scoreOutfit(paletteHexes(garments)) + echoBonus(garments);
+  const match = finalMatch(colorPercent, coherence.score);
   const sharedStyle = STYLE_REFERENCES.find((reference) => reference.id === coherence.sharedStyles[0])?.name;
+  return {
+    garments,
+    coherence,
+    palette,
+    matchPercent: palette.offRule ? Math.min(match, OFF_RULE_MAX_MATCH) : match,
+    conflict: coherence.conflictReason ?? (palette.discard ? (palette.reasons[0] ?? 'Los colores chocan') : null),
+    ...(sharedStyle ? { sharedStyle } : {}),
+    lookFormality: lookFormalityLabel(garments),
+  };
+}
+
+/** La idea con estas prendas, o null si no combinan (coherencia, o una paleta que no se sostiene con los secundarios). */
+function buildOutfit(top: Garment, bottom: Garment, shoe: Garment | null): Outfit | null {
+  const rating = rateOutfit(top, bottom, shoe);
+  const { coherence, palette, garments: items } = rating;
+  if (coherence.hardConflict || coherence.score < MIN_COHERENCE || palette.discard) return null;
+  const explanation = explainOutfit(items);
   return {
     id: items.map((item) => item.id).join('-'),
     garments: items,
-    matchPercent: finalMatch(colorPercent, coherence.score),
-    ...(sharedStyle ? { sharedStyle } : {}),
-    ...describe(items),
+    matchPercent: rating.matchPercent,
+    ...(rating.sharedStyle ? { sharedStyle: rating.sharedStyle } : {}),
+    ...(rating.lookFormality ? { lookFormality: rating.lookFormality } : {}),
+    ...describe(items, palette.groups),
     description: explanation.description,
     explanation,
   };

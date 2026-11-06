@@ -24,6 +24,7 @@ export const STYLE_REFERENCES: StyleReference[] = [
     description: 'Clásico y prolijo, en tonos claros y neutros',
     palette: ['#E9E1D0', '#B08D63', '#23324A'],
     preferredCuts: ['regular', 'straight', 'slim'],
+    estampados: { logo: 'penaliza', grafico: 'excluye' }, // solo liso; un logo baja la prenda, una estampa la deja afuera
     slots: [
       { label: 'camisa o sweater claro', categories: ['arriba'], tone: 'claro', requiresClassic: true },
       { label: 'pantalón o pollera neutra', categories: ['abajo', 'pollera'], tone: 'neutro', requiresClassic: true },
@@ -51,6 +52,18 @@ export const STYLE_REFERENCES: StyleReference[] = [
     preferredCuts: ['ajustado', 'slim', 'skinny', 'straight', 'regular'],
     excludesClassic: true,
     maxSecondaryColors: 1,
+    estampados: { grafico: 'excluye' }, // liso o un logo chico; una estampa grande no es techwear
+    affinityBoost: {
+      // Lo técnico manda: una campera tech o un jogger técnico de corte limpio va antes que un buzo común.
+      technical: {
+        keywords: ['tech', 'tecnic', 'softshell', 'rompevientos', 'cortavientos'],
+        formalidades: ['deportivo'],
+        uncleanCuts: ['oversize', 'boxy', 'baggy', 'wide leg'],
+        bonus: 3,
+      },
+      estampado: { liso: 1 }, // liso > logo chico
+      colors: { names: ['Negro', 'Gris oscuro', 'Gris', 'Verde oliva', 'Marrón', 'Azul marino'], bonus: 0.5 },
+    },
     slots: [
       { label: 'prenda base ajustada', categories: ['arriba', 'top'], tone: 'cualquiera', cuts: ['ajustado', 'regular'] },
       { label: 'buzo o campera ajustada', categories: ['arriba'], tone: 'cualquiera', cuts: ['ajustado', 'regular'] },

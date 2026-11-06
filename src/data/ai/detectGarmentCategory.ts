@@ -1,3 +1,4 @@
+import { FORMALIDADES } from '../../domain/entities/Formality';
 import { ALL_GARMENT_CUTS, CALZADO_TIPOS, ESTAMPADOS, GARMENT_CATEGORIES, MAX_SECONDARY_COLORS } from '../../domain/entities/Garment';
 import { GARMENT_COLORS } from '../../domain/services/garmentColors';
 import type { GarmentTypeDetection } from '../../domain/services/CategoryDetector';
@@ -11,15 +12,30 @@ export interface GeminiImage {
 
 export interface GeminiOptions {
   apiKey: string;
+  /** Modelo principal (vacío o sin valor = GEMINI_MODEL). */
   model?: string;
+  /** Modelo alternativo: se prueba UNA vez si el principal sigue saturado después de los reintentos. */
+  fallbackModel?: string;
   timeoutMs?: number;
   fetchImpl?: typeof fetch;
+  /** Esperas entre reintentos del modelo principal (por defecto RETRY_DELAYS_MS). */
+  retryDelaysMs?: readonly number[];
+  sleep?: (ms: number) => Promise<void>;
+  /** Se llama antes de cada reintento (y antes de probar el alternativo): la pantalla avisa "reintentando". */
+  onRetry?: () => void;
 }
 
 // gemini-1.5-flash ya fue dado de baja por Google. Flash-Lite es el modelo más rápido y barato, y alcanza para esto.
 export const GEMINI_MODEL = 'gemini-3.5-flash-lite';
 const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
 const DEFAULT_TIMEOUT_MS = 15_000;
+/** Hasta 3 reintentos con espera creciente cuando Gemini está saturado o falla la red. */
+export const RETRY_DELAYS_MS: readonly number[] = [2_000, 5_000, 10_000];
+/** Tope al retryDelay que pide Gemini, para que la pantalla no quede esperando minutos. */
+export const MAX_RETRY_DELAY_MS = 30_000;
+const LOG = '[detección de prenda]';
+
+const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 const COLOR_NAMES = GARMENT_COLORS.map((color) => `"${color.name}"`).join(', ');
 
@@ -54,7 +70,11 @@ const PROMPT = `Mirá la foto y decí qué prenda es. Usá nombres comunes en Ar
 - estampado: cuánto texto, logo o dibujo tiene la prenda a la vista.
   - "liso": sin logos ni textos visibles (rayas, cuadros o costuras contrastantes cuentan como liso).
   - "logo": un logo o texto chico (por ejemplo, el swoosh de Nike o un escudo chico en el pecho).
-  - "grafico": una estampa, letras o un dibujo grande y protagonista (letras grandes en el pecho o la espalda, un estampado de banda, un personaje).`;
+  - "grafico": una estampa, letras o un dibujo grande y protagonista (letras grandes en el pecho o la espalda, un estampado de banda, un personaje).
+- formalidad: elegí uno de estos valores exactos.
+  - "clasico": sastrería, pantalón de vestir o sastrero, camisa, chomba, piloto, blazer, mocasines y zapatos de vestir.
+  - "casual": remera, jean, buzo liso, sweater, campera urbana, zapatilla urbana.
+  - "deportivo": jogger, pantalón o campera tech (tipo Nike Tech) o de nylon deportivo, ropa de entrenamiento, camiseta de fútbol o de básquet, botines.`;
 
 /** Esquema de la respuesta: Gemini devuelve un JSON que lo cumple. */
 const RESPONSE_SCHEMA = {
@@ -72,6 +92,7 @@ const RESPONSE_SCHEMA = {
     es_deportiva: { type: 'BOOLEAN' },
     es_clasica: { type: 'BOOLEAN' },
     estampado: { type: 'STRING', enum: [...ESTAMPADOS] },
+    formalidad: { type: 'STRING', enum: [...FORMALIDADES] },
     color_dominante: { type: 'STRING', enum: GARMENT_COLORS.map((color) => color.name) },
     colores_secundarios: {
       type: 'ARRAY',
@@ -79,7 +100,7 @@ const RESPONSE_SCHEMA = {
       maxItems: MAX_SECONDARY_COLORS,
     },
   },
-  required: ['esPrenda', 'tipo', 'categoria', 'manga', 'temporadas', 'corte', 'calzado_tipo', 'es_deportiva', 'es_clasica', 'estampado', 'color_dominante', 'colores_secundarios'],
+  required: ['esPrenda', 'tipo', 'categoria', 'manga', 'temporadas', 'corte', 'calzado_tipo', 'es_deportiva', 'es_clasica', 'estampado', 'formalidad', 'color_dominante', 'colores_secundarios'],
   propertyOrdering: [
     'esPrenda',
     'tipo',
@@ -91,24 +112,71 @@ const RESPONSE_SCHEMA = {
     'es_deportiva',
     'es_clasica',
     'estampado',
+    'formalidad',
     'color_dominante',
     'colores_secundarios',
   ],
 };
 
+interface GeminiErrorExtra {
+  /** El "status" del cuerpo del error ("UNAVAILABLE", "RESOURCE_EXHAUSTED"). */
+  apiStatus?: string;
+  /** Cuánto pidió Gemini esperar antes de reintentar (retryDelay o Retry-After), en milisegundos. */
+  retryDelayMs?: number;
+  /** No hubo respuesta: sin conexión o se pasó el tiempo de espera. */
+  network?: boolean;
+}
+
+const SATURATION_PATTERN = /high demand|overloaded|UNAVAILABLE|RESOURCE_EXHAUSTED/i;
+
 export class GeminiApiError extends Error {
+  public readonly apiStatus?: string;
+  public readonly retryDelayMs?: number;
+  public readonly network: boolean;
+
   constructor(
     public readonly status: number,
     message: string,
+    extra: GeminiErrorExtra = {},
   ) {
     super(message);
     Object.setPrototypeOf(this, GeminiApiError.prototype);
     this.name = 'GeminiApiError';
+    this.apiStatus = extra.apiStatus;
+    this.retryDelayMs = extra.retryDelayMs;
+    this.network = extra.network ?? false;
+  }
+
+  /** El modelo está con mucha demanda o se acabó la cuota del momento (503, 429 o el texto que lo dice). */
+  get saturated(): boolean {
+    return this.status === 503 || this.status === 429 || SATURATION_PATTERN.test(`${this.apiStatus ?? ''} ${this.message}`);
+  }
+
+  /** Vale la pena volver a intentar: saturación o error de red. Una clave inválida o una foto rechazada, no. */
+  get retriable(): boolean {
+    return this.saturated || this.network;
   }
 }
 
+/** "12s" o "1.5s" → milisegundos; null si no se entiende. */
+function parseDuration(value: unknown): number | null {
+  if (typeof value !== 'string') return null;
+  const match = /^(\d+(?:\.\d+)?)s$/.exec(value.trim());
+  return match ? Math.round(Number(match[1]) * 1000) : null;
+}
+
+/** El retryDelay del cuerpo (google.rpc.RetryInfo) o, si no viene, el encabezado Retry-After en segundos. */
+function retryDelayOf(json: GeminiResponse | null, response: Response): number | undefined {
+  for (const detail of json?.error?.details ?? []) {
+    const ms = parseDuration(detail?.retryDelay);
+    if (ms !== null) return ms;
+  }
+  const header = Number(response.headers?.get?.('retry-after'));
+  return Number.isFinite(header) && header > 0 ? header * 1000 : undefined;
+}
+
 interface GeminiResponse {
-  error?: { code?: number; message?: string };
+  error?: { code?: number; message?: string; status?: string; details?: { retryDelay?: unknown }[] };
   promptFeedback?: { blockReason?: string };
   candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
 }
@@ -140,7 +208,10 @@ export async function fetchGeminiAnalysis(image: GeminiImage, options: GeminiOpt
     });
     const json = (await response.json().catch(() => null)) as GeminiResponse | null;
     if (!response.ok) {
-      throw new GeminiApiError(response.status, json?.error?.message ?? `Gemini respondió ${response.status}.`);
+      throw new GeminiApiError(response.status, json?.error?.message ?? `Gemini respondió ${response.status}.`, {
+        apiStatus: json?.error?.status,
+        retryDelayMs: retryDelayOf(json, response),
+      });
     }
     if (json?.promptFeedback?.blockReason) {
       throw new GeminiApiError(0, `Gemini no analizó la foto (${json.promptFeedback.blockReason}).`);
@@ -150,16 +221,55 @@ export async function fetchGeminiAnalysis(image: GeminiImage, options: GeminiOpt
     return text;
   } catch (error) {
     if (error instanceof GeminiApiError) throw error;
-    if (error instanceof Error && error.name === 'AbortError') throw new GeminiApiError(0, 'Gemini tardó demasiado en responder.');
-    throw new GeminiApiError(0, 'No se pudo conectar con Gemini.');
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new GeminiApiError(0, 'Gemini tardó demasiado en responder.', { network: true });
+    }
+    throw new GeminiApiError(0, 'No se pudo conectar con Gemini.', { network: true });
   } finally {
     clearTimeout(timer);
   }
 }
 
+/** Un modelo con hasta RETRY_DELAYS_MS.length reintentos si está saturado o falla la red. */
+async function fetchWithRetries(image: GeminiImage, options: GeminiOptions, model: string): Promise<string> {
+  const delays = options.retryDelaysMs ?? RETRY_DELAYS_MS;
+  const sleep = options.sleep ?? defaultSleep;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await fetchGeminiAnalysis(image, { ...options, model });
+    } catch (error) {
+      if (!(error instanceof GeminiApiError) || !error.retriable || attempt >= delays.length) throw error;
+      // Se respeta lo que pide Gemini, pero nunca menos que la espera creciente ni más que el tope.
+      const wait = Math.max(delays[attempt], Math.min(error.retryDelayMs ?? 0, MAX_RETRY_DELAY_MS));
+      console.warn(`${LOG} ${model} no respondió (${error.status || 'red'}: ${error.message}). Reintento ${attempt + 1} de ${delays.length} en ${wait / 1000} s.`);
+      options.onRetry?.();
+      await sleep(wait);
+    }
+  }
+}
+
+/**
+ * Pide el análisis al modelo principal con reintentos; si sigue saturado y hay un modelo alternativo, lo prueba
+ * una vez con el mismo pedido. Devuelve el texto y qué modelo respondió.
+ */
+export async function analyzeWithFallback(image: GeminiImage, options: GeminiOptions): Promise<{ text: string; model: string }> {
+  const primary = options.model || GEMINI_MODEL;
+  try {
+    return { text: await fetchWithRetries(image, options, primary), model: primary };
+  } catch (error) {
+    const fallback = options.fallbackModel;
+    if (!(error instanceof GeminiApiError) || !error.saturated || !fallback || fallback === primary) throw error;
+    console.warn(`${LOG} ${primary} sigue saturado después de los reintentos; pruebo con ${fallback}.`);
+    options.onRetry?.();
+    return { text: await fetchGeminiAnalysis(image, { ...options, model: fallback }), model: fallback };
+  }
+}
+
 /** Servicio principal: manda la foto a Gemini y devuelve la prenda, su categoría y en qué épocas se usa. */
 export async function detectGarmentCategory(image: GeminiImage, options: GeminiOptions): Promise<GarmentTypeDetection | null> {
-  const text = await fetchGeminiAnalysis(image, options);
+  const { text, model } = await analyzeWithFallback(image, options);
+  const primary = options.model || GEMINI_MODEL;
+  if (__DEV__) console.log(`${LOG} respondió el modelo ${model}${model === primary ? '' : ' (alternativo)'}`);
   if (__DEV__) console.log('[detección de prenda] resultado de la IA:', text);
 
   let raw: unknown;
@@ -172,7 +282,7 @@ export async function detectGarmentCategory(image: GeminiImage, options: GeminiO
   if (__DEV__) {
     console.log(
       '[detección de prenda] categoría asignada:',
-      detection ? `${detection.type} → ${detection.category} · manga ${detection.sleeve ?? 'no aplica'} · épocas ${detection.seasons?.join(', ') ?? 'sin deducir'} · corte ${detection.cut ?? 'sin deducir'}${detection.calzadoTipo ? ` · calzado ${detection.calzadoTipo}` : ''}${detection.sporty ? ' · deportiva' : ''}${detection.classic ? ' · clásica' : ''}${detection.estampado ? ` · estampado ${detection.estampado}` : ''} · color ${detection.dominantColor?.name ?? 'sin deducir'}${detection.secondaryColors.length > 0 ? ` + ${detection.secondaryColors.map((color) => color.name).join(', ')}` : ''}` : 'ninguna (no es una prenda que la app maneje)',
+      detection ? `${detection.type} → ${detection.category} · manga ${detection.sleeve ?? 'no aplica'} · épocas ${detection.seasons?.join(', ') ?? 'sin deducir'} · corte ${detection.cut ?? 'sin deducir'}${detection.calzadoTipo ? ` · calzado ${detection.calzadoTipo}` : ''}${detection.sporty ? ' · deportiva' : ''}${detection.classic ? ' · clásica' : ''}${detection.estampado ? ` · estampado ${detection.estampado}` : ''}${detection.formalidad ? ` · ${detection.formalidad}` : ''} · color ${detection.dominantColor?.name ?? 'sin deducir'}${detection.secondaryColors.length > 0 ? ` + ${detection.secondaryColors.map((color) => color.name).join(', ')}` : ''}` : 'ninguna (no es una prenda que la app maneje)',
     );
   }
   return detection;

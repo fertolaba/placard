@@ -1,4 +1,5 @@
 import { normalizeSeasons } from '../entities/Season';
+import { isFormalidad } from '../entities/Formality';
 import { GARMENT_CUTS, isCalzadoTipo, isEstampado, MAX_SECONDARY_COLORS, type NewGarment } from '../entities/Garment';
 import type { GarmentColor } from './garmentColors';
 
@@ -32,5 +33,6 @@ export function normalizeGarmentData(input: NewGarment): NewGarment {
   // El tipo de calzado solo se guarda en calzado; si la prenda cambió de categoría, se descarta.
   const calzadoTipo = input.category === 'calzado' && isCalzadoTipo(input.calzadoTipo) ? input.calzadoTipo : undefined;
   const estampado = isEstampado(input.estampado) ? input.estampado : undefined; // un valor fuera de la lista no se guarda
-  return { ...input, name, seasons, corte, calzadoTipo, estampado, secondaryColors };
+  const formalidad = isFormalidad(input.formalidad) ? input.formalidad : undefined;
+  return { ...input, name, seasons, corte, calzadoTipo, estampado, formalidad, secondaryColors };
 }

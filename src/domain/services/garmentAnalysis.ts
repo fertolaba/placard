@@ -8,6 +8,7 @@ import {
   type Estampado,
   type GarmentCategory,
 } from '../entities/Garment';
+import { isFormalidad, type Formalidad } from '../entities/Formality';
 import { normalizeSeasons, type Season } from '../entities/Season';
 import type { GarmentTypeDetection, SleeveLength } from './CategoryDetector';
 import { GARMENT_COLORS, type GarmentColor } from './garmentColors';
@@ -24,6 +25,7 @@ export interface GarmentAnalysis {
   es_deportiva: boolean; // camiseta de fútbol con mangas, short de fútbol o botines
   es_clasica: boolean; // camisa, chomba, sweater fino, blazer, pantalón sastrero, mocasines
   estampado: Estampado; // liso, logo chico o estampa grande
+  formalidad: Formalidad; // clasico, casual o deportivo
   color_dominante: string; // uno de los nombres de GARMENT_COLORS
   colores_secundarios: string[]; // nombres de GARMENT_COLORS; vacío si la prenda es lisa
 }
@@ -109,5 +111,6 @@ export function parseGarmentAnalysis(raw: unknown): GarmentTypeDetection | null 
   }
   // Un estampado fuera de la lista (o que no vino) queda en null: la prenda es neutra para los referentes.
   const estampado = isEstampado(data.estampado) ? data.estampado : null;
-  return { type, category, sleeve, seasons, cut, calzadoTipo, sporty, classic, estampado, dominantColor, secondaryColors };
+  const formalidad = isFormalidad(data.formalidad) ? data.formalidad : null; // lo mismo con la formalidad
+  return { type, category, sleeve, seasons, cut, calzadoTipo, sporty, classic, estampado, formalidad, dominantColor, secondaryColors };
 }

@@ -25,6 +25,7 @@ export function AddGarmentScreen() {
         corte: values.corte,
         calzadoTipo: values.calzadoTipo,
         estampado: values.estampado,
+        formalidad: values.formalidad,
         photoUri: values.newPhotoUri,
       });
       notifyDataChanged(); // avisa a Pilchapp, Outfits, Inspiración y Perfil que hay una prenda nueva

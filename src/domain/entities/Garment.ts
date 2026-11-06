@@ -1,4 +1,5 @@
 import type { GarmentColor } from '../services/garmentColors';
+import type { Formalidad } from './Formality';
 import type { Season } from './Season';
 
 // "top" y "pollera" son categorías propias (no variantes de "arriba" y "abajo"): solo se ofrecen en perfiles femeninos.
@@ -69,6 +70,7 @@ export interface Garment {
   corte?: string; // uno de GARMENT_CUTS[category]; opcional
   calzadoTipo?: CalzadoTipo; // solo calzado; sin valor = prenda vieja o no se sabe (no la excluye de ningún estilo)
   estampado?: Estampado; // sin valor = prenda vieja o no se sabe (neutra: no la excluye de ningún referente)
+  formalidad?: Formalidad; // clásico, casual o deportivo; sin valor = se deduce del nombre, el corte y los flags (ver garmentFormality)
   sporty: boolean; // camiseta de fútbol (la IA también marca shorts de fútbol y botines): en los estilos solo se usa en Blokecore
   classic: boolean; // prenda clásica o formal: camisa, chomba, sweater fino, pantalón de vestir o sastrero, mocasines
   photoRef: string | null; // referencia de la foto en PhotoStorage (es lo que se guarda)

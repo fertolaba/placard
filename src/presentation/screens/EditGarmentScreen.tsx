@@ -38,6 +38,7 @@ export function EditGarmentScreen() {
         corte: values.corte,
         calzadoTipo: values.calzadoTipo,
         estampado: values.estampado,
+        formalidad: values.formalidad,
         newPhotoUri: values.newPhotoUri,
       });
       notifyDataChanged();
@@ -109,6 +110,7 @@ export function EditGarmentScreen() {
         corte: garment.corte,
         calzadoTipo: garment.calzadoTipo,
         estampado: garment.estampado,
+        formalidad: garment.formalidad,
         imageUri: garment.imageUri,
       }}
       submitting={submitting}

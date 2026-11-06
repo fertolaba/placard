@@ -1,4 +1,5 @@
-import type { CalzadoTipo, Garment, GarmentCategory } from './Garment';
+import type { Formalidad } from './Formality';
+import type { CalzadoTipo, Estampado, Garment, GarmentCategory } from './Garment';
 
 export type Tone = 'oscuro' | 'claro' | 'neutro' | 'color' | 'cualquiera';
 
@@ -11,6 +12,22 @@ export interface StyleSlot {
   requiresClassic?: boolean; // true = solo la cubre una prenda con `classic`
   cuts?: readonly string[]; // cortes aceptados; una prenda sin corte guardado pasa igual
   calzadoTipos?: readonly CalzadoTipo[]; // tipos de calzado aceptados; un calzado sin tipo guardado pasa igual
+}
+
+/** Qué hace un estilo con cada estampado: lo acepta, lo deja pero más abajo, o no lo usa. Sin dato = lo acepta. */
+export type EstampadoTolerance = 'acepta' | 'penaliza' | 'excluye';
+
+/**
+ * Afinidad propia de un estilo: cuánto suma una prenda a ser la protagonista. Solo ordena dentro del estilo
+ * (no decide si una prenda entra ni cuál es su estilo de casa), así no mueve el orden de los demás estilos.
+ */
+export interface StyleAffinityBoost {
+  /** Prendas técnicas por nombre ("Campera Nike Tech", "Rompevientos") o por formalidad, con corte limpio. */
+  technical?: { keywords: readonly string[]; formalidades: readonly Formalidad[]; uncleanCuts: readonly string[]; bonus: number };
+  /** Suma (o resta) según el estampado. */
+  estampado?: Partial<Record<Estampado, number>>;
+  /** Colores sobrios del estilo: un plus leve, sin dejar afuera a los demás. */
+  colors?: { names: readonly string[]; bonus: number };
 }
 
 export const STYLE_IDS = ['streetwear', 'old-money', 'y2k', 'techwear', 'blokecore'] as const;
@@ -26,6 +43,8 @@ export interface StyleReference {
   excludesClassic?: boolean; // true = las prendas con `classic` no se usan en ninguna pieza del estilo
   maxSecondaryColors?: number; // las prendas con más colores de detalle que este número no se usan en el estilo
   preferredCuts?: readonly string[]; // cortes típicos del estilo: no deciden si una prenda entra, solo cuál es la protagonista
+  estampados?: Partial<Record<Estampado, EstampadoTolerance>>; // una prenda sin estampado guardado es neutra (no se excluye)
+  affinityBoost?: StyleAffinityBoost;
   slots: StyleSlot[];
 }
 

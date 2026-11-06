@@ -1,5 +1,5 @@
 import type { CategoryDetector } from '../../domain/services/CategoryDetector';
-import { createGeminiCategoryDetector } from './createGeminiCategoryDetector';
+import { createGeminiCategoryDetector, type GeminiDetectorConfig } from './createGeminiCategoryDetector';
 import type { GeminiImage } from './detectGarmentCategory';
 
 /** Lee la foto (una dirección del navegador) y la devuelve en base64 junto con su formato. */
@@ -17,6 +17,6 @@ async function readImage(photoUri: string): Promise<GeminiImage> {
 }
 
 /** Versión para la web. En el celular, Expo usa el archivo ".native" de al lado. */
-export function createCategoryDetector(apiKey: string): CategoryDetector {
-  return createGeminiCategoryDetector(apiKey, readImage);
+export function createCategoryDetector(config: GeminiDetectorConfig): CategoryDetector {
+  return createGeminiCategoryDetector(config, readImage);
 }

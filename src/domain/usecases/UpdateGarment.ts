@@ -1,3 +1,4 @@
+import type { Formalidad } from '../entities/Formality';
 import type { CalzadoTipo, Estampado, Garment, GarmentCategory } from '../entities/Garment';
 import type { Season } from '../entities/Season';
 import type { GarmentRepository } from '../repositories/GarmentRepository';
@@ -17,6 +18,7 @@ export interface GarmentEdit {
   classic: boolean;
   calzadoTipo?: CalzadoTipo; // solo calzado
   estampado?: Estampado; // sin valor = no se sabe
+  formalidad?: Formalidad; // sin valor = se deduce
   corte?: string; // sin corte = se borra el que tenía
   newPhotoUri: string | null; // null = dejar la foto que ya tiene
 }

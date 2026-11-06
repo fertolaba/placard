@@ -1,4 +1,4 @@
-import type { Formality } from '../entities/Formality';
+import { FORMALITY_OF, type Formality } from '../entities/Formality';
 import type { Garment } from '../entities/Garment';
 import type { StyleId, StyleReference } from '../entities/StyleReference';
 import { hemShoeFit } from './bottomHem';
@@ -17,6 +17,8 @@ export interface OutfitCoherence {
   hardConflict: boolean; // true = el look no se propone, aunque el color sea perfecto
   sharedStyles: StyleId[]; // estilos donde entran arriba y abajo, del más afín al menos
   reasons: string[];
+  /** El motivo del conflicto duro, para mostrarlo ("Prenda deportiva (…) con prenda clásica (…)"); null si no hay. */
+  conflictReason: string | null;
 }
 
 /** Peso de cada criterio dentro de la coherencia (suman 1). */
@@ -61,17 +63,23 @@ export function formalityFromName(text: string): Formality | null {
   return null;
 }
 
-/** Nivel de formalidad de una prenda de arriba o de abajo. */
+/**
+ * Nivel de formalidad de una prenda. Fuente principal: la formalidad guardada (la elige la IA o la persona). Si está
+ * vacía, se deduce de las marcas classic/sporty, del nombre y del corte ("sastrero"). Sin nada de eso: null (neutro).
+ */
 export function garmentFormality(garment: Garment): Formality | null {
+  if (garment.formalidad) return FORMALITY_OF[garment.formalidad];
   if (garment.classic) return 0;
   if (garment.sporty) return 2;
-  return formalityFromName(garment.name);
+  return formalityFromName(garment.name) ?? (garment.corte ? formalityFromName(garment.corte) : null);
 }
 
 type ShoeKind = 'formal' | 'technical' | 'rugged' | 'neutral';
 
 function shoeKind(shoe: Garment): ShoeKind {
   const name = normalize(shoe.name);
+  if (shoe.formalidad === 'clasico') return 'formal';
+  if (shoe.formalidad === 'deportivo') return 'technical';
   if (shoe.classic || FORMAL_NAME.test(name)) return 'formal';
   if (shoe.sporty || /\bbotin\w*\b/.test(name)) return 'technical';
   if (shoe.calzadoTipo === 'botita' || shoe.calzadoTipo === 'gruesa' || RUGGED_SHOE_NAME.test(name)) return 'rugged';
@@ -98,6 +106,12 @@ export function evaluateOutfitCoherence(
 ): OutfitCoherence {
   const reasons: string[] = [];
   let hardConflict = false;
+  const hardReasons: { reason: string; priority: number }[] = []; // el de formalidad es el más claro: va primero
+  const hard = (reason: string, priority = 1) => {
+    hardConflict = true;
+    hardReasons.push({ reason, priority });
+    reasons.push(reason);
+  };
 
   // 1. Estilo compartido
   const topStyles = stylesOf(top, references);
@@ -116,8 +130,7 @@ export function evaluateOutfitCoherence(
       reasons.push(`${top.name} y ${bottom.name} no comparten ningún estilo`);
     } else {
       styleScore = 0;
-      hardConflict = true;
-      reasons.push(`${top.name} y ${bottom.name} son de estilos distintos`);
+      hard(`${top.name} y ${bottom.name} son de estilos distintos`);
     }
   } else if (shoe) {
     const shoeIds = new Set(stylesOf(shoe, references).map((reference) => reference.id));
@@ -138,8 +151,7 @@ export function evaluateOutfitCoherence(
     const distance = Math.abs(topLevel - bottomLevel);
     if (distance === 2) {
       formalityScore = 0;
-      hardConflict = true;
-      reasons.push(`Una prenda ${FORMALITY_NAMES[topLevel]} no va con una ${FORMALITY_NAMES[bottomLevel]}`);
+      hard(`Prenda ${FORMALITY_NAMES[topLevel]} (${top.name}) con prenda ${FORMALITY_NAMES[bottomLevel]} (${bottom.name})`, 0);
     } else if (distance === 1) {
       formalityScore = FORMALITY_SCORE_ONE_STEP;
       reasons.push(`Mezcla una prenda ${FORMALITY_NAMES[topLevel]} con una ${FORMALITY_NAMES[bottomLevel]}`);
@@ -186,8 +198,7 @@ export function evaluateOutfitCoherence(
   if (shoe) {
     const fit = hemShoeFit(bottom, shoe);
     if (fit === 'conflicto') {
-      hardConflict = true;
-      reasons.push(`${shoe.name} no va con un pantalón ajustado en el tobillo como ${bottom.name}`);
+      hard(`${shoe.name} no va con un pantalón ajustado en el tobillo como ${bottom.name}`);
     } else if (fit === 'leve') {
       hemPenalty = PENALTY_HEM_CHUNKY;
       reasons.push(`${shoe.name} queda pesado con un pantalón ajustado en el tobillo`);
@@ -201,5 +212,30 @@ export function evaluateOutfitCoherence(
     hemPenalty;
   // Redondeado a milésimas: sin esto, la suma de los pesos podría dar 0,9999… con todo perfecto.
   const score = hardConflict ? 0 : Math.max(0, Math.round(weighted * 1000) / 1000);
-  return { score, hardConflict, sharedStyles, reasons };
+  const conflictReason = [...hardReasons].sort((a, b) => a.priority - b.priority)[0]?.reason ?? null;
+  return { score, hardConflict, sharedStyles, reasons, conflictReason };
+}
+
+const LOOK_NAMES: Record<Formality, string> = { 0: 'clásico', 1: 'casual', 2: 'deportivo' };
+const TOUCH_NAMES: Record<Formality, string> = { 0: 'clásicos', 1: 'casuales', 2: 'deportivos' };
+
+/**
+ * La formalidad del look para mostrarla: "Look casual", "Look casual con toques clásicos". Cuenta las prendas con
+ * formalidad conocida; null si no hay ninguna o si mezcla clásico con deportivo (eso ya es un conflicto).
+ */
+export function lookFormalityLabel(garments: readonly Garment[]): string | null {
+  const levels = garments.flatMap((garment) => {
+    const level = garmentFormality(garment);
+    return level === null ? [] : [level];
+  });
+  if (levels.length === 0) return null;
+  const distinct = [...new Set(levels)].sort() as Formality[];
+  if (distinct.length === 1) return `Look ${LOOK_NAMES[distinct[0]]}`;
+  if (distinct.length > 2 || distinct[1] - distinct[0] === 2) return null;
+  // Dos niveles vecinos: el que más se repite manda; a igualdad, manda el casual (es el puente entre los dos).
+  const count = (level: Formality) => levels.filter((item) => item === level).length;
+  const [a, b] = distinct;
+  const main = count(a) > count(b) ? a : count(b) > count(a) ? b : 1;
+  const other = main === a ? b : a;
+  return `Look ${LOOK_NAMES[main]} con toques ${TOUCH_NAMES[other]}`;
 }

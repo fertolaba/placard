@@ -10,5 +10,7 @@ export type Formality = 0 | 1 | 2;
 
 export const FORMALITY_OF: Record<Formalidad, Formality> = { clasico: 0, casual: 1, deportivo: 2 };
 
+export const FORMALIDAD_LABELS: Record<Formalidad, string> = { clasico: 'Clásico', casual: 'Casual', deportivo: 'Deportivo' };
+
 export const isFormalidad = (value: unknown): value is Formalidad =>
   typeof value === 'string' && (FORMALIDADES as readonly string[]).includes(value);

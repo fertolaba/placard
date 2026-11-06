@@ -20,8 +20,10 @@ interface Props {
 
 export const SavedOutfitCard = memo(function SavedOutfitCard({ view, width, onRemove, onOpen }: Props) {
   const { tokens, transition, reducedMotion } = useOutfitsTheme();
-  const { variant, gradient, title, origin } = view;
+  const { variant, gradient, title, origin, conflict } = view;
   const matchLabel = variant.complete ? `${variant.matchPercent}% match` : 'Incompleto';
+  // Un look guardado antes de una regla nueva que ahora la rompe: se avisa, pero no se borra.
+  const statusLabel = conflict ? `${matchLabel}. Ya no combina` : matchLabel;
   const garments = useMemo(() => ({ torso: variant.top, piernas: variant.bottom, pies: variant.shoe }), [variant]);
 
   return (
@@ -45,6 +47,13 @@ export const SavedOutfitCard = memo(function SavedOutfitCard({ view, width, onRe
             </Animated.Text>
             <View style={styles.matchRow}>
               <Animated.Text style={[styles.match, { color: tokens.sub }, transition]}>{matchLabel}</Animated.Text>
+              {conflict ? (
+                <Animated.View style={[styles.conflict, { backgroundColor: tokens.soft }, transition]}>
+                  <Animated.Text style={[styles.conflictLabel, { color: tokens.danger }, transition]} numberOfLines={1}>
+                    Ya no combina
+                  </Animated.Text>
+                </Animated.View>
+              ) : null}
             </View>
           </View>
         </View>
@@ -53,7 +62,7 @@ export const SavedOutfitCard = memo(function SavedOutfitCard({ view, width, onRe
           onPress={() => onOpen(view)}
           style={StyleSheet.absoluteFill}
           accessibilityRole="button"
-          accessibilityLabel={`${title}, ${origin}, ${matchLabel}. Ver por qué combina`}
+          accessibilityLabel={`${title}, ${origin}, ${statusLabel}. Ver por qué combina`}
         />
         <Pressable
           onPress={() => onRemove(view)}
@@ -110,5 +119,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 16, lineHeight: 20, minHeight: 40, fontWeight: '600', marginTop: 2 },
   matchRow: { height: 44, justifyContent: 'center' },
   match: { fontSize: 13, fontWeight: '700' },
+  conflict: { alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, marginTop: 3 },
+  conflictLabel: { fontSize: 11, fontWeight: '700' },
   share: { position: 'absolute', right: 4, bottom: 4, width: 44, height: 44, alignItems: 'center', justifyContent: 'center', opacity: 0.45 },
 });

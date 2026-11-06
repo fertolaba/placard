@@ -15,11 +15,14 @@ import { scheduleOnRN, scheduleOnUI } from 'react-native-worklets';
 import { readableOn } from '../../../core/utils/color';
 import { CATEGORY_ZONE, type Garment } from '../../../domain/entities/Garment';
 import type { Outfit } from '../../../domain/entities/Outfit';
+import { paletteDots } from '../../../domain/services/outfitPalette';
 import { deckGradient, hexToRgba, paletteLabel } from '../../outfits/deckAppearance';
 import { PAPER, useOutfitsTheme } from '../../outfits/outfitsTheme';
 import { PressableScale } from '../PressableScale';
 import { Silhouette } from './GarmentSilhouettes';
 import { GradientFill } from './GradientFill';
+
+const MAX_PALETTE_DOTS = 5; // tres prendas y hasta dos acentos de sus detalles
 
 export type DeckDecision = 'save' | 'skip';
 
@@ -121,9 +124,12 @@ const CardFace = memo(function CardFace({ outfit }: { outfit: Outfit }) {
           {outfit.description}
         </Text>
         <View style={styles.paletteRow}>
-          {outfit.garments.slice(0, 3).map((garment) => (
-            <View key={garment.id} style={[styles.paletteDot, { backgroundColor: garment.colorHex }]} />
-          ))}
+          {/* El principal de cada prenda y sus secundarios vivos: lo mismo que se evalúa en el color del look. */}
+          {paletteDots(outfit.garments)
+            .slice(0, MAX_PALETTE_DOTS)
+            .map((color, index) => (
+              <View key={`${color.hex}-${index}`} style={[styles.paletteDot, { backgroundColor: color.hex }]} />
+            ))}
           <Text style={styles.paletteLabel} numberOfLines={1} maxFontSizeMultiplier={1.2}>
             {outfit.sharedStyle ? `${paletteLabel(outfit)} · ${outfit.sharedStyle}` : paletteLabel(outfit)}
           </Text>

@@ -1,6 +1,7 @@
 import type { Garment } from '../entities/Garment';
 import { hexToRgb, rgbToLab } from './colorDetection';
-import { hexToHsl, isNeutral, type Hsl } from './colorHarmony';
+import { hexToHsl, type Hsl } from './colorHarmony';
+import { accentGroups, isFashionNeutral } from './outfitPalette';
 import type { GarmentColor } from './garmentColors';
 
 /** La regla de teoría del color que explica la combinación de los colores dominantes. */
@@ -178,8 +179,15 @@ function shortDescription(rule: ColorRule, colorful: Dominant[], hasEchoes: bool
 /** Explica por qué combinan las prendas de un look: la regla de color de los dominantes y los detalles que se repiten. */
 export function explainOutfit(garments: readonly Garment[]): OutfitExplanation {
   const dominants: Dominant[] = garments.map((garment) => ({ garment, name: garment.colorName, hsl: hexToHsl(garment.colorHex) }));
-  const colorful = dominants.filter((item) => !isNeutral(item.hsl));
-  const neutrals = dominants.filter((item) => isNeutral(item.hsl));
+  const neutrals = dominants.filter((item) => isFashionNeutral(item.hsl));
+  // Los colores vivos: los principales y, además, los secundarios vivos de un tono que ningún principal aporta
+  // (el rojo de unas Jordan blancas), así la regla que se explica es la misma con la que se evaluó el look.
+  const colorful = dominants.filter((item) => !isFashionNeutral(item.hsl));
+  for (const group of accentGroups(garments)) {
+    if (group.fromPrincipal) continue;
+    const [accent] = group.accents;
+    colorful.push({ garment: accent.garment, name: accent.color.name, hsl: accent.hsl });
+  }
   const { rule, distance } = pickRule(colorful);
   const echoes = detailEchoes(garments);
   return {

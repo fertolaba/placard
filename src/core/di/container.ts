@@ -61,7 +61,11 @@ import { env } from '../config/env';
  */
 const localPhotoStorage = createPhotoStorage(); // fotos en el teléfono (la de perfil siempre; las de prendas si no se usa Supabase)
 const colorDetector = createColorDetector();
-const categoryDetector = createCategoryDetector(env.geminiApiKey);
+const categoryDetector = createCategoryDetector({
+  apiKey: env.geminiApiKey,
+  model: env.geminiModel,
+  fallbackModel: env.geminiFallbackModel,
+});
 
 // Cuentas: sin URL o clave de Supabase la app abre igual, pero no se puede entrar.
 const supabase = createSupabaseClient(env.supabaseUrl, env.supabaseAnonKey);

@@ -78,3 +78,37 @@ describe('parseSavedOutfits', () => {
     expect(parseSavedOutfits('[{"id":"b","garmentIds":[],"styleId":null,"title":"Base"}]')[0].title).toBe('Base');
   });
 });
+
+describe('Guardados con las reglas actuales', () => {
+  const tech: Garment = { ...garment('tech', 'arriba', '#26262B'), name: 'Campera negra', formalidad: 'deportivo' };
+  const sastrero: Garment = { ...garment('sastrero', 'abajo', '#26262B'), name: 'Pantalón negro', formalidad: 'clasico' };
+  const zapas: Garment = { ...garment('zapas', 'calzado', '#F2F2F2'), name: 'Zapatillas blancas' };
+  const closet = new Map([tech, sastrero, zapas].map((item) => [item.id, item]));
+  // Guardado con el corazón antes de la regla de formalidad: el dato guardado no cambia.
+  const viejo = Object.freeze({ id: 'viejo', garmentIds: ['tech', 'sastrero', 'zapas'], styleId: null, title: 'Base neutra' });
+
+  it('un outfit guardado viejo con conflicto se marca "Ya no combina" y no se borra', () => {
+    const view = savedOutfitView(viejo, closet);
+    expect(view).not.toBeNull();
+    expect(view!.saved).toBe(viejo);
+    expect(view!.conflict).toBe('Prenda deportiva (Campera negra) con prenda clásica (Pantalón negro)');
+    expect(view!.variant.complete).toBe(true);
+  });
+
+  it('el % match se recalcula con la coherencia: ya no muestra 100%', () => {
+    expect(savedOutfitView(viejo, closet)!.variant.matchPercent).toBeLessThan(60);
+  });
+
+  it('el detalle de "Por qué combinan" lleva el motivo en lugar del estilo', () => {
+    const detail = savedOutfitDetail(savedOutfitView(viejo, closet)!);
+    expect(detail.conflict).toContain('Prenda deportiva');
+  });
+
+  it('un guardado que sigue combinando no lleva aviso y muestra la formalidad del look', () => {
+    const remera: Garment = { ...garment('remera', 'arriba', '#EDEAE4'), name: 'Remera blanca', formalidad: 'casual' };
+    const jean: Garment = { ...garment('jean', 'abajo', '#5B7AA0'), name: 'Jean', formalidad: 'casual', corte: 'straight' };
+    const view = savedOutfitView({ id: 'ok', garmentIds: ['remera', 'jean', 'zapas'], styleId: null }, new Map([remera, jean, zapas].map((item) => [item.id, item])))!;
+    expect(view.conflict).toBeNull();
+    expect(savedOutfitDetail(view).lookFormality).toBe('Look casual');
+  });
+});

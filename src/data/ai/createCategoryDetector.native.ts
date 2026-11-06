@@ -1,6 +1,6 @@
 import { ImageFormat, Skia } from '@shopify/react-native-skia';
 import type { CategoryDetector } from '../../domain/services/CategoryDetector';
-import { createGeminiCategoryDetector } from './createGeminiCategoryDetector';
+import { createGeminiCategoryDetector, type GeminiDetectorConfig } from './createGeminiCategoryDetector';
 import type { GeminiImage } from './detectGarmentCategory';
 
 const MAX_SIDE = 512; // la foto se achica antes de mandarla: llega rápido y gasta menos datos
@@ -24,6 +24,6 @@ async function readSmallJpeg(photoUri: string): Promise<GeminiImage> {
 }
 
 /** Versión para iPhone y Android. */
-export function createCategoryDetector(apiKey: string): CategoryDetector {
-  return createGeminiCategoryDetector(apiKey, readSmallJpeg);
+export function createCategoryDetector(config: GeminiDetectorConfig): CategoryDetector {
+  return createGeminiCategoryDetector(config, readSmallJpeg);
 }

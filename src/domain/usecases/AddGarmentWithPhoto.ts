@@ -1,3 +1,4 @@
+import type { Formalidad } from '../entities/Formality';
 import type { CalzadoTipo, Estampado, Garment, GarmentCategory } from '../entities/Garment';
 import type { Season } from '../entities/Season';
 import type { GarmentColor } from '../services/garmentColors';
@@ -15,6 +16,7 @@ export interface GarmentDraft {
   classic: boolean;
   calzadoTipo?: CalzadoTipo; // solo calzado
   estampado?: Estampado; // sin valor = no se sabe
+  formalidad?: Formalidad; // sin valor = se deduce
   corte?: string;
   photoUri: string | null; // foto recién sacada o elegida (todavía en una carpeta temporal)
 }
