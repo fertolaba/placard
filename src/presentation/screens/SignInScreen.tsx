@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Alert, type TextInputInstance } from 'react-native';
+import { type TextInputInstance } from 'react-native';
 import { validateSignIn } from '../../domain/services/authValidation';
 import { useAuth } from '../auth/AuthProvider';
 import { AuthScaffold } from '../components/AuthScaffold';
@@ -35,7 +35,7 @@ export function SignInScreen() {
   return (
     <AuthScaffold
       hero={<MascotAvatar focus={focus} emailLength={email.length} fieldWidth={emailWidth} />}
-      title="Iniciá sesión en Placard"
+      title="Iniciá sesión en Pilchapp"
       configured={configured}
       error={error}
       submitLabel="Entrar"
@@ -43,7 +43,6 @@ export function SignInScreen() {
       busy={busy}
       valid={validateSignIn(email, password) === null}
       onSubmit={submit}
-      onForgotPassword={() => Alert.alert('Olvidé mi contraseña', 'Recuperar la contraseña todavía no está disponible.')}
       switchPrompt="¿No tenés cuenta?"
       switchLabel="Registrate"
       onSwitch={() => router.replace('/registro')}

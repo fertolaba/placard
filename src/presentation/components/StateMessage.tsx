@@ -30,8 +30,8 @@ const useStyles = makeStyles((colors) => ({
   button: {
     marginTop: 8,
     paddingHorizontal: 20,
-    height: 40,
-    borderRadius: 20,
+    minHeight: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     backgroundColor: colors.primary,
   },

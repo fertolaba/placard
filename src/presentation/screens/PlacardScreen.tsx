@@ -68,6 +68,10 @@ export function PlacardScreen() {
   const cardWidth = (contentWidth - SIDE_PADDING * 2 - GAP) / 2;
 
   const filtering = category !== 'todo' || season !== 'todas';
+  const clearFilters = () => {
+    setCategory('todo');
+    setSeason('todas');
+  };
   const openAddGarment = useCallback(() => router.push('/add-garment'), [router]);
   const openGarment = useCallback((id: string) => router.push({ pathname: '/garment/[id]', params: { id } }), [router]);
 
@@ -88,15 +92,23 @@ export function PlacardScreen() {
   const renderItem = useCallback(
     ({ item, index }: { item: GridItem; index: number }) =>
       item === ADD_ITEM ? (
-        <AddGarmentCard width={cardWidth} index={index} entranceDone={entranceDone} onPress={openAddGarment} />
+        <AddGarmentCard width={cardWidth} index={index} entranceDone={entranceDone} first={garments.length === 0} onPress={openAddGarment} />
       ) : (
         <GarmentCard garment={item} width={cardWidth} index={index} entranceDone={entranceDone} onPress={openGarment} />
       ),
-    [cardWidth, entranceDone, openAddGarment, openGarment],
+    [cardWidth, entranceDone, garments.length, openAddGarment, openGarment],
   );
 
   const count = `${garments.length} ${garments.length === 1 ? 'prenda' : 'prendas'}`;
-  const subtitle = status !== 'ready' ? ' ' : season === 'todas' ? count : `${count} · ${SEASON_UI[season].label}`;
+  const emptyCloset = garments.length === 0 && !filtering;
+  const subtitle =
+    status !== 'ready'
+      ? ' '
+      : emptyCloset
+        ? 'Cargá tus prendas y te armamos outfits'
+        : season === 'todas'
+          ? count
+          : `${count} · ${SEASON_UI[season].label}`;
 
   return (
     <Animated.View style={[styles.container, { paddingTop: Math.max(HEADER_TOP, insets.top) }, screenColors]}>
@@ -130,6 +142,8 @@ export function PlacardScreen() {
           <StateMessage
             title="No hay prendas con esos filtros"
             detail="Probá con otra época o categoría, o marcá más épocas en tus prendas."
+            actionLabel="Ver todo"
+            onAction={clearFilters}
           />
         )}
         {/* Sin filtros la grilla se muestra aunque esté vacía, para que siempre esté la tarjeta de agregar. */}

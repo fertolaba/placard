@@ -14,11 +14,12 @@ interface Props {
   width: number;
   index: number;
   entranceDone: SharedValue<boolean>;
+  first?: boolean; // el placard está vacío: invita a subir la primera
   onPress: () => void;
 }
 
 /** Última tarjeta de la grilla: mismo tamaño que GarmentCard, con el contenido centrado. */
-export const AddGarmentCard = memo(function AddGarmentCard({ width, index, entranceDone, onPress }: Props) {
+export const AddGarmentCard = memo(function AddGarmentCard({ width, index, entranceDone, first = false, onPress }: Props) {
   const { theme } = useSeasonTheme();
   const cardColors = useThemeColors(CARD_COLORS);
   const nameColors = useThemeColors(NAME_COLORS);
@@ -37,7 +38,7 @@ export const AddGarmentCard = memo(function AddGarmentCard({ width, index, entra
           Agregar prenda
         </Animated.Text>
         <Animated.Text style={[styles.meta, metaColors]} numberOfLines={1}>
-          Subir más
+          {first ? 'Subí la primera' : 'Subir más'}
         </Animated.Text>
       </PressableScale>
     </Animated.View>

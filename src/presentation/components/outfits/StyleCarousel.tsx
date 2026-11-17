@@ -57,7 +57,7 @@ const StyleCard = memo(function StyleCard({ coverage, selected, onSelect }: Card
               </Animated.Text>
               <Animated.Text style={[styles.badge, { color: tokens.chipFg }, transition]}>{styleBadge(coverage)}</Animated.Text>
             </View>
-            <Animated.Text style={[styles.phrase, { color: tokens.sub }, transition]} numberOfLines={2}>
+            <Animated.Text style={[styles.phrase, { color: tokens.sub }, transition]} numberOfLines={3}>
               {reference.description}
             </Animated.Text>
             <Animated.View style={[styles.track, { backgroundColor: tokens.soft }, transition]}>
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
   nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   name: { flex: 1, fontSize: 20, fontWeight: '700' },
   badge: { fontSize: 12, fontWeight: '700' },
-  phrase: { fontSize: 13, lineHeight: 17, minHeight: 34 },
+  phrase: { fontSize: 13, lineHeight: 17, minHeight: 51 },
   track: { height: 6, borderRadius: 3, overflow: 'hidden' },
   fill: { height: 6, borderRadius: 3 },
   count: { fontSize: 12, fontWeight: '600' },

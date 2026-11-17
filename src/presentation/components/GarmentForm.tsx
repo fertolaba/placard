@@ -25,6 +25,7 @@ import { usePhotoPicker, type PhotoSource } from '../hooks/usePhotoPicker';
 import { SEASON_UI } from '../seasonUi';
 import { makeStyles } from '../theme/makeStyles';
 import { useTheme } from '../theme/ThemeProvider';
+import { confirmDestructive } from '../utils/confirm';
 import { FORMALIDAD_LABELS, FORMALIDADES, type Formalidad } from '../../domain/entities/Formality';
 import { CheckerboardBackground } from './CheckerboardBackground';
 import { ColorPicker } from './ColorPicker';
@@ -405,6 +406,36 @@ export function GarmentForm({
     removal.dismiss();
   };
 
+  // Hay algo cargado o editado que se perdería al cancelar.
+  const sameHexes = (a: readonly GarmentColor[], b: readonly GarmentColor[]) =>
+    a.length === b.length && a.every((item, index) => item.hex === b[index].hex);
+  const isDirty =
+    newPhotoUri !== null ||
+    removal.review !== null ||
+    name.trim() !== (initial?.name ?? '').trim() ||
+    category !== (initial?.category ?? categoryOptions[0].value) ||
+    seasons.join() !== (initial?.seasons ?? []).join() ||
+    corte !== initial?.corte ||
+    calzadoTipo !== initial?.calzadoTipo ||
+    estampado !== initial?.estampado ||
+    formalidad !== initial?.formalidad ||
+    sporty !== (initial?.sporty ?? false) ||
+    classic !== (initial?.classic ?? false) ||
+    (color?.hex ?? null) !== (initial?.colorHex ?? null) ||
+    !sameHexes(secondaryColors, initial?.secondaryColors ?? []);
+
+  const handleCancel = async () => {
+    if (isDirty && !submitting) {
+      const confirmed = await confirmDestructive(
+        initial ? '¿Descartar los cambios?' : '¿Descartar la prenda?',
+        'Se pierde lo que cargaste.',
+        'Descartar',
+      );
+      if (!confirmed) return;
+    }
+    onCancel();
+  };
+
   return (
     <ScrollView
       style={styles.scroll}
@@ -413,7 +444,7 @@ export function GarmentForm({
       automaticallyAdjustKeyboardInsets
     >
       <View style={styles.topBar}>
-        <Pressable onPress={onCancel} accessibilityRole="button" hitSlop={8} style={styles.sideSlot}>
+        <Pressable onPress={handleCancel} accessibilityRole="button" hitSlop={8} style={styles.sideSlot}>
           <Text style={styles.cancel}>Cancelar</Text>
         </Pressable>
         <Text style={styles.topTitle} accessibilityRole="header">
@@ -442,7 +473,7 @@ export function GarmentForm({
               {removal.slow ? 'Quitando el fondo… puede tardar unos segundos' : 'Quitando el fondo…'}
             </Text>
           </View>
-          <Pressable onPress={removal.dismiss} accessibilityRole="button" hitSlop={8}>
+          <Pressable onPress={removal.dismiss} accessibilityRole="button" hitSlop={8} style={styles.suggestionButton}>
             <Text style={styles.suggestionAction}>Usar la original</Text>
           </Pressable>
         </View>
@@ -560,7 +591,7 @@ export function GarmentForm({
             <Text style={styles.suggestionText}>
               Parece ser: {detectedType.type} ({CATEGORY_LABELS[detectedType.category]})
             </Text>
-            <Pressable onPress={() => chooseCategory(detectedType.category)} accessibilityRole="button" hitSlop={8}>
+            <Pressable onPress={() => chooseCategory(detectedType.category)} accessibilityRole="button" hitSlop={8} style={styles.suggestionButton}>
               <Text style={styles.suggestionAction}>Usar</Text>
             </Pressable>
           </View>
@@ -580,7 +611,7 @@ export function GarmentForm({
             <Text style={styles.suggestionText}>
               Por la foto ({seasonsSource(detectedType)}): {seasonsLabel(detectedType.seasons)}
             </Text>
-            <Pressable onPress={() => chooseSeasons(detectedType.seasons!)} accessibilityRole="button" hitSlop={8}>
+            <Pressable onPress={() => chooseSeasons(detectedType.seasons!)} accessibilityRole="button" hitSlop={8} style={styles.suggestionButton}>
               <Text style={styles.suggestionAction}>Usar</Text>
             </Pressable>
           </View>
@@ -601,7 +632,7 @@ export function GarmentForm({
             {!analyzing && detectedCut && detectedCut !== shownCorte ? (
               <View style={styles.suggestion}>
                 <Text style={styles.suggestionText}>Por la silueta de la foto: {detectedCut}</Text>
-                <Pressable onPress={() => chooseCorte(detectedCut)} accessibilityRole="button" hitSlop={8}>
+                <Pressable onPress={() => chooseCorte(detectedCut)} accessibilityRole="button" hitSlop={8} style={styles.suggestionButton}>
                   <Text style={styles.suggestionAction}>Usar</Text>
                 </Pressable>
               </View>
@@ -629,7 +660,7 @@ export function GarmentForm({
             {!analyzing && detectedCalzadoTipo && detectedCalzadoTipo !== shownCalzadoTipo ? (
               <View style={styles.suggestion}>
                 <Text style={styles.suggestionText}>Por la foto: {CALZADO_TIPO_LABELS[detectedCalzadoTipo]}</Text>
-                <Pressable onPress={() => chooseCalzadoTipo(detectedCalzadoTipo)} accessibilityRole="button" hitSlop={8}>
+                <Pressable onPress={() => chooseCalzadoTipo(detectedCalzadoTipo)} accessibilityRole="button" hitSlop={8} style={styles.suggestionButton}>
                   <Text style={styles.suggestionAction}>Usar</Text>
                 </Pressable>
               </View>
@@ -655,7 +686,7 @@ export function GarmentForm({
         {!analyzing && detectedEstampado && detectedEstampado !== estampado ? (
           <View style={styles.suggestion}>
             <Text style={styles.suggestionText}>Por la foto: {ESTAMPADO_LABELS[detectedEstampado]}</Text>
-            <Pressable onPress={() => chooseEstampado(detectedEstampado)} accessibilityRole="button" hitSlop={8}>
+            <Pressable onPress={() => chooseEstampado(detectedEstampado)} accessibilityRole="button" hitSlop={8} style={styles.suggestionButton}>
               <Text style={styles.suggestionAction}>Usar</Text>
             </Pressable>
           </View>
@@ -679,7 +710,7 @@ export function GarmentForm({
         {!analyzing && detectedFormalidad && detectedFormalidad !== formalidad ? (
           <View style={styles.suggestion}>
             <Text style={styles.suggestionText}>Por la foto: {FORMALIDAD_LABELS[detectedFormalidad]}</Text>
-            <Pressable onPress={() => chooseFormalidad(detectedFormalidad)} accessibilityRole="button" hitSlop={8}>
+            <Pressable onPress={() => chooseFormalidad(detectedFormalidad)} accessibilityRole="button" hitSlop={8} style={styles.suggestionButton}>
               <Text style={styles.suggestionAction}>Usar</Text>
             </Pressable>
           </View>
@@ -700,7 +731,7 @@ export function GarmentForm({
           <View style={styles.suggestion}>
             <View style={[styles.suggestionDot, { backgroundColor: detected.hex }]} />
             <Text style={styles.suggestionText}>Detectamos {detected.name} en la foto</Text>
-            <Pressable onPress={() => setColor(detected)} accessibilityRole="button" hitSlop={8}>
+            <Pressable onPress={() => setColor(detected)} accessibilityRole="button" hitSlop={8} style={styles.suggestionButton}>
               <Text style={styles.suggestionAction}>Usar</Text>
             </Pressable>
           </View>
@@ -726,7 +757,7 @@ export function GarmentForm({
               <View key={item.hex} style={[styles.suggestionDot, { backgroundColor: item.hex }]} />
             ))}
             <Text style={styles.suggestionText}>En la foto: {detectedSecondary.map((item) => item.name).join(', ')}</Text>
-            <Pressable onPress={() => chooseSecondary(detectedSecondary)} accessibilityRole="button" hitSlop={8}>
+            <Pressable onPress={() => chooseSecondary(detectedSecondary)} accessibilityRole="button" hitSlop={8} style={styles.suggestionButton}>
               <Text style={styles.suggestionAction}>Usar</Text>
             </Pressable>
           </View>
@@ -773,7 +804,7 @@ const useStyles = makeStyles((colors) => ({
   scroll: { flex: 1, backgroundColor: colors.background },
   content: { width: '100%', maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center', paddingHorizontal: 20, paddingBottom: 40 },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 },
-  sideSlot: { minWidth: 80 },
+  sideSlot: { minWidth: 80, minHeight: 44, justifyContent: 'center' },
   cancel: { fontSize: 17, color: colors.link },
   topTitle: { fontSize: 17, fontWeight: '600', color: colors.text },
   photoBox: {
@@ -830,6 +861,7 @@ const useStyles = makeStyles((colors) => ({
   suggestion: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, paddingHorizontal: 4 },
   suggestionDot: { width: 16, height: 16, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.swatchBorder },
   suggestionText: { flex: 1, fontSize: 14, color: colors.text },
+  suggestionButton: { minHeight: 44, paddingHorizontal: 8, justifyContent: 'center' },
   suggestionAction: { fontSize: 15, fontWeight: '600', color: colors.link },
   error: { fontSize: 14, color: colors.danger, marginBottom: 8 },
   save: { height: 50, borderRadius: 14, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },

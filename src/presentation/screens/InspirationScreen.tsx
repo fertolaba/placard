@@ -91,6 +91,17 @@ export function InspirationScreen() {
         </View>
       )}
 
+      {status === 'ready' && filter !== 'Todos' && destacados.length === 0 && referentes.length === 0 && (
+        <View style={styles.message}>
+          <StateMessage
+            title="No hay referentes de este estilo"
+            detail="Probá con otro estilo o mirá todos."
+            actionLabel="Ver todos"
+            onAction={() => setFilter('Todos')}
+          />
+        </View>
+      )}
+
       {status === 'ready' && destacados.length > 0 && (
         <>
           <Text style={styles.sectionTitle} accessibilityRole="header">

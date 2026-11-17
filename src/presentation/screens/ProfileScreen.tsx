@@ -63,7 +63,7 @@ export function ProfileScreen() {
   const onSignOut = async () => {
     const confirmed = await confirmDestructive(
       '¿Cerrar sesión?',
-      'Tus prendas y tu perfil siguen guardados en este teléfono.',
+      'Tus prendas y tu perfil no se borran: vas a encontrarlos cuando vuelvas a entrar.',
       'Cerrar sesión',
     );
     if (!confirmed) return;

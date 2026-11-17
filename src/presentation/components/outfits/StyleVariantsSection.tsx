@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View, type DimensionValue } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -74,6 +75,7 @@ interface Props {
 /** Se monta con key={estilo}: al cambiar de estilo vuelve solo al modo plegado. */
 export function StyleVariantsSection({ coverage, savedIds, onToggleSave }: Props) {
   const { tokens, transition } = useOutfitsTheme();
+  const router = useRouter();
   const [expanded, setExpanded] = useState(false);
   const variants = useMemo(() => buildStyleVariants(coverage), [coverage]);
   const styleId = coverage.reference.id;
@@ -106,9 +108,16 @@ export function StyleVariantsSection({ coverage, savedIds, onToggleSave }: Props
       </View>
 
       {shown === 0 ? (
-        <Animated.Text style={[styles.none, { color: tokens.sub }, transition]}>
-          Todavía no tenés prendas de este estilo.
-        </Animated.Text>
+        <View>
+          <Animated.Text style={[styles.none, { color: tokens.sub }, transition]}>
+            Todavía no tenés prendas de este estilo.
+          </Animated.Text>
+          <Pressable onPress={() => router.push('/add-garment')} accessibilityRole="button">
+            <Animated.View style={[styles.more, { borderColor: tokens.line }, transition]}>
+              <Animated.Text style={[styles.moreLabel, { color: tokens.text }, transition]}>Cargá una prenda</Animated.Text>
+            </Animated.View>
+          </Pressable>
+        </View>
       ) : expanded ? (
         <View style={styles.grid}>
           {variants.map((variant) => (

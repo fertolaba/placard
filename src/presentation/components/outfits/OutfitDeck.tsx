@@ -33,6 +33,8 @@ const VISIBLE_CARDS = 3;
 const Y_STEP = 14;
 const STACK_PEEK = (VISIBLE_CARDS - 1) * Y_STEP; // lo que asoman por debajo las cartas de atrás
 const SCALE_STEP = 0.06;
+const PANEL_PADDING = 22; // margen del fondo redondeado alrededor de las cartas
+const PANEL_GAP = 12; // aire entre el fondo del mazo y lo que tiene arriba (rótulo) y abajo (botones)
 const MAX_ROTATION = 18;
 const SWIPE_DISTANCE = 110;
 const SWIPE_VELOCITY = 800;
@@ -286,27 +288,30 @@ export function OutfitDeck({ outfits, index, savedCount, onDecide, onAdvance, on
 
   return (
     <View style={styles.deck}>
-      <View style={[styles.stage, { height: cardHeight(top) + STACK_PEEK }]}>
-        <Animated.View
-          style={[
-            styles.panel,
-            { backgroundColor: hexToRgba(panelGradient, scheme === 'dark' ? 0.28 : 0.2) },
-            reducedMotion ? null : styles.panelTransition,
-          ]}
-        />
-        {/* Las cartas conservan su key al avanzar: así suben de posición animadas, sin volver a montarse. */}
-        {visible.map((outfit, position) => (
-          <DeckSlot
-            key={outfit.id}
-            ref={position === 0 ? topRef : undefined}
-            outfit={outfit}
-            position={position}
-            reducedMotion={reducedMotion}
-            onDecide={onDecide}
-            onGone={onAdvance}
-          />
-        ))}
-      </View>
+      {/* El fondo del mazo va en flujo y envuelve a las cartas: su alto incluye lo que asoman las de atrás,
+          así nunca invade el encabezado ni los botones, sin importar cuántas líneas tenga el rótulo. */}
+      <Animated.View
+        style={[
+          styles.panel,
+          { backgroundColor: hexToRgba(panelGradient, scheme === 'dark' ? 0.28 : 0.2) },
+          reducedMotion ? null : styles.panelTransition,
+        ]}
+      >
+        <View style={[styles.stage, { height: cardHeight(top) + STACK_PEEK }]}>
+          {/* Las cartas conservan su key al avanzar: así suben de posición animadas, sin volver a montarse. */}
+          {visible.map((outfit, position) => (
+            <DeckSlot
+              key={outfit.id}
+              ref={position === 0 ? topRef : undefined}
+              outfit={outfit}
+              position={position}
+              reducedMotion={reducedMotion}
+              onDecide={onDecide}
+              onGone={onAdvance}
+            />
+          ))}
+        </View>
+      </Animated.View>
 
       <View style={styles.actions}>
         <RoundButton
@@ -336,8 +341,11 @@ export function OutfitDeck({ outfits, index, savedCount, onDecide, onAdvance, on
           onPress={() => onExplain(top)}
         />
       </View>
-      <Animated.Text style={[styles.help, { color: tokens.sub }, transition]}>
-        Deslizá a la derecha para guardar, a la izquierda para otra idea
+      <Animated.Text
+        style={[styles.help, { color: tokens.sub }, transition]}
+        accessibilityLabel="Deslizá a la derecha para guardar, a la izquierda para otra idea"
+      >
+        Deslizá → para guardar, ← para otra idea
       </Animated.Text>
     </View>
   );
@@ -372,8 +380,9 @@ const RoundButton = memo(function RoundButton({ size, icon, color, label, backgr
 
 const styles = StyleSheet.create({
   deck: { alignItems: 'center' },
-  stage: { width: CARD_WIDTH, marginTop: 24, marginBottom: 22 }, // alto: la carta de arriba + lo que asoman las de atrás
-  panel: { position: 'absolute', top: -22, bottom: -22, left: -22, right: -22, borderRadius: 38 },
+  // Las cartas de atrás solo asoman hacia abajo (translateY positivo, origen abajo): no dibujan nada por encima del stage.
+  panel: { marginTop: PANEL_GAP, padding: PANEL_PADDING, borderRadius: 38 },
+  stage: { width: CARD_WIDTH }, // alto: la carta de arriba + lo que asoman las de atrás
   panelTransition: { transitionProperty: 'backgroundColor', transitionDuration: 300 },
   card: {
     position: 'absolute',
@@ -444,7 +453,7 @@ const styles = StyleSheet.create({
   stampLabel: { fontSize: 20, fontWeight: '800', letterSpacing: 1 },
   saveStampLabel: { color: PAPER.matchText },
   skipStampLabel: { color: PAPER.skipStamp },
-  actions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 18, marginTop: 8 },
+  actions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 18, marginTop: PANEL_GAP },
   round: { alignItems: 'center', justifyContent: 'center' },
   help: { fontSize: 13, textAlign: 'center', marginTop: 12, paddingHorizontal: 20 },
   empty: {

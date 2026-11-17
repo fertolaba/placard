@@ -9,6 +9,8 @@ import { GradientFill } from '../outfits/GradientFill';
 import { StyleGarmentsRow } from '../outfits/StyleGarmentsRow';
 
 const ENTERING = FadeInDown.duration(350).withInitialValues({ opacity: 0, transform: [{ translateY: 12 }] });
+/** Cuando exista compartir en historias, pasar a true para mostrar el botón. */
+const SHARE_READY: boolean = false;
 const SHARE_ICON = 'M12 15V3M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6';
 
 interface Props {
@@ -73,18 +75,20 @@ export const SavedOutfitCard = memo(function SavedOutfitCard({ view, width, onRe
         >
           <Ionicons name="heart" size={20} color={PAPER.heart} />
         </Pressable>
-        {/* Preparado: todavía no existe el flujo de compartir en historias. */}
-        <Pressable
-          disabled
-          accessibilityRole="button"
-          accessibilityLabel={`Compartir ${title} en una historia, próximamente`}
-          accessibilityState={{ disabled: true }}
-          style={styles.share}
-        >
-          <Svg width={20} height={20} viewBox="0 0 24 24">
-            <Path d={SHARE_ICON} fill="none" stroke={tokens.sub} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-          </Svg>
-        </Pressable>
+        {/* Oculto hasta que exista el flujo de compartir en historias (SHARE_READY). */}
+        {SHARE_READY ? (
+          <Pressable
+            disabled
+            accessibilityRole="button"
+            accessibilityLabel={`Compartir ${title} en una historia, próximamente`}
+            accessibilityState={{ disabled: true }}
+            style={styles.share}
+          >
+            <Svg width={20} height={20} viewBox="0 0 24 24">
+              <Path d={SHARE_ICON} fill="none" stroke={tokens.sub} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+          </Pressable>
+        ) : null}
       </Animated.View>
     </Animated.View>
   );

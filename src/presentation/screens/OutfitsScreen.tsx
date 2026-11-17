@@ -134,7 +134,7 @@ export function OutfitsScreen() {
                 Outfits
               </Animated.Text>
               <Animated.Text style={[styles.subtitle, { color: tokens.sub }, transition]}>
-                Combinaciones según el color de tu ropa
+                Ideas para combinar tu ropa
               </Animated.Text>
             </View>
             <HeaderActions />
@@ -152,14 +152,16 @@ export function OutfitsScreen() {
           {status === 'ready' && outfits.length === 0 && (
             <StateMessage
               title="Todavía no hay combinaciones"
-              detail="Cargá más prendas para ver combinaciones: necesitás al menos una de arriba (o un top) y una de abajo (o una pollera) que combinen entre sí."
+              detail="Necesitás al menos una prenda de arriba y una de abajo que combinen."
+              actionLabel="Cargá más prendas"
+              onAction={() => router.push('/add-garment')}
             />
           )}
           {status === 'ready' && outfits.length > 0 && (
             <>
               <View style={styles.deckLabelRow}>
                 <Animated.Text style={[styles.accentLabel, styles.deckLabel, { color: tokens.accent }, transition]}>
-                  Outfits según combinación de color
+                  Por color
                 </Animated.Text>
                 <View
                   style={styles.saved}
@@ -210,7 +212,7 @@ export function OutfitsScreen() {
             >
               <Animated.View style={[styles.divider, { backgroundColor: tokens.line }, transition]} />
               <View style={styles.sectionHeader}>
-                <Animated.Text style={[styles.accentLabel, { color: tokens.accent }, transition]}>Outfits según estilo</Animated.Text>
+                <Animated.Text style={[styles.accentLabel, { color: tokens.accent }, transition]}>Por estilo</Animated.Text>
                 <Animated.Text style={[styles.sectionTitle, { color: tokens.text }, transition]} accessibilityRole="header">
                   ¿Cómo querés vestirte hoy?
                 </Animated.Text>
